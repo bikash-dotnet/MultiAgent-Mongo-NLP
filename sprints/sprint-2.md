@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Route routine English queries through local deterministic NLP so simple searches never hit the LLM.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 1
 
 ---

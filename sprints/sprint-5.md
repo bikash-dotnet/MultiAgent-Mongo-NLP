@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Complete the hierarchical governance workflow: Data Owner bypass, Team Lead approval, and managerial override.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 4
 
 ---

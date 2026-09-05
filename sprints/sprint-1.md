@@ -1,9 +1,9 @@
 # Sprint 1 — Platform Foundation, Auth, and Greeting Engine
 
 **Duration:** 2 weeks  
-**Sprint goal:** Stand up the Angular 17+ SPA and ASP.NET Core 8 gateway with JWT auth, SSE plumbing, and the time-aware personalized greeting.
+**Sprint goal:** Stand up the Angular 21 SPA and ASP.NET Core 10 gateway with JWT auth, SSE plumbing, and the time-aware personalized greeting.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** none
 
 ---
@@ -18,10 +18,10 @@
 
 ---
 
-## Tech stack (locked by BRD 4.1)
+## Tech stack (locked by BRD 4.2)
 
-- Client: Angular 17+ standalone components, Angular Material / PrimeNG
-- Gateway: ASP.NET Core 8 (`net8.0`) Minimal APIs
+- Client: Angular 21 standalone components, Angular Material / PrimeNG
+- Gateway: ASP.NET Core 10 (`net10.0`) Minimal APIs
 - Auth: `Microsoft.AspNetCore.Authentication.JwtBearer`
 - Contracts: FluentValidation + DataAnnotations
 - Clock: `TimeProvider` (no LLM calls for greetings)
@@ -31,8 +31,8 @@
 ## Stories
 
 ### S1-01 Solution scaffold
-- Create `src/gateway` ASP.NET Core 8 Web API
-- Create `src/web` Angular 17+ SPA
+- Create `src/gateway` ASP.NET Core 10 Web API
+- Create `src/web` Angular 21 SPA
 - Configure HTTPS, CORS, and reverse-proxy of `/api` from the SPA dev server to the gateway
 - Add `appsettings.json` placeholders for MongoDB, JWT, NVIDIA NIM (no secrets committed)
 

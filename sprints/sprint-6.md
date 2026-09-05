@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Execute approved read-only queries against MongoDB or Enterprise Core REST and write a complete audit row every time.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 5
 
 ---
