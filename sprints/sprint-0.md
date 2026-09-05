@@ -2,7 +2,7 @@
 
 **BRD:** `docs/BRD.md` (v4.2 — C# / ASP.NET Core 10 / Angular 21 / Semantic Kernel)  
 **Cadence:** 2 weeks per sprint  
-**Numbering:** `sprints/sprint-1.md` … `sprints/sprint-7.md`
+**Numbering:** `sprints/sprint-1.md` … `sprints/sprint-8.md`
 
 | Sprint | File | Goal | Primary BRD IDs |
 | --- | --- | --- | --- |
@@ -13,5 +13,6 @@
 | 5 | `sprints/sprint-5.md` | Data Owner exemption, lead approval, override | FR-06, FR-07, NFR-13 |
 | 6 | `sprints/sprint-6.md` | Execution, dual ingestion, immutable audit | FR-08, FR-10, NFR-03, NFR-09 |
 | 7 | `sprints/sprint-7.md` | Export, narrative insights, admin analytics | FR-09, FR-11, NFR-10 |
+| 8 | `sprints/sprint-8.md` | CI/CD: GitHub Actions, Docker images, Compose deploy | NFR-08, NFR-12 |
 
 Add later sprints as `sprints/sprint-8.md`, `sprints/sprint-9.md`, and so on.
