@@ -62,11 +62,11 @@
 
 ## Acceptance criteria
 
-- [ ] Authenticated user sees a time-aware greeting with their session name and quick-action chips (BRD-FR-01)
-- [ ] Unauthenticated requests to greeting/stream return `401`
-- [ ] Greeting path does not call NVIDIA NIM
-- [ ] SPA can open an SSE connection to the gateway and receive a heartbeat
-- [ ] `/api` from the SPA is reverse-proxied to the gateway
+- [x] Authenticated user sees a time-aware greeting with their session name and quick-action chips (BRD-FR-01)
+- [x] Unauthenticated requests to greeting/stream return `401`
+- [x] Greeting path does not call NVIDIA NIM
+- [x] SPA can open an SSE connection to the gateway and receive a heartbeat
+- [x] `/api` from the SPA is reverse-proxied to the gateway
 
 ---
 

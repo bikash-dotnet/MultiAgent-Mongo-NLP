@@ -1,0 +1,25 @@
+<main class="shell">
+  <header class="hero">
+    <p class="eyebrow">Enterprise Multi-Agent Workspace</p>
+    @if (greeting) {
+      <h1>{{ greeting.message }}</h1>
+      <p class="period">Session period: {{ greeting.period }}</p>
+      <div class="chips">
+        @for (chip of greeting.chips; track chip) {
+          <button type="button" class="chip">{{ chip }}</button>
+        }
+      </div>
+    } @else if (error) {
+      <h1>Workspace unavailable</h1>
+      <p>{{ error }}</p>
+    } @else {
+      <h1>Signing you in…</h1>
+    }
+  </header>
+
+  <section class="telemetry">
+    <h2>Agent swarm</h2>
+    <p>Transport: Server-Sent Events</p>
+    <p class="status">Status: {{ streamStatus }}</p>
+  </section>
+</main>
