@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Reject unsafe MQL and pause any query that targets sensitive registry fields.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 3
 
 ---

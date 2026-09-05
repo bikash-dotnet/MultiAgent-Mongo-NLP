@@ -2,17 +2,17 @@
 
 **Project Title:** Enterprise Multi-Agent Natural Language Query & Governance Platform  
 **Document Type:** Production Edition  
-**Document Version:** 4.1 (C# / .NET Backend Alignment)  
+**Document Version:** 4.2 (.NET 10 / Angular 21 Alignment)  
 **Date:** September 2026  
 **Primary Target Collection:** MongoDB (`sample_airbnb.listingsAndReviews`)  
-**Architecture Pattern:** Decoupled Angular 17+ SPA Client + ASP.NET Core 8 Gateway + Semantic Kernel Multi-Agent Orchestrator + Hybrid NLP Engine
+**Architecture Pattern:** Decoupled Angular 21 SPA Client + ASP.NET Core 10 Gateway + Semantic Kernel Multi-Agent Orchestrator + Hybrid NLP Engine
 
-### Tech Stack (v4.1)
+### Tech Stack (v4.2)
 
 | Layer | Choice |
 | --- | --- |
-| Client | Angular 17+ SPA, standalone components, Angular Material / PrimeNG, RxJS `EventSource` |
-| Gateway | ASP.NET Core 8 (`net8.0`) Minimal APIs / Web API |
+| Client | Angular 21 SPA, standalone components, Angular Material / PrimeNG, RxJS `EventSource` |
+| Gateway | ASP.NET Core 10 (`net10.0`) Minimal APIs / Web API |
 | Auth / RBAC | JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
 | Contracts | FluentValidation + DataAnnotations |
 | Agent orchestration | Microsoft Semantic Kernel (process / agent framework) |
@@ -27,9 +27,9 @@
 
 #### Stack substitution from v4.0
 
-| v4.0 (Python) | v4.1 (C# / .NET) |
+| v4.0 (Python) | v4.1+ (C# / .NET) |
 | --- | --- |
-| FastAPI (Python 3.10+) | ASP.NET Core 8 |
+| FastAPI (Python 3.10+) | ASP.NET Core 10 |
 | Pydantic | FluentValidation + DataAnnotations |
 | LangGraph | Microsoft Semantic Kernel |
 | spaCy dictionaries | Regex + gazetteer dictionaries |
@@ -43,7 +43,7 @@
 
 | Field | Value |
 | --- | --- |
-| Document ID | BRD-MAS-NLP-GOV-4.1 |
+| Document ID | BRD-MAS-NLP-GOV-4.2 |
 | Status | Production / Architecture Baseline |
 | Classification | Internal — Enterprise Architecture |
 | Primary Audience | Product, Engineering, Security, Data Governance, Operations |
@@ -134,7 +134,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Client["Angular 17+ Client SPA"]
+    subgraph Client["Angular 21 Client SPA"]
         C1["Personal Greeting and Quick Action Chips"]
         C2["Agent Swarm Activity and Telemetry"]
         C3["Tabular Results Grid and File Exporter"]
@@ -142,7 +142,7 @@ flowchart LR
         C5["Admin Executive Analytics Dashboard"]
     end
 
-    subgraph Gateway["ASP.NET Core 8 Gateway"]
+    subgraph Gateway["ASP.NET Core 10 Gateway"]
         G1["Auth and RBAC Middleware JWT"]
         G2["Semantic Cache and Slot Extractor"]
         G3["Semantic Kernel Multi-Agent Engine"]
@@ -162,7 +162,7 @@ flowchart LR
 
 ### 3.1 Frontend
 
-Angular 17+ Single Page Application with:
+Angular 21 Single Page Application with:
 
 - Standalone components
 - Angular Material / PrimeNG data grids
@@ -178,7 +178,7 @@ Client capabilities:
 
 ### 3.2 Backend
 
-ASP.NET Core 8 (`net8.0`) Minimal APIs / Web API providing:
+ASP.NET Core 10 (`net10.0`) Minimal APIs / Web API providing:
 
 - Asynchronous task handling (`async`/`await`, `IHostedService`)
 - Streaming response pipelines (`IAsyncEnumerable`, SSE)
@@ -479,8 +479,8 @@ Approval lifecycle tracking and managerial override records.
 
 | Requirement ID | Module | Functional Description | Architecture Component | Priority |
 | --- | --- | --- | --- | --- |
-| BRD-FR-01 | Greeting Engine | Dynamic, time-aware personalized greeting using authenticated session token | Angular SPA + ASP.NET Core Auth | High |
-| BRD-FR-02 | Hybrid NLP | Cache lookup and slot-filling before invoking NVIDIA LLM endpoints | ASP.NET Core NLP Service | Critical |
+| BRD-FR-01 | Greeting Engine | Dynamic, time-aware personalized greeting using authenticated session token | Angular 21 SPA + ASP.NET Core 10 Auth | High |
+| BRD-FR-02 | Hybrid NLP | Cache lookup and slot-filling before invoking NVIDIA LLM endpoints | ASP.NET Core 10 NLP Service | Critical |
 | BRD-FR-03 | MQL Synthesis | Translates natural language into validated aggregation pipelines using few-shot templates | Semantic Kernel Query Agent | Critical |
 | BRD-FR-04 | Security AST | Enforces read-only syntax; blocks write and administrative operators | Guardrail Agent (AST) | Critical |
 | BRD-FR-05 | Flag Governance | Verifies requested fields against `schema_field_registry` flags | Guardrail Agent | Critical |
@@ -606,7 +606,7 @@ Approval lifecycle tracking and managerial override records.
 - Write / mutate operations against listings
 - Multi-turn unrestricted clarification loops (capped at one question)
 - On-disk export artifacts
-- Direct client access to MongoDB or NVIDIA endpoints (must go through the ASP.NET Core Gateway)
+- Direct client access to MongoDB or NVIDIA endpoints (must go through the ASP.NET Core 10 Gateway)
 
 ---
 
@@ -620,7 +620,7 @@ Approval lifecycle tracking and managerial override records.
 | AST | Abstract Syntax Tree used for read-only and whitelist checks (C# MQL walker) |
 | NIM | NVIDIA Inference Microservice endpoint |
 | SK | Microsoft Semantic Kernel — agent orchestration and process state |
-| ASP.NET Core 8 | Gateway runtime (`net8.0`) replacing FastAPI from v4.0 |
+| ASP.NET Core 10 | Gateway runtime (`net10.0`) replacing FastAPI from v4.0 |
 | Data Owner Exemption | Role-based auto-approve for sensitive fields |
 | Hierarchical Override | Manager/Director/Owner claim of a Team Lead approval queue |
 | Semantic Cache | Local ONNX vector match (`bge-small`, cosine > 0.95) of previously approved queries |
@@ -632,8 +632,9 @@ Approval lifecycle tracking and managerial override records.
 | Version | Date | Description |
 | --- | --- | --- |
 | 4.0 | September 2026 | Enterprise architecture update: Angular 17+ SPA, FastAPI gateway, LangGraph MAS, hybrid NLP, flag-based governance, dual ingestion, in-memory export |
-| 4.1 | September 2026 | Backend tech-stack realignment: Python/FastAPI/LangGraph/Pydantic/spaCy/Jinja2 replaced with C# / ASP.NET Core 8 / Semantic Kernel / FluentValidation / Regex gazetteers / Scriban / ONNX embeddings |
+| 4.1 | September 2026 | Backend tech-stack realignment: Python/FastAPI/LangGraph/Pydantic/spaCy/Jinja2 replaced with C# / ASP.NET Core / Semantic Kernel / FluentValidation / Regex gazetteers / Scriban / ONNX embeddings |
+| 4.2 | September 2026 | Runtime floor raised to ASP.NET Core 10 (`net10.0`) and Angular 21 |
 
 ---
 
-*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above. Numbered two-week sprints live in `sprints/sprint-1.md` through `sprints/sprint-7.md` (index: `sprints/sprint-0.md`).*
+*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above. Numbered two-week sprints live in `sprints/sprint-1.md` through `sprints/sprint-7.md` (index: `sprints/sprint-0.md`). The v4.0 Python snapshot is archived at `docs/BRD_V1.md`.*

@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Deliver business briefings, in-memory exports, SMTP PDF dispatch, and the admin dashboard from `audit_logs`.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 6
 
 ---

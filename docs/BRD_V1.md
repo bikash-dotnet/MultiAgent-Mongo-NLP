@@ -1,7 +1,9 @@
-# Business Requirements Document (BRD)
+# Business Requirements Document (BRD) — Historical Snapshot
+
+> Archived v4.0 (Python / FastAPI / LangGraph, Angular 17+). Current baseline is `docs/BRD.md` v4.2 (ASP.NET Core 10 / Angular 21). Do not implement from this file.
 
 **Project Title:** Enterprise Multi-Agent Natural Language Query & Governance Platform  
-**Document Type:** Production Edition  
+**Document Type:** Historical / Archived  
 **Document Version:** 4.0 (Enterprise Architecture Update)  
 **Date:** September 2026  
 **Primary Target Collection:** MongoDB (`sample_airbnb.listingsAndReviews`)  

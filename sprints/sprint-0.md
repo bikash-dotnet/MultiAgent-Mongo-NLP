@@ -1,6 +1,6 @@
 # Sprint Program Index
 
-**BRD:** `docs/BRD.md` (v4.1 — C# / ASP.NET Core 8 / Semantic Kernel)  
+**BRD:** `docs/BRD.md` (v4.2 — C# / ASP.NET Core 10 / Angular 21 / Semantic Kernel)  
 **Cadence:** 2 weeks per sprint  
 **Numbering:** `sprints/sprint-1.md` … `sprints/sprint-7.md`
 

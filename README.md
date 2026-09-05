@@ -2,7 +2,8 @@
 
 Enterprise multi-agent natural language query and governance platform.
 
-- BRD: `docs/BRD.md` (v4.1, ASP.NET Core 8 / Semantic Kernel)
+- BRD: `docs/BRD.md` (v4.2, ASP.NET Core 10 / Angular 21 / Semantic Kernel)
+- Archived Python BRD: `docs/BRD_V1.md`
 - Sprints: `sprints/sprint-0.md`
 
 ## Sprint 1 local run

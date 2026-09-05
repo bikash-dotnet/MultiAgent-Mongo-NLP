@@ -3,7 +3,7 @@
 **Duration:** 2 weeks  
 **Sprint goal:** Introduce the Semantic Kernel multi-agent orchestrator and generate validated aggregation pipelines for complex English queries.
 
-**BRD version:** 4.1  
+**BRD version:** 4.2  
 **Depends on:** Sprint 2
 
 ---
