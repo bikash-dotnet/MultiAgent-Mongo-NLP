@@ -637,4 +637,4 @@ Approval lifecycle tracking and managerial override records.
 
 ---
 
-*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above. Numbered two-week sprints live in `sprints/sprint-1.md` through `sprints/sprint-7.md` (index: `sprints/sprint-0.md`). The v4.0 Python snapshot is archived at `docs/BRD_V1.md`.*
+*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above. Numbered two-week sprints live in `sprints/sprint-1.md` through `sprints/sprint-8.md` (index: `sprints/sprint-0.md`). The v4.0 Python snapshot is archived at `docs/BRD_V1.md`.*
