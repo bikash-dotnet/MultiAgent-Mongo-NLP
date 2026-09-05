@@ -2,10 +2,40 @@
 
 **Project Title:** Enterprise Multi-Agent Natural Language Query & Governance Platform  
 **Document Type:** Production Edition  
-**Document Version:** 4.0 (Enterprise Architecture Update)  
+**Document Version:** 4.1 (C# / .NET Backend Alignment)  
 **Date:** September 2026  
 **Primary Target Collection:** MongoDB (`sample_airbnb.listingsAndReviews`)  
-**Architecture Pattern:** Decoupled Angular 17+ SPA Client + FastAPI Gateway + LangGraph Multi-Agent Orchestrator + Hybrid NLP Engine
+**Architecture Pattern:** Decoupled Angular 17+ SPA Client + ASP.NET Core 8 Gateway + Semantic Kernel Multi-Agent Orchestrator + Hybrid NLP Engine
+
+### Tech Stack (v4.1)
+
+| Layer | Choice |
+| --- | --- |
+| Client | Angular 17+ SPA, standalone components, Angular Material / PrimeNG, RxJS `EventSource` |
+| Gateway | ASP.NET Core 8 (`net8.0`) Minimal APIs / Web API |
+| Auth / RBAC | JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
+| Contracts | FluentValidation + DataAnnotations |
+| Agent orchestration | Microsoft Semantic Kernel (process / agent framework) |
+| LLM | NVIDIA NIM via Semantic Kernel connector |
+| Embeddings / cache | ONNX Runtime + `bge-small` local vectors |
+| Slot extraction | `System.Text.RegularExpressions` + gazetteer dictionaries |
+| Simple MQL templates | Scriban |
+| Guardrails | C# MQL AST walker + rule engine |
+| Persistence | MongoDB.Driver against `sample_airbnb` |
+| Streaming | HTTPS + Server-Sent Events (`IAsyncEnumerable`) |
+| Export | ClosedXML / CsvHelper in-memory; MailKit SMTP; QuestPDF for PDF |
+
+#### Stack substitution from v4.0
+
+| v4.0 (Python) | v4.1 (C# / .NET) |
+| --- | --- |
+| FastAPI (Python 3.10+) | ASP.NET Core 8 |
+| Pydantic | FluentValidation + DataAnnotations |
+| LangGraph | Microsoft Semantic Kernel |
+| spaCy dictionaries | Regex + gazetteer dictionaries |
+| Jinja2 | Scriban |
+| Python AST | C# MQL AST walker |
+| sentence-transformers `bge-small` | ONNX Runtime `bge-small` |
 
 ---
 
@@ -13,7 +43,7 @@
 
 | Field | Value |
 | --- | --- |
-| Document ID | BRD-MAS-NLP-GOV-4.0 |
+| Document ID | BRD-MAS-NLP-GOV-4.1 |
 | Status | Production / Architecture Baseline |
 | Classification | Internal — Enterprise Architecture |
 | Primary Audience | Product, Engineering, Security, Data Governance, Operations |
@@ -69,27 +99,27 @@ flowchart TD
     E --> F["Extract City, Rooms, Known Amenities"]
     F --> G["3. Rule-Based Intent Filter"]
     G --> H{"Search, Export, or Clarify?"}
-    H -->|Simple / Cached Path| I["Simple MQL Builders Jinja2 / Local Code"]
+    H -->|Simple / Cached Path| I["Simple MQL Builders Scriban / Local C#"]
     H -->|Complex Unstructured Pipeline Needed| J["Flagship LLM Layer NVIDIA-Hosted"]
     J --> K["4. Complex MQL Generation"]
     J --> L["5. Narrative Insights"]
     I --> M["Local Deterministic Guardrails and AST"]
     K --> M
     L --> M
-    M --> N["6. Python AST and Rule Engine: Field Whitelist, Read-Only Parse"]
+    M --> N["6. C# MQL AST and Rule Engine: Field Whitelist, Read-Only Parse"]
 ```
 
 ### 2.2 NLP Workload Allocation Matrix
 
 | Pipeline Step | Processing Engine | Latency | Token / API Cost | Rationale |
 | --- | --- | --- | --- | --- |
-| Personalized Greetings | Rule Engine / System Clock | < 1 ms | $0.00 | Uses session identity and local clock; zero model calls |
-| Semantic Cache | Local Vector Embeddings (`bge-small`) | < 10 ms | $0.00 | Instantly matches and returns previously approved queries |
-| Slot Extraction | Python Regex / spaCy Dictionary | < 5 ms | $0.00 | Extracts known schema fields (amenities, beds, price limits) |
-| Simple MQL Builders | Jinja2 Templates / Local Code | < 2 ms | $0.00 | Builds simple queries directly without model invocation |
+| Personalized Greetings | C# Rule Engine / `TimeProvider` | < 1 ms | $0.00 | Uses session identity and local clock; zero model calls |
+| Semantic Cache | Local ONNX Vector Embeddings (`bge-small`) | < 10 ms | $0.00 | Instantly matches and returns previously approved queries |
+| Slot Extraction | `Regex` / gazetteer dictionaries | < 5 ms | $0.00 | Extracts known schema fields (amenities, beds, price limits) |
+| Simple MQL Builders | Scriban Templates / Local C# | < 2 ms | $0.00 | Builds simple queries directly without model invocation |
 | Complex MQL Pipelines | NVIDIA-Hosted LLM | 1.5 – 3 s | Standard Token Cost | Reserved for multi-condition semantic queries and nested aggregations |
-| Safety & Flag Verification | Python AST Grammar Engine | < 1 ms | $0.00 | Verifies read-only rules and checks `schema_field_registry` flags |
-| Standard Executive Summary | Deterministic Python String Formatter | < 1 ms | $0.00 | Formats counts, median prices, and top locations via templates |
+| Safety & Flag Verification | C# MQL AST Grammar Engine | < 1 ms | $0.00 | Verifies read-only rules and checks `schema_field_registry` flags |
+| Standard Executive Summary | Deterministic C# String Formatter | < 1 ms | $0.00 | Formats counts, median prices, and top locations via templates |
 
 ### 2.3 Cost-Optimization Rules
 
@@ -112,10 +142,10 @@ flowchart LR
         C5["Admin Executive Analytics Dashboard"]
     end
 
-    subgraph Gateway["FastAPI Gateway"]
-        G1["Auth and RBAC Interceptor JWT"]
+    subgraph Gateway["ASP.NET Core 8 Gateway"]
+        G1["Auth and RBAC Middleware JWT"]
         G2["Semantic Cache and Slot Extractor"]
-        G3["LangGraph Multi-Agent Engine"]
+        G3["Semantic Kernel Multi-Agent Engine"]
         G4["NVIDIA NIM LLM Endpoint"]
         G5["Data Layer"]
     end
@@ -148,23 +178,23 @@ Client capabilities:
 
 ### 3.2 Backend
 
-FastAPI (Python 3.10+) providing:
+ASP.NET Core 8 (`net8.0`) Minimal APIs / Web API providing:
 
-- Asynchronous task handling
-- Streaming response pipelines
-- Pydantic schema validation
-- JWT auth and RBAC interceptor
+- Asynchronous task handling (`async`/`await`, `IHostedService`)
+- Streaming response pipelines (`IAsyncEnumerable`, SSE)
+- FluentValidation + DataAnnotations contract validation
+- JWT auth and RBAC middleware (`Microsoft.AspNetCore.Authentication.JwtBearer`)
 - Semantic cache and slot extractor
-- LangGraph multi-agent engine
-- NVIDIA NIM LLM endpoint integration
+- Semantic Kernel multi-agent engine
+- NVIDIA NIM LLM endpoint integration via Semantic Kernel connectors
 
 ### 3.3 Agentic Framework
 
-LangGraph state machine driving:
+Microsoft Semantic Kernel process/state machine driving:
 
 - Cyclical agent validation loops
 - Error retries
-- Paused state persistence for governance holds
+- Paused state persistence for governance holds (`IAgentStateStore`)
 
 ### 3.4 LLM Engine
 
@@ -449,9 +479,9 @@ Approval lifecycle tracking and managerial override records.
 
 | Requirement ID | Module | Functional Description | Architecture Component | Priority |
 | --- | --- | --- | --- | --- |
-| BRD-FR-01 | Greeting Engine | Dynamic, time-aware personalized greeting using authenticated session token | Angular SPA + FastAPI Auth | High |
-| BRD-FR-02 | Hybrid NLP | Cache lookup and slot-filling before invoking NVIDIA LLM endpoints | FastAPI NLP Service | Critical |
-| BRD-FR-03 | MQL Synthesis | Translates natural language into validated aggregation pipelines using few-shot templates | LangGraph Query Agent | Critical |
+| BRD-FR-01 | Greeting Engine | Dynamic, time-aware personalized greeting using authenticated session token | Angular SPA + ASP.NET Core Auth | High |
+| BRD-FR-02 | Hybrid NLP | Cache lookup and slot-filling before invoking NVIDIA LLM endpoints | ASP.NET Core NLP Service | Critical |
+| BRD-FR-03 | MQL Synthesis | Translates natural language into validated aggregation pipelines using few-shot templates | Semantic Kernel Query Agent | Critical |
 | BRD-FR-04 | Security AST | Enforces read-only syntax; blocks write and administrative operators | Guardrail Agent (AST) | Critical |
 | BRD-FR-05 | Flag Governance | Verifies requested fields against `schema_field_registry` flags | Guardrail Agent | Critical |
 | BRD-FR-06 | Data Owner Exemption | Bypasses approval workflow when user holds `data_owner_roles` | RBAC Middleware | High |
@@ -479,7 +509,7 @@ Approval lifecycle tracking and managerial override records.
 | BRD-NFR-10 | Privacy | Export path is in-memory only; no temp files on disk |
 | BRD-NFR-11 | Streaming | Agent activity and results stream over SSE |
 | BRD-NFR-12 | Auth | JWT session identity on every request |
-| BRD-NFR-13 | Persistence | LangGraph paused-state persistence during governance holds |
+| BRD-NFR-13 | Persistence | Semantic Kernel paused-state persistence during governance holds |
 
 ---
 
@@ -519,7 +549,7 @@ Approval lifecycle tracking and managerial override records.
 
 | Rule | Enforcement |
 | --- | --- |
-| Read-only MQL only | Python AST + rule engine |
+| Read-only MQL only | C# MQL AST + rule engine |
 | Field whitelist | `schema.txt` + `schema_field_registry` |
 | Sensitive field gate | `is_sensitive` / `requires_approval` |
 | Data Owner bypass | Role match against `data_owner_roles` |
@@ -576,7 +606,7 @@ Approval lifecycle tracking and managerial override records.
 - Write / mutate operations against listings
 - Multi-turn unrestricted clarification loops (capped at one question)
 - On-disk export artifacts
-- Direct client access to MongoDB or NVIDIA endpoints (must go through FastAPI Gateway)
+- Direct client access to MongoDB or NVIDIA endpoints (must go through the ASP.NET Core Gateway)
 
 ---
 
@@ -587,11 +617,13 @@ Approval lifecycle tracking and managerial override records.
 | MAS | Hierarchical Multi-Agent System |
 | MQL | MongoDB Query / Aggregation Language |
 | SSE | Server-Sent Events |
-| AST | Abstract Syntax Tree used for read-only and whitelist checks |
+| AST | Abstract Syntax Tree used for read-only and whitelist checks (C# MQL walker) |
 | NIM | NVIDIA Inference Microservice endpoint |
+| SK | Microsoft Semantic Kernel — agent orchestration and process state |
+| ASP.NET Core 8 | Gateway runtime (`net8.0`) replacing FastAPI from v4.0 |
 | Data Owner Exemption | Role-based auto-approve for sensitive fields |
 | Hierarchical Override | Manager/Director/Owner claim of a Team Lead approval queue |
-| Semantic Cache | Local vector match (bge-small, cosine > 0.95) of previously approved queries |
+| Semantic Cache | Local ONNX vector match (`bge-small`, cosine > 0.95) of previously approved queries |
 
 ---
 
@@ -600,7 +632,8 @@ Approval lifecycle tracking and managerial override records.
 | Version | Date | Description |
 | --- | --- | --- |
 | 4.0 | September 2026 | Enterprise architecture update: Angular 17+ SPA, FastAPI gateway, LangGraph MAS, hybrid NLP, flag-based governance, dual ingestion, in-memory export |
+| 4.1 | September 2026 | Backend tech-stack realignment: Python/FastAPI/LangGraph/Pydantic/spaCy/Jinja2 replaced with C# / ASP.NET Core 8 / Semantic Kernel / FluentValidation / Regex gazetteers / Scriban / ONNX embeddings |
 
 ---
 
-*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above.*
+*This document is the production BRD baseline for implementation, QA, and governance design. Subsequent implementation plans should trace work items to the BRD-FR and BRD-NFR IDs above. Numbered two-week sprints live in `sprints/sprint-1.md` through `sprints/sprint-7.md` (index: `sprints/sprint-0.md`).*
