@@ -1,0 +1,12 @@
+{
+  "amenities": [
+    { "canonical": "Pool", "aliases": ["pool", "pools", "swimming pool", "swimming pools", "heated pool"] },
+    { "canonical": "Wireless Internet", "aliases": ["wifi", "wi-fi", "wireless internet", "internet"] },
+    { "canonical": "Free parking on premises", "aliases": ["parking", "free parking", "parking on premises"] },
+    { "canonical": "Kitchen", "aliases": ["kitchen", "full kitchen"] },
+    { "canonical": "Washer", "aliases": ["washer", "washing machine"] },
+    { "canonical": "Dryer", "aliases": ["dryer"] },
+    { "canonical": "Hot tub", "aliases": ["hot tub", "jacuzzi"] },
+    { "canonical": "Gym", "aliases": ["gym", "fitness center", "home gym"] }
+  ]
+}

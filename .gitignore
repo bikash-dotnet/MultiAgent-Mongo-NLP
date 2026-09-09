@@ -8,3 +8,4 @@ src/web/dist/
 src/web/.angular/
 .idea/
 *.log
+src/gateway/Models/

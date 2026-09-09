@@ -1,0 +1,11 @@
+{
+  "markets": [
+    { "canonical": "Los Angeles", "aliases": ["los angeles", "la", "l.a.", "la california", "los angeles california"] },
+    { "canonical": "New York", "aliases": ["new york", "nyc", "ny", "new york city", "manhattan"] },
+    { "canonical": "San Francisco", "aliases": ["san francisco", "sf", "bay area"] },
+    { "canonical": "Miami", "aliases": ["miami", "miami beach"] },
+    { "canonical": "Chicago", "aliases": ["chicago"] },
+    { "canonical": "Austin", "aliases": ["austin", "austin texas"] },
+    { "canonical": "Seattle", "aliases": ["seattle"] }
+  ]
+}
