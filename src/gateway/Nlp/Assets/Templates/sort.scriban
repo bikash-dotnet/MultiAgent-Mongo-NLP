@@ -1,0 +1,1 @@
+{ "$sort": { {{ sort_field }}: {{ sort_direction }} } }
