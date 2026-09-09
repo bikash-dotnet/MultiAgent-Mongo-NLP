@@ -12,15 +12,16 @@ mkdir -p "$DEST"
 
 download() {
   local file="$1"
+  local url="$2"
   if [ ! -f "$DEST/$file" ]; then
     echo "Downloading $file ..."
-    curl -sL --fail -o "$DEST/$file" "$BASE/$file"
+    curl -sL --fail -o "$DEST/$file" "$url"
   else
     echo "$file already present"
   fi
 }
 
-download "onnx/model_quantized.onnx"
-download "vocab.txt"
+download "model_quantized.onnx" "$BASE/onnx/model_quantized.onnx"
+download "vocab.txt" "$BASE/vocab.txt"
 
 echo "NLP model assets ready at $DEST"
