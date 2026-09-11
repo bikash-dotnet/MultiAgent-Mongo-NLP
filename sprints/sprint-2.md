@@ -62,10 +62,10 @@
 
 ## Acceptance criteria
 
-- [ ] Known/simple queries resolve via cache or slot/template path with **zero LLM tokens** (BRD-FR-02)
-- [ ] Cache hit only when cosine > 0.95 (BRD-NFR-05)
-- [ ] `"listings with pools in Los Angeles, just run it"` produces MQL without NVIDIA
-- [ ] Latency budgets in BRD-NFR-01 hold under unit/bench tests for cache, slots, simple MQL
+- [x] Known/simple queries resolve via cache or slot/template path with **zero LLM tokens** (BRD-FR-02)
+- [x] Cache hit only when cosine > 0.95 (BRD-NFR-05)
+- [x] `"listings with pools in Los Angeles, just run it"` produces MQL without NVIDIA
+- [x] Latency budgets in BRD-NFR-01 hold under unit/bench tests for cache, slots, simple MQL
 
 ---
 
@@ -82,3 +82,8 @@
 - `INlpRouter` with cache / slot / template paths
 - Gazetteer + Scriban template assets
 - Bench numbers for NFR-01 local steps
+
+**Status:** Implemented and verified (62 tests green). In-memory budgets hold (slot extraction and
+simple MQL render both well under BRD-NFR-01 limits); real ONNX embed recorded separately under the
+split-budget decision; semantic cache gates on cosine > 0.95. Live numbers in
+`docs/benchmarks/sprint-2-nfr01.md`.
