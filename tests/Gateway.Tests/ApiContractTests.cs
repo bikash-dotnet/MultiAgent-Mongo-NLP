@@ -110,6 +110,45 @@ public class ApiContractTests : IClassFixture<GatewayFactory>
         Assert.Equal("sess_9041-A", response.Headers.GetValues("X-Session-Id").Single());
     }
 
+    [Fact]
+    public async Task Nlp_query_without_token_returns_401()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/nlp/query", new { utterance = "listings in Los Angeles" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Nlp_query_simple_utterance_returns_simple_mql_zero_tokens()
+    {
+        var client = AuthedClient();
+
+        var response = await client.PostAsJsonAsync("/api/nlp/query", new { utterance = "listings with pools in Los Angeles, just run it" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var payload = await response.Content.ReadFromJsonAsync<NlpQueryDto>();
+        Assert.NotNull(payload);
+        Assert.Equal("SimpleMql", payload!.Kind);
+        Assert.Equal(0, payload.LlmTokensConsumed);
+        Assert.Contains("address.market", payload.Mql);
+    }
+
+    [Fact]
+    public async Task Nlp_query_identical_repeat_hits_cache()
+    {
+        var client = AuthedClient();
+        var body = new { utterance = "listings with pools in Los Angeles, just run it" };
+
+        await client.PostAsJsonAsync("/api/nlp/query", body);
+        var second = await client.PostAsJsonAsync("/api/nlp/query", body);
+
+        var payload = await second.Content.ReadFromJsonAsync<NlpQueryDto>();
+        Assert.Equal("CacheHit", payload!.Kind);
+        Assert.True(payload.SemanticCacheHit);
+    }
+
     private HttpClient AuthedClient()
     {
         var client = _factory.CreateClient();
@@ -143,4 +182,14 @@ public class ApiContractTests : IClassFixture<GatewayFactory>
     private sealed record HealthResponse(string Status);
 
     private sealed record GreetingDto(string DisplayName, string Period, string Message, string[] Chips);
+
+    private sealed record NlpQueryDto(
+        string Kind,
+        string? Mql,
+        string? Question,
+        bool SemanticCacheHit,
+        bool SlotExtractionUsed,
+        string Intent,
+        bool JustRunIt,
+        int LlmTokensConsumed);
 }

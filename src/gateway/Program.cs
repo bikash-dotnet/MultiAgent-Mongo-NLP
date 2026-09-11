@@ -4,6 +4,9 @@ using System.Text;
 using System.Text.Json;
 using Gateway.Auth;
 using Gateway.Greeting;
+using Gateway.Nlp;
+using Gateway.Nlp.Http;
+using Gateway.Nlp.Router;
 using Gateway.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +63,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddGatewayNlp(builder.Configuration);
 
 var app = builder.Build();
 
@@ -109,6 +113,22 @@ app.MapGet("/api/session/greeting", (ClaimsPrincipal user, TimeProvider clock) =
         "Just run it"
     };
     return Results.Ok(new GreetingResponse(name, period, GreetingClock.FormatMessage(name, period), chips));
+}).RequireAuthorization();
+
+app.MapPost("/api/nlp/query", (NlpQueryRequest request, INlpRouter router) =>
+{
+    var utterance = request.Utterance?.Trim();
+    if (string.IsNullOrWhiteSpace(utterance))
+    {
+        return Results.BadRequest(new { error = "utterance is required" });
+    }
+
+    if (utterance.Length > 500)
+    {
+        return Results.BadRequest(new { error = "utterance must be 500 characters or fewer" });
+    }
+
+    return Results.Ok(NlpQueryResponse.From(router.Route(utterance)));
 }).RequireAuthorization();
 
 app.MapGet("/api/agents/stream", async (HttpContext context, CancellationToken cancellationToken) =>
