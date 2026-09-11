@@ -34,7 +34,7 @@ jobs:
     - name: Test
       run: dotnet test src/gateway --no-build --verbosity normal
     - name: Cache Node Modules
-      uses: actions/setup-cache@v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: src/web/node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('src/web/package-lock.json') }}
