@@ -30,6 +30,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore src/gateway
     - name: Build
-      run: dotnet build --no-restore --configuration  Release
+      run: dotnet build src/gateway --no-restore --configuration  Release
     - name: Test
       run: dotnet test src/gateway --no-build --verbosity normal
