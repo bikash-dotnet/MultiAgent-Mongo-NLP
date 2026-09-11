@@ -1,1 +1,1 @@
-{ "$sort": { {{ sort_field }}: {{ sort_direction }} } }
+{ "$sort": { "{{ sort_field }}": {{ sort_direction }} } }
