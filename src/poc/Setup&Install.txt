@@ -1,0 +1,18 @@
+# Install
+npm init -y
+npm install mongodb @google/generative-ai @modelcontextprotocol/sdk
+
+# Env
+export GEMINI_API_KEY="your-key"
+export MONGO_URI="mongodb://localhost:27017"
+
+# Run CLI
+node mongo-ai-query.js \
+  --db shop --collection users \
+  --ask "top 5 users in Pune by total order amount" \
+  --showPrompt
+
+# With caching (cheaper on repeat)
+USE_CACHE=1 node mongo-ai-query.js \
+  --db shop --collection users \
+  --ask "top 5 users in Pune by total order amount"

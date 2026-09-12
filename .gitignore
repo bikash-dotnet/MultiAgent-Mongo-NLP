@@ -6,5 +6,6 @@ obj/
 src/web/node_modules/
 src/web/dist/
 src/web/.angular/
+src/poc/node_modules/
 .idea/
 *.log
