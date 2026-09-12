@@ -49,6 +49,9 @@ jobs:
     - name: Install Angular dependencies
       working-directory: ./src/web
       run: npm ci
+    - name: Run Angular tests
+      working-directory: ./src/web
+      run: npm test
     - name: Build Angular
       working-directory: ./src/web
       run: npm run build -- --configuration production
