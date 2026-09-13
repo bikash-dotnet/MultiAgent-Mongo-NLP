@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>mongo-ai-query</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>mongo-ai-query</h1>
+      <p class="subtitle">Natural language to MongoDB aggregation pipeline</p>
+    </div>
+    <span id="mode-badge" class="badge badge-muted">checking</span>
+  </header>
+
+  <main>
+    <section class="card">
+      <form id="ask-form">
+        <div class="row">
+          <label class="field">
+            <span>Database</span>
+            <input id="db" name="db" type="text" value="shop" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span>Collection</span>
+            <input id="collection" name="collection" type="text" value="users" autocomplete="off" />
+          </label>
+        </div>
+        <label class="field">
+          <span>Question</span>
+          <textarea id="question" name="question" rows="3" maxlength="500"
+            placeholder="e.g. top 5 users in Pune by total order amount">top 5 users in Pune by total order amount</textarea>
+        </label>
+        <div class="actions">
+          <button id="ask-button" type="submit">Generate and run</button>
+          <span id="status" class="status"></span>
+        </div>
+      </form>
+    </section>
+
+    <div id="banner" class="banner hidden" role="status"></div>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Generated pipeline</h2>
+        <pre id="pipeline" class="code empty">Run a question to see the pipeline.</pre>
+      </div>
+
+      <div class="card">
+        <h2>Schema</h2>
+        <div class="tabs">
+          <button class="tab active" data-schema="compact" type="button">Compact</button>
+          <button class="tab" data-schema="flattened" type="button">Flattened</button>
+        </div>
+        <pre id="schema" class="code empty">Run a question to see the schema.</pre>
+      </div>
+    </section>
+
+    <section class="card" id="messages-card">
+      <h2>Warnings and errors</h2>
+      <ul id="messages" class="messages empty">
+        <li class="muted">No warnings or errors yet.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Results <span id="result-count" class="count"></span></h2>
+      <div id="results" class="results empty">Run a question to see results.</div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
