@@ -34,8 +34,8 @@ const CONFIG = {
   mongoUri:    process.env.MONGO_URI     || 'mongodb://localhost:27017',
   dbName:      process.env.MONGO_DB      || 'shop',
   collection:  process.env.MONGO_COLL    || 'users',
-  geminiKey:   process.env.API_KEY,
-  geminiModel: process.env.MODEL  || 'gemini-1.5-pro',
+  geminiKey:   process.env.GEMINI_API_KEY || process.env.API_KEY,
+  geminiModel: process.env.GEMINI_MODEL || process.env.MODEL || 'gemini-1.5-pro',
   sampleSize:  parseInt(process.env.SAMPLE_SIZE || '200', 10),
   maxFields:   parseInt(process.env.MAX_FIELDS || '40', 10),
   useCache:    process.env.USE_CACHE === '1',
@@ -345,11 +345,12 @@ const MONGO_RULES = `MONGODB BEST-PRACTICES (follow strictly):
 12. Put $sort immediately after the filtering $match, before $limit.
 13. For top-N, always $sort before $limit — never $limit before $sort.
 14. For distinct values, prefer {$group:{_id:"$field"}} over $addToSet.
-9.  Put $project at the END to shape output.
-11. NEVER use: $where,$function,$accumulator,$out,$merge,$currentOp,
+15. Put $project at the END to shape output.
+16. NEVER use: $where,$function,$accumulator,$out,$merge,$currentOp,
     $listSessions,$planCacheStats.
-12. NEVER $lookup into "system.*" or other databases.
-13. If no sort is required, use {_id:1} for stable pagination.
+17. NEVER $lookup into "system.*" or other databases.
+18. If no sort is required, use {_id:1} for stable pagination.
+`;
 
 function buildPrompt(compactSchema, question, context = {}) {
   const indexes = context.indexes?.length
@@ -359,8 +360,8 @@ function buildPrompt(compactSchema, question, context = {}) {
   const parts = [
     'ROLE: You are an expert data analyst experienced at using MongoDB. our job is to take information about a MongoDB database plus a natural language query and generate a MongoDB shell (mongosh) query to execute to retrieve the information needed to answer the natural language query',
     'Format the mongosh query in the following structure:',
-    ''
-    `db.<collectionname>.find({/* query */})` or `db.<collectionname>.aggregate({/* query */})`,
+    '',
+    'db.<collectionname>.find({/* query */})` or `db.<collectionname>.aggregate({/* query */})',
     '',
     ALIAS_LEGEND,
     '',
@@ -544,8 +545,9 @@ function validatePipeline(rawPipeline, schema) {
   for (const stage of pipeline) {
     if ('$lookup' in stage) {
       const from = stage.$lookup?.from || '';
+      const crossDb = stage.$lookup?.db || '';
       if (from.startsWith('system.')) errors.push(`$lookup into system.* is forbidden: ${from}`);
-      if (from.includes('.'))         warnings.push(`$lookup cross-database: ${from}`);
+      if (crossDb) warnings.push(`$lookup cross-database read: ${crossDb}.${from}`);
     }
   }
 
