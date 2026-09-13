@@ -4,7 +4,8 @@
   "description": "",
   "main": "mcp-server.js.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "ui": "node ui/server.js",
+    "test": "node --test ui/server.test.js"
   },
   "keywords": [],
   "author": "",

@@ -59,6 +59,7 @@ collection for five minutes.
 | --- | --- |
 | `mongo-ai-query.js` | Core library and CLI. Everything lives here. |
 | `mcp-server.js.js` | MCP server exposing four tools over stdio. Imports the core. |
+| `ui/` | Small zero-dependency web UI: Node server, single page, demo data, tests. |
 | `MongoOfficialPrompt.txt` | The vanilla MongoDB prompt used as the prompt reference / baseline. |
 | `ReadMe.txt` | Original short description. Superseded by this document. |
 | `Setup&Install.txt` | Short install and run notes. |
@@ -263,7 +264,56 @@ Example MCP client configuration:
 
 ---
 
-## 12. Configuration
+## 12. Web UI
+
+A small, dependency-free web interface lives under `src/poc/ui/`. It lets you
+type a question, then shows the inferred schema, the generated pipeline,
+warnings and errors, and a results table.
+
+| File | Purpose |
+| --- | --- |
+| `ui/server.js` | Zero-dependency Node `http` server. Serves the page and `POST /api/ask`, `GET /api/health`. |
+| `ui/index.html` | Single page markup. |
+| `ui/styles.css` | Styling. |
+| `ui/app.js` | Front-end logic: submit, render schema/pipeline/messages/results. |
+| `ui/demo-data.js` | Sample `shop.users` documents, schema, pipeline, and results. |
+| `ui/server.test.js` | `node --test` smoke tests for health, ask shape, validation, and 404. |
+
+Run it:
+
+```bash
+PORT=8787 node ui/server.js
+```
+
+Then open `http://localhost:8787`. You can also use `npm run ui`, or run the
+tests with `npm test`.
+
+### Live versus demo mode
+
+The server reports readiness at `GET /api/health`. It runs a live query only when
+the core module loads and `GEMINI_API_KEY` is set. Otherwise, and whenever a
+live run fails (for example no reachable MongoDB), it returns a demo response
+built from `ui/demo-data.js` with `mode: "demo"` and a note explaining why. The
+page shows a `live` or `demo` badge so the mode is always obvious.
+
+```mermaid
+graph TD
+    A["Browser form"] --> B["POST /api/ask"]
+    B --> C{"Core loaded and GEMINI_API_KEY set?"}
+    C -->|no| D["demo-data response, mode=demo"]
+    C -->|yes| E["sample, prompt, Gemini, validate, execute"]
+    E -->|success| F["live response, mode=live"]
+    E -->|failure| D
+    D --> G["Render schema, pipeline, messages, results"]
+    F --> G
+```
+
+The `POST /api/ask` body is `{ "db": "...", "collection": "...", "question": "..." }`.
+An empty question returns HTTP 400. The question is limited to 500 characters.
+
+---
+
+## 13. Configuration
 
 Set via environment variables (or a local `.env` loaded by dotenv). The API key
 and model accept two names each; `GEMINI_*` takes precedence.
@@ -282,7 +332,7 @@ and model accept two names each; `GEMINI_*` takes precedence.
 
 ---
 
-## 13. Setup and usage
+## 14. Setup and usage
 
 Prerequisites: Node.js 18 or newer and a reachable MongoDB.
 
@@ -321,7 +371,7 @@ CLI flags: `--uri`, `--db`, `--collection`, `--ask`, `--maxFields`, `--cache`,
 
 ---
 
-## 14. Safety model
+## 15. Safety model
 
 - Stage whitelist plus a banned list (`$where`, `$function`, `$accumulator`,
   `$out`, `$merge`, `$currentOp`, `$listSessions`, `$planCacheStats`).
@@ -335,7 +385,7 @@ rotate it and remove it from history.
 
 ---
 
-## 15. Fixes applied in this revision
+## 16. Fixes applied in this revision
 
 - Repaired the parse errors that prevented the module from loading: the
   `MONGO_RULES` template literal was never closed, a comma was missing in the
@@ -346,10 +396,11 @@ rotate it and remove it from history.
   and the legacy `API_KEY`/`MODEL` names work, matching the documentation.
 - Corrected the `$lookup` cross-database check to inspect the `db` field instead
   of looking for a dot in the collection name.
+- Added the `src/poc/ui/` web interface with demo fallback and smoke tests.
 
 ---
 
-## 16. Known gaps
+## 17. Known gaps
 
 - No self-correction loop; a single validation failure ends the request.
 - Validator field and type checks use `endsWith` suffix matching, which can
