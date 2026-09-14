@@ -1,18 +1,38 @@
-# Install
-npm init -y
-npm install mongodb @google/generative-ai @modelcontextprotocol/sdk
+# mongo-ai-query - setup and run
 
-# Env
+# 1. Install (run inside src/poc)
+npm install
+
+# 2. Configure (optional: without this the CLI prints only the prompt
+#    and the Web UI runs in demo mode)
 export GEMINI_API_KEY="your-key"
+export GEMINI_MODEL="gemini-1.5-pro"
 export MONGO_URI="mongodb://localhost:27017"
 
-# Run CLI
+# 3. Run the CLI
 node mongo-ai-query.js \
   --db shop --collection users \
   --ask "top 5 users in Pune by total order amount" \
   --showPrompt
 
-# With caching (cheaper on repeat)
+# 3b. Run the CLI with caching (cheaper on repeat)
 USE_CACHE=1 node mongo-ai-query.js \
   --db shop --collection users \
   --ask "top 5 users in Pune by total order amount"
+
+# 4. Run the Web UI
+npm run ui
+
+# 4b. Or run the server directly with a custom port
+PORT=8787 node ui/server.js
+
+# Then open http://localhost:8787
+
+# 5. Run the MCP server (stdio; usually registered with an MCP client)
+node mcp-server.js.js
+
+# 6. Run the tests (no external services required)
+npm test
+
+# Prerequisites: Node.js 18 or newer. MongoDB and a Gemini key are optional;
+# without them the CLI is prompt-only and the Web UI uses demo mode.
