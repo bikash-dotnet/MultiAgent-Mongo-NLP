@@ -12,10 +12,19 @@ const MAX_BODY = 100 * 1024;
 
 let core = null;
 let coreError = null;
+let lastLiveError = null;
 try {
   core = require('../mongo-ai-query.js');
 } catch (e) {
   coreError = e.message;
+}
+
+function redactUri(uri) {
+  return String(uri || '').replace(/\/\/[^@/]*@/, '//***@');
+}
+
+function modelLooksValid(name) {
+  return /^(models\/)?gemini[-\w.]*$/i.test(String(name || ''));
 }
 
 const STATIC_FILES = {
@@ -155,6 +164,7 @@ function createServer() {
         liveReady: liveReady(),
         coreLoaded: Boolean(core),
         coreError,
+        lastLiveError,
         port: PORT,
       });
       return;
@@ -198,8 +208,11 @@ function createServer() {
 
       try {
         const result = await runLive(db, collection, question);
+        lastLiveError = null;
         sendJson(res, 200, result);
       } catch (e) {
+        lastLiveError = e.message;
+        console.error(`[live] ${db}.${collection} failed: ${e.message}`);
         sendJson(res, 200, demoResponse(question, db, collection, `Live run failed (${e.message}). Showing demo data.`));
       }
       return;
@@ -212,7 +225,23 @@ function createServer() {
 if (require.main === module) {
   createServer().listen(PORT, HOST, () => {
     console.log(`mongo-ai-query UI listening on http://${HOST}:${PORT}`);
-    console.log(liveReady() ? 'Mode: live (GEMINI_API_KEY set)' : 'Mode: demo (no GEMINI_API_KEY)');
+    if (!core) {
+      console.warn(`Mode: demo (core unavailable: ${coreError})`);
+      console.warn('Run "npm install" inside src/poc to enable live mode.');
+      return;
+    }
+    if (!liveReady()) {
+      console.warn('Mode: demo (GEMINI_API_KEY not set)');
+      console.warn('Set GEMINI_API_KEY to enable live mode.');
+      return;
+    }
+    console.log('Mode: live');
+    console.log(`Model: ${core.CONFIG.geminiModel}`);
+    console.log(`MongoDB: ${redactUri(core.CONFIG.mongoUri)}`);
+    if (!modelLooksValid(core.CONFIG.geminiModel)) {
+      console.warn(`WARNING: "${core.CONFIG.geminiModel}" does not look like a Gemini model. Use a name such as "gemini-1.5-flash".`);
+    }
+    console.warn('Live requests still fail if MongoDB is unreachable or the API key is invalid; watch for [live] errors below.');
   });
 }
 
