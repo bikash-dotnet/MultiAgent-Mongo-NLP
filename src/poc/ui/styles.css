@@ -282,6 +282,9 @@ button:disabled {
   font-weight: 400;
   text-transform: none;
 }
+.d-none {
+  display: none !important;
+}
 
 @media (max-width: 780px) {
   .grid,
