@@ -334,22 +334,36 @@ and model accept two names each; `GEMINI_*` takes precedence.
 
 ## 14. Setup and usage
 
-Prerequisites: Node.js 18 or newer and a reachable MongoDB.
+### Prerequisites
 
-Install dependencies (run inside `src/poc`):
+- Node.js 18 or newer.
+- A reachable MongoDB instance at `MONGO_URI` (optional: the Web UI falls back
+  to demo mode without it).
+- A Gemini API key (optional: the CLI only prints the prompt, and the Web UI
+  uses demo mode, when it is missing).
+
+### 1. Install dependencies
+
+Run inside `src/poc`:
 
 ```bash
 npm install
 ```
 
-Set environment variables:
+### 2. Configure (optional for demo mode)
+
+Set environment variables directly or create a local `.env`:
 
 ```bash
 export GEMINI_API_KEY="your-key"
+export GEMINI_MODEL="gemini-1.5-pro"
 export MONGO_URI="mongodb://localhost:27017"
 ```
 
-Run the CLI:
+Without a key and a reachable MongoDB, the CLI stays in prompt-only mode and the
+Web UI stays in demo mode. Nothing else is required to explore the project.
+
+### 3. Run the CLI
 
 ```bash
 node mongo-ai-query.js \
@@ -358,7 +372,7 @@ node mongo-ai-query.js \
   --showPrompt
 ```
 
-Run with context caching:
+Enable context caching for repeat runs:
 
 ```bash
 USE_CACHE=1 node mongo-ai-query.js \
@@ -367,7 +381,41 @@ USE_CACHE=1 node mongo-ai-query.js \
 ```
 
 CLI flags: `--uri`, `--db`, `--collection`, `--ask`, `--maxFields`, `--cache`,
-`--showPrompt`. Dependency versions come from `package.json`.
+`--showPrompt`.
+
+### 4. Run the Web UI
+
+```bash
+npm run ui
+```
+
+Or run the server directly and override the port:
+
+```bash
+PORT=8787 node ui/server.js
+```
+
+Open `http://localhost:8787` and enter a question. See section 12 for live versus
+demo behavior.
+
+### 5. Run the MCP server
+
+```bash
+node mcp-server.js.js
+```
+
+It speaks MCP over stdio, so normally you register it with an MCP client rather
+than running it by hand. See the configuration example in section 11.
+
+### 6. Run the tests
+
+```bash
+npm test
+```
+
+The tests exercise the Web UI server (health, response shape, validation, and
+404) using the built-in Node test runner and need no external services.
+
 
 ---
 
