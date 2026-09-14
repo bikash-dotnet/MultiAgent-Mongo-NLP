@@ -36,7 +36,11 @@
       .then((data) => {
         if (data.liveReady) {
           setBadge('live', 'live');
-          showBanner('', null);
+          if (data.lastLiveError) {
+            showBanner(`Previous live request failed: ${data.lastLiveError}`, 'error');
+          } else {
+            showBanner('', null);
+          }
         } else {
           setBadge('demo', 'demo');
           showBanner('Running in demo mode. Set GEMINI_API_KEY and a reachable MongoDB to enable live queries.', 'warn');
@@ -136,7 +140,8 @@
 
     if (data.mode === 'demo') {
       setBadge('demo', 'demo');
-      showBanner(data.note || 'Showing demo data.', 'warn');
+      const failed = typeof data.note === 'string' && data.note.toLowerCase().includes('failed');
+      showBanner(data.note || 'Showing demo data.', failed ? 'error' : 'warn');
     } else {
       setBadge('live', 'live');
       if ((data.errors || []).length) {

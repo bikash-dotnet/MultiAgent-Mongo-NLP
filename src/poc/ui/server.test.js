@@ -19,6 +19,7 @@ test('GET /api/health reports status and readiness', async (t) => {
   assert.strictEqual(body.status, 'ok');
   assert.strictEqual(typeof body.liveReady, 'boolean');
   assert.strictEqual(typeof body.coreLoaded, 'boolean');
+  assert.ok('lastLiveError' in body);
 });
 
 test('POST /api/ask returns a well-formed response', async (t) => {

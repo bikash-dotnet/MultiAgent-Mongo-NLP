@@ -311,6 +311,23 @@ graph TD
 The `POST /api/ask` body is `{ "db": "...", "collection": "...", "question": "..." }`.
 An empty question returns HTTP 400. The question is limited to 500 characters.
 
+### Diagnosing live failures
+
+When a live request fails, the server logs a
+`[live] <db>.<collection> failed: <reason>` line to its terminal and returns
+demo data with the reason in `note`. The most recent failure is also exposed at
+`GET /api/health` as `lastLiveError`, and the page shows it in a red banner.
+Startup prints the effective model and MongoDB target, and warns when the
+configured model name does not look like a Gemini model.
+
+Common causes:
+
+- MongoDB is not running or `MONGO_URI` is wrong, for example
+  `connect ECONNREFUSED 127.0.0.1:27017`.
+- The API key is missing or invalid (`API_KEY_INVALID`).
+- The model name is not a real Gemini model, for example `gemini-1.5-turbo`.
+  Use a name such as `gemini-1.5-flash`.
+
 ---
 
 ## 13. Configuration
