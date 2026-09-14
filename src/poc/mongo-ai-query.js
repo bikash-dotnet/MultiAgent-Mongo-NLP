@@ -32,10 +32,10 @@ require('dotenv').config();
 // ─────────────────────────────────────────────────────────────────────────────
 const CONFIG = {
   mongoUri:    process.env.MONGO_URI     || 'mongodb://localhost:27017',
-  dbName:      process.env.MONGO_DB      || 'shop',
-  collection:  process.env.MONGO_COLL    || 'users',
-  geminiKey:   process.env.GEMINI_API_KEY || process.env.API_KEY,
-  geminiModel: process.env.GEMINI_MODEL || process.env.MODEL || 'gemini-1.5-pro',
+  dbName:      process.env.MONGO_DB      || 'sample_airbnb',
+  collection:  process.env.MONGO_COLL    || 'listingsAndReviews',
+  geminiKey:   process.env.API_KEY,
+  geminiModel: process.env.MODEL || 'gemini-1.5-pro',
   sampleSize:  parseInt(process.env.SAMPLE_SIZE || '200', 10),
   maxFields:   parseInt(process.env.MAX_FIELDS || '40', 10),
   useCache:    process.env.USE_CACHE === '1',
