@@ -56,7 +56,7 @@ public sealed class NlpRouter : INlpRouter
         var slots = SlotExtractor.Extract(normalized, _gazetteer);
         var defaults = MqlDefaults.Standard;
 
-        if (intent.IsComplex && !slots.HasAnyConstraints)
+        if (intent.IsComplex)
         {
             return new NlpRouteResult(
                 NlpRouteKind.ComplexLlmRequired, null, null,
