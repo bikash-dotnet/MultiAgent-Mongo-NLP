@@ -97,4 +97,15 @@ public class NlpRouterTests
         Assert.Equal(NlpRouteKind.SimpleMql, result.Kind);
         Assert.True(result.JustRunIt);
     }
+
+    [Fact]
+    public void Complex_query_with_constraints_requires_llm()
+    {
+        var result = _router.Route("average price by market under $200");
+
+        Assert.Equal(NlpRouteKind.ComplexLlmRequired, result.Kind);
+        Assert.Null(result.Mql);
+        Assert.Equal(0, result.LlmTokensConsumed);
+        Assert.Equal(0, result.LlmAttempts);
+    }
 }

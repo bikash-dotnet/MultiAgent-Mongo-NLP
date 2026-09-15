@@ -8,7 +8,8 @@ public enum NlpRouteKind
     CacheHit,
     SimpleMql,
     ClarifyRequired,
-    ComplexLlmRequired
+    ComplexLlmRequired,
+    ComplexLlmFailed
 }
 
 public sealed record NlpRouteResult(
@@ -20,4 +21,6 @@ public sealed record NlpRouteResult(
     IntentKind Intent,
     bool JustRunIt,
     MqlDefaults ClarificationsApplied,
-    int LlmTokensConsumed);
+    int LlmTokensConsumed,
+    int LlmAttempts = 0,
+    string? Error = null);

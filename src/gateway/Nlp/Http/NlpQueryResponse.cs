@@ -10,7 +10,9 @@ public sealed record NlpQueryResponse(
     bool SlotExtractionUsed,
     string Intent,
     bool JustRunIt,
-    int LlmTokensConsumed)
+    int LlmTokensConsumed,
+    int LlmAttempts,
+    string? Error)
 {
     public static NlpQueryResponse From(NlpRouteResult result)
     {
@@ -22,6 +24,8 @@ public sealed record NlpQueryResponse(
             result.SlotExtractionUsed,
             result.Intent.ToString(),
             result.JustRunIt,
-            result.LlmTokensConsumed);
+            result.LlmTokensConsumed,
+            result.LlmAttempts,
+            result.Error);
     }
 }
