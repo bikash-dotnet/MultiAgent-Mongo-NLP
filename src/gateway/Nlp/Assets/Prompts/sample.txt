@@ -1,0 +1,2 @@
+Request: listings with pools in Los Angeles, just run it
+Output: [{"$match":{"address.market":"Los Angeles","amenities":{"$all":["Pool"]}}},{"$sort":{"review_scores.rating":-1}},{"$limit":10}]
