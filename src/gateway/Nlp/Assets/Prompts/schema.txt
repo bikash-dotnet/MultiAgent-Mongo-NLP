@@ -1,0 +1,9 @@
+collection: sample_airbnb.listingsAndReviews
+fields:
+- price: number (daily price in USD)
+- amenities: array<string>
+- beds: number
+- bedrooms: number
+- address.market: string
+- property_type: string
+- review_scores.rating: number

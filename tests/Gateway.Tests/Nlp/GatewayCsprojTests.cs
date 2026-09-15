@@ -12,5 +12,9 @@ public class GatewayCsprojTests
         Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Templates", "match.scriban")));
         Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Templates", "sort.scriban")));
         Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Templates", "limit.scriban")));
+        Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Prompts", "prompt_template.txt")));
+        Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Prompts", "schema.txt")));
+        Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Prompts", "sample.txt")));
+        Assert.True(File.Exists(Path.Combine(baseDir, "Nlp", "Assets", "Prompts", "examples.txt")));
     }
 }
