@@ -1,8 +1,11 @@
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Embeddings;
+using Gateway.Nlp.Llm;
 using Gateway.Nlp.Mql;
+using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
+using Gateway.Nlp.Slots;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp;
@@ -12,6 +15,7 @@ public static class NlpServiceCollectionExtensions
     public static IServiceCollection AddGatewayNlp(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<NlpOptions>(configuration.GetSection(NlpOptions.SectionName));
+        services.Configure<NvidiaNimOptions>(configuration.GetSection(NvidiaNimOptions.SectionName));
 
         services.AddSingleton<ITextEmbedder>(sp =>
         {
@@ -25,10 +29,23 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<ISemanticCache, SemanticCache>();
         services.AddSingleton<IMqlBuilder>(_ => ScribanSimpleMqlBuilder.FromAssetsDirectory(
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates")));
+        services.AddSingleton(Gazetteer.LoadFromDirectory(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Gazetteers")));
+        services.AddSingleton(PromptAssets.LoadFromDirectory(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts")));
+
         services.AddSingleton<INlpRouter>(sp => new NlpRouter(
             sp.GetRequiredService<ITextEmbedder>(),
             sp.GetRequiredService<ISemanticCache>(),
-            sp.GetRequiredService<IMqlBuilder>()));
+            sp.GetRequiredService<IMqlBuilder>(),
+            sp.GetRequiredService<Gazetteer>()));
+
+        services.AddSingleton<IPipelineValidator, PipelineValidator>();
+        services.AddSingleton<ILlmQueryGenerator, SemanticKernelLlmQueryGenerator>();
+        services.AddSingleton<SelfCorrectingLlmQueryGenerator>();
+        services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
+        services.AddSingleton<IAgentStateStore, InMemoryAgentStateStore>();
+        services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();
 
         return services;
     }
