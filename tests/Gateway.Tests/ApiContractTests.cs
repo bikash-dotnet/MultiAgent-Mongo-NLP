@@ -149,6 +149,34 @@ public class ApiContractTests : IClassFixture<GatewayFactory>
         Assert.True(payload.SemanticCacheHit);
     }
 
+    [Fact]
+    public async Task Nlp_query_complex_utterance_reports_llm_attempt_telemetry()
+    {
+        var client = AuthedClient();
+
+        var response = await client.PostAsJsonAsync("/api/nlp/query", new { utterance = "average price by market" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<NlpQueryDto>();
+        Assert.NotNull(payload);
+        Assert.True(payload!.Kind is "ComplexLlmRequired" or "ComplexLlmFailed");
+    }
+
+    [Fact]
+    public async Task Agent_stream_event_names_are_well_formed()
+    {
+        var client = AuthedClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/agents/stream");
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+        await using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
+        using var reader = new StreamReader(stream);
+        var first = await reader.ReadLineAsync(cts.Token);
+
+        Assert.Equal("event: agent.idle", first);
+    }
+
     private HttpClient AuthedClient()
     {
         var client = _factory.CreateClient();
@@ -191,5 +219,7 @@ public class ApiContractTests : IClassFixture<GatewayFactory>
         bool SlotExtractionUsed,
         string Intent,
         bool JustRunIt,
-        int LlmTokensConsumed);
+        int LlmTokensConsumed,
+        int LlmAttempts,
+        string? Error);
 }

@@ -6,6 +6,7 @@ using Gateway.Auth;
 using Gateway.Greeting;
 using Gateway.Nlp;
 using Gateway.Nlp.Http;
+using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -115,7 +116,7 @@ app.MapGet("/api/session/greeting", (ClaimsPrincipal user, TimeProvider clock) =
     return Results.Ok(new GreetingResponse(name, period, GreetingClock.FormatMessage(name, period), chips));
 }).RequireAuthorization();
 
-app.MapPost("/api/nlp/query", (NlpQueryRequest request, INlpRouter router) =>
+app.MapPost("/api/nlp/query", async (NlpQueryRequest request, ClaimsPrincipal user, INlpOrchestrator orchestrator, CancellationToken cancellationToken) =>
 {
     var utterance = request.Utterance?.Trim();
     if (string.IsNullOrWhiteSpace(utterance))
@@ -128,28 +129,24 @@ app.MapPost("/api/nlp/query", (NlpQueryRequest request, INlpRouter router) =>
         return Results.BadRequest(new { error = "utterance must be 500 characters or fewer" });
     }
 
-    return Results.Ok(NlpQueryResponse.From(router.Route(utterance)));
+    var sessionId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
+    var result = await orchestrator.OrchestrateAsync(utterance, sessionId, cancellationToken);
+    return Results.Ok(NlpQueryResponse.From(result));
 }).RequireAuthorization();
 
-app.MapGet("/api/agents/stream", async (HttpContext context, CancellationToken cancellationToken) =>
+app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
 {
     context.Response.Headers.ContentType = "text/event-stream";
     context.Response.Headers.CacheControl = "no-cache";
     context.Response.Headers.Connection = "keep-alive";
 
-    var payload = JsonSerializer.Serialize(new { status = "idle" });
-    await context.Response.WriteAsync($"event: agent.idle\n", cancellationToken);
-    await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
-    await context.Response.Body.FlushAsync(cancellationToken);
+    await WriteAgentEvent(context, new AgentEvent("agent.idle", "idle"), cancellationToken);
 
     try
     {
-        while (!cancellationToken.IsCancellationRequested)
+        await foreach (var agentEvent in events.ReadAllAsync(cancellationToken))
         {
-            await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken);
-            await context.Response.WriteAsync($"event: agent.idle\n", cancellationToken);
-            await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
-            await context.Response.Body.FlushAsync(cancellationToken);
+            await WriteAgentEvent(context, agentEvent, cancellationToken);
         }
     }
     catch (OperationCanceledException)
@@ -158,5 +155,13 @@ app.MapGet("/api/agents/stream", async (HttpContext context, CancellationToken c
 }).RequireAuthorization();
 
 app.Run();
+
+static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, CancellationToken cancellationToken)
+{
+    var payload = JsonSerializer.Serialize(new { status = agentEvent.Status, detail = agentEvent.Detail });
+    await context.Response.WriteAsync($"event: {agentEvent.Name}\n", cancellationToken);
+    await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
+    await context.Response.Body.FlushAsync(cancellationToken);
+}
 
 public partial class Program;
