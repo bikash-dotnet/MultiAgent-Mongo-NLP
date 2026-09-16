@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Multi-Agent Architecture Flow</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --accent: #38bdf8;
+      --border: #334155;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --blue: #2563eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    h1 { font-size: 20px; font-weight: 700; color: #fff; }
+    .badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; background: #111827; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); align-items: center; }
+    button { background: #1e293b; color: #fff; border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    button:hover { background: #334155; border-color: var(--accent); }
+    button.active { background: var(--blue); border-color: var(--accent); color: #fff; }
+
+    .diagram-container { position: relative; width: 100%; height: 580px; background: #090d16; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    svg { width: 100%; height: 100%; }
+
+    /* Node Styling */
+    .node-box { fill: #1e293b; stroke: #475569; stroke-width: 1.5; rx: 8; cursor: pointer; transition: all 0.3s; }
+    .node-box:hover { stroke: var(--accent); filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+    .node-title { fill: #fff; font-size: 13px; font-weight: 700; pointer-events: none; }
+    .node-sub { fill: #94a3b8; font-size: 10px; pointer-events: none; }
+    .node-icon { font-size: 18px; pointer-events: none; }
+
+    /* Connectors */
+    .wire { stroke: #334155; stroke-width: 2; fill: none; stroke-dasharray: 4,4; }
+    .wire-active { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6,4; animation: dash 1s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -20; } }
+
+    /* Moving Signal Dot */
+    #packet { fill: #38bdf8; filter: drop-shadow(0 0 6px #38bdf8); transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Live Telemetry Info Panel */
+    .telemetry-card { display: grid; grid-template-columns: 1.2fr 2fr; gap: 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; width: fit-content; }
+    .status-running { background: rgba(56,189,248,0.15); color: #38bdf8; }
+    .status-alert { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .status-ok { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .console-log { font-family: Consolas, monospace; font-size: 12px; color: #a5f3fc; background: #020617; padding: 10px; border-radius: 6px; border: 1px solid #1e293b; height: 75px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>Interactive Architecture &amp; Data Traversal Flow</h1>
+      <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Watch real-time request packets navigate through C# Semantic Kernel, LangGraph nodes, and MCP Servers</p>
+    </div>
+    <span class="badge">Architecture v4.0 (MCP Enabled)</span>
+  </header>
+
+  <!-- Interactive Controls -->
+  <div class="controls">
+    <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">SIMULATE SCENARIO:</span>
+    <button class="active" onclick="runScenario('happy')">1. Standard Safe Query (Cache/Fast)</button>
+    <button onclick="runScenario('sensitive')">2. Restricted Field Trigger (Governance Gate)</button>
+    <button onclick="runScenario('override')">3. Managerial Override &amp; MCP Fetch</button>
+    <button onclick="autoStep()">▶ Step-by-Step Auto Flow</button>
+  </div>
+
+  <!-- SVG Diagram Canvas -->
+  <div class="diagram-container">
+    <svg id="stage" viewBox="0 0 1100 560">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569" />
+        </marker>
+        <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+        </marker>
+      </defs>
+
+      <!-- Connections / Wires -->
+      <path id="wire1" class="wire" d="M 170 120 L 280 120" marker-end="url(#arrow)" />
+      <path id="wire2" class="wire" d="M 460 120 L 550 120" marker-end="url(#arrow)" />
+      <path id="wire3" class="wire" d="M 640 160 L 640 240" marker-end="url(#arrow)" />
+      <path id="wire4" class="wire" d="M 550 280 L 460 280" marker-end="url(#arrow)" />
+      <path id="wire5" class="wire" d="M 370 320 L 370 410" marker-end="url(#arrow)" />
+      <path id="wire6" class="wire" d="M 460 450 L 570 450" marker-end="url(#arrow)" />
+      <path id="wire7" class="wire" d="M 750 450 L 840 450" marker-end="url(#arrow)" />
+      <path id="wire8" class="wire" d="M 930 410 L 930 160 L 730 120" marker-end="url(#arrow)" />
+
+      <!-- Step Indicator Dot (Packet) -->
+      <circle id="packet" cx="85" cy="120" r="9" />
+
+      <!-- Node 1: Angular User Interface -->
+      <g transform="translate(40, 70)" onclick="inspect('ui')">
+        <rect id="node-ui" class="node-box" width="130" height="95"/>
+        <text class="node-icon" x="15" y="32">💻</text>
+        <text class="node-title" x="15" y="58">Angular 17 Client</text>
+        <text class="node-sub" x="15" y="74">User Natural Prompt</text>
+        <text class="node-sub" x="15" y="88">SSE EventSource listener</text>
+      </g>
+
+      <!-- Node 2: Gateway & Deterministic NLP -->
+      <g transform="translate(280, 70)" onclick="inspect('nlp')">
+        <rect id="node-nlp" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">⚡</text>
+        <text class="node-title" x="15" y="58">Hybrid Gateway / NLP</text>
+        <text class="node-sub" x="15" y="74">• Semantic Cache Check</text>
+        <text class="node-sub" x="15" y="88">• Regex Slot-Filling (0 Tokens)</text>
+      </g>
+
+      <!-- Node 3: C# Semantic Kernel / Orchestrator -->
+      <g transform="translate(550, 70)" onclick="inspect('orch')">
+        <rect id="node-orch" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🧠</text>
+        <text class="node-title" x="15" y="58">Orchestrator Host</text>
+        <text class="node-sub" x="15" y="74">C# Semantic Kernel / LangGraph</text>
+        <text class="node-sub" x="15" y="88">Max-1 Question Policy</text>
+      </g>
+
+      <!-- Node 4: NVIDIA NIM / Query Builder -->
+      <g transform="translate(550, 235)" onclick="inspect('llm')">
+        <rect id="node-llm" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🤖</text>
+        <text class="node-title" x="15" y="58">NVIDIA NIM LLM</text>
+        <text class="node-sub" x="15" y="74">MQL Pipeline Generator</text>
+        <text class="node-sub" x="15" y="88">Few-Shot Airbnb Schemas</text>
+      </g>
+
+      <!-- Node 5: AST & Security Guardrail Agent -->
+      <g transform="translate(280, 235)" onclick="inspect('guard')">
+        <rect id="node-guard" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🛡️</text>
+        <text class="node-title" x="15" y="58">Flag Security Guard</text>
+        <text class="node-sub" x="15" y="74">AST Parser (Read-Only)[cite: 1]</text>
+        <text class="node-sub" x="15" y="88">Flag Registry &amp; Manager Override</text>
+      </g>
+
+      <!-- Node 6: MCP Host Gateway -->
+      <g transform="translate(280, 405)" onclick="inspect('mcp')">
+        <rect id="node-mcp" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🔌</text>
+        <text class="node-title" x="15" y="58">MCP Client Host</text>
+        <text class="node-sub" x="15" y="74">JSON-RPC Transport (stdio/SSE)</text>
+        <text class="node-sub" x="15" y="88">Sandboxed Tool Dispatcher</text>
+      </g>
+
+      <!-- Node 7: MongoDB MCP Server -->
+      <g transform="translate(570, 405)" onclick="inspect('mongo')">
+        <rect id="node-mongo" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🍃</text>
+        <text class="node-title" x="15" y="58">MongoDB MCP Server</text>
+        <text class="node-sub" x="15" y="74">Collection: listingsAndReviews[cite: 1]</text>
+        <text class="node-sub" x="15" y="88">Append-Only: audit_logs</text>
+      </g>
+
+      <!-- Node 8: Upstream Enterprise Core API -->
+      <g transform="translate(840, 405)" onclick="inspect('api')">
+        <rect id="node-api" class="node-box" width="180" height="95"/>
+        <text class="node-icon" x="15" y="32">🏢</text>
+        <text class="node-title" x="15" y="58">Enterprise Data API</text>
+        <text class="node-sub" x="15" y="74">Direct Production Read Gateway</text>
+        <text class="node-sub" x="15" y="88">OAuth2 / Bearer Token Bound</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Real-Time Telemetry / State Details -->
+  <div class="telemetry-card">
+    <div>
+      <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 6px;">CURRENT TRAVERSAL STEP:</div>
+      <div id="statusTag" class="status-badge status-running">Ready / Idle</div>
+      <h3 id="stepTitle" style="font-size: 16px; margin-top: 8px;">Select or play a scenario above</h3>
+      <p id="stepDesc" style="font-size: 12px; color: #94a3b8; margin-top: 4px;">The packet indicator will animate along the exact network and agent routing paths.</p>
+    </div>
+    <div>
+      <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 6px;">AGENT BUS / JSON-RPC LOG STREAM:</div>
+      <div id="consoleLog" class="console-log">System initialized. Awaiting user action or execution trigger...</div>
+    </div>
+  </div>
+
+  <script>
+    const coords = {
+      ui: { x: 105, y: 120 },
+      nlp: { x: 370, y: 120 },
+      orch: { x: 640, y: 120 },
+      llm: { x: 640, y: 280 },
+      guard: { x: 370, y: 280 },
+      mcp: { x: 370, y: 450 },
+      mongo: { x: 660, y: 450 },
+      api: { x: 930, y: 450 }
+    };
+
+    const packet = document.getElementById('packet');
+    const statusTag = document.getElementById('statusTag');
+    const stepTitle = document.getElementById('stepTitle');
+    const stepDesc = document.getElementById('stepDesc');
+    const consoleLog = document.getElementById('consoleLog');
+
+    function log(msg) {
+      consoleLog.innerHTML = `<span style="color:#64748b">[${new Date().toISOString().substring(11, 19)}]</span> ${msg}<br/>` + consoleLog.innerHTML;
+    }
+
+    function movePacket(nodeKey) {
+      const target = coords[nodeKey];
+      packet.setAttribute('cx', target.x);
+      packet.setAttribute('cy', target.y);
+      document.querySelectorAll('.node-box').forEach(b => b.style.stroke = '#475569');
+      const activeNode = document.getElementById(`node-${nodeKey}`);
+      if (activeNode) activeNode.style.stroke = '#38bdf8';
+    }
+
+    function runScenario(type) {
+      document.querySelectorAll('.wire').forEach(w => w.classList.remove('wire-active'));
+      if (type === 'happy') {
+        movePacket('ui');
+        statusTag.className = 'status-badge status-running';
+        statusTag.innerText = 'Step 1: Input Received';
+        stepTitle.innerText = 'Natural Prompt: "Top 5 NYC stays"[cite: 1]';
+        stepDesc.innerText = 'User initiates search from Angular client.';
+        log('User prompt submitted via Angular SignalR/SSE client.');
+
+        setTimeout(() => {
+          movePacket('nlp');
+          document.getElementById('wire1').classList.add('wire-active');
+          statusTag.className = 'status-badge status-ok';
+          statusTag.innerText = 'Step 2: Semantic Cache Hit';
+          stepTitle.innerText = 'Deterministic NLP Layer (0 Tokens)';
+          stepDesc.innerText = 'FastText/Vector embedding match found. Cached MQL pipeline extracted directly (0ms LLM latency).';
+          log('Cache hit! Cosine similarity > 0.95. Bypassing NVIDIA LLM call.');
+        }, 1200);
+
+        setTimeout(() => {
+          movePacket('mcp');
+          document.getElementById('wire5').classList.add('wire-active');
+          statusTag.innerText = 'Step 3: MCP Query Dispatch';
+          stepTitle.innerText = 'Calling run_mql_query via MCP Client';
+          stepDesc.innerText = 'Direct execution through Model Context Protocol client.';
+          log('Invoking JSON-RPC tool: "mongo_mcp.run_mql_query"');
+        }, 2400);
+
+        setTimeout(() => {
+          movePacket('mongo');
+          document.getElementById('wire6').classList.add('wire-active');
+          statusTag.innerText = 'Step 4: Data Retrieved';
+          stepTitle.innerText = 'MongoDB Execution Complete';
+          stepDesc.innerText = 'Fetched 5 listings from sample_airbnb.listingsAndReviews. Appended entry to audit_logs[cite: 1].';
+          log('200 OK. 5 records returned. Audit commit hash #AUDIT-8812 recorded.');
+        }, 3600);
+      } 
+      else if (type === 'sensitive') {
+        movePacket('ui');
+        statusTag.className = 'status-badge status-running';
+        statusTag.innerText = 'Step 1: Complex Prompt';
+        stepTitle.innerText = 'Prompt: "Pool listings in LA with exact coordinates"';
+        stepDesc.innerText = 'User requests data attributes governed by security policies.';
+        log('Input dispatched to gateway.');
+
+        setTimeout(() => {
+          movePacket('orch');
+          document.getElementById('wire1').classList.add('wire-active');
+          document.getElementById('wire2').classList.add('wire-active');
+          statusTag.innerText = 'Step 2: Orchestrator Routing';
+          stepTitle.innerText = 'C# Semantic Kernel Routing';
+          stepDesc.innerText = 'Cache missed. Prompt structured with schema.txt and few-shot examples[cite: 1].';
+          log('No cache found. Routing to Intent & Query Generator Agent.');
+        }, 1200);
+
+        setTimeout(() => {
+          movePacket('llm');
+          document.getElementById('wire3').classList.add('wire-active');
+          statusTag.innerText = 'Step 3: Model Inference';
+          stepTitle.innerText = 'NVIDIA NIM Synthesis';
+          stepDesc.innerText = 'Generates MongoDB aggregation pipeline ($match, $project).';
+          log('NVIDIA LLM generated MQL with requested field "address.location.coordinates".');
+        }, 2400);
+
+        setTimeout(() => {
+          movePacket('guard');
+          document.getElementById('wire4').classList.add('wire-active');
+          statusTag.className = 'status-badge status-alert';
+          statusTag.innerText = 'Step 4: RESTRICTED ACCESS GATE';
+          stepTitle.innerText = 'Governance Guardrail Halt';
+          stepDesc.innerText = 'AST Parser detected "coordinates" with flag: requires_approval. Pipeline paused. Clearance request created.';
+          log('ACCESS PAUSED: Field "address.location.coordinates" requires clearance. Created request REQ-9041.');
+        }, 3600);
+      }
+      else if (type === 'override') {
+        movePacket('guard');
+        statusTag.className = 'status-badge status-ok';
+        statusTag.innerText = 'Step 1: Override Invocation';
+        stepTitle.innerText = 'Manager Override Approved';
+        stepDesc.innerText = 'Bikash Ranjan Nayak (Senior Lead / Data Owner) executed hierarchical override to clear REQ-9041.';
+        log('OVERRIDE SIGNED: Managerial waiver verified. Authorization token generated.');
+
+        setTimeout(() => {
+          movePacket('mcp');
+          document.getElementById('wire5').classList.add('wire-active');
+          statusTag.className = 'status-badge status-running';
+          statusTag.innerText = 'Step 2: Sandboxed MCP Dispatch';
+          stepTitle.innerText = 'Dispatching to MCP Host';
+          stepDesc.innerText = 'Authorizing tool call with attached override signature.';
+          log('MCP tool "run_mql_query" authorized with override claim.');
+        }, 1400);
+
+        setTimeout(() => {
+          movePacket('mongo');
+          document.getElementById('wire6').classList.add('wire-active');
+          statusTag.className = 'status-badge status-ok';
+          statusTag.innerText = 'Step 3: Database Execution & Audit';
+          stepTitle.innerText = 'Data Retrieved & Audit Committed';
+          stepDesc.innerText = 'Query executed. Results returned to Angular client; full event written to audit_logs.';
+          log('Success: 24 records returned from listingsAndReviews[cite: 1]. Audit linked to REQ-9041.');
+        }, 2800);
+      }
+    }
+
+    let currentStepIndex = 0;
+    const stepSequence = ['ui', 'nlp', 'orch', 'llm', 'guard', 'mcp', 'mongo'];
+    function autoStep() {
+      const node = stepSequence[currentStepIndex];
+      movePacket(node);
+      statusTag.className = 'status-badge status-running';
+      statusTag.innerText = `Step ${currentStepIndex + 1} of ${stepSequence.length}`;
+      stepTitle.innerText = `Focus: ${node.toUpperCase()} Node`;
+      stepDesc.innerText = `Currently traversing ${node.toUpperCase()} component in the multi-agent lifecycle.`;
+      log(`Traversal transitioned to ${node.toUpperCase()}`);
+      currentStepIndex = (currentStepIndex + 1) % stepSequence.length;
+    }
+
+    function inspect(nodeKey) {
+      movePacket(nodeKey);
+      statusTag.className = 'status-badge status-running';
+      statusTag.innerText = `Inspecting Node: ${nodeKey.toUpperCase()}`;
+      stepTitle.innerText = `Node Component: ${nodeKey.toUpperCase()}`;
+      stepDesc.innerText = 'Click any scenario button above to re-run end-to-end traversal simulations.';
+      log(`User manually clicked and inspected ${nodeKey.toUpperCase()} component.`);
+    }
+  </script>
+</body>
+</html>
