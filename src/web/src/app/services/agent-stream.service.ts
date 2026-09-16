@@ -22,17 +22,24 @@ export class AgentStreamService {
         params.set('access_token', token);
       }
       const source = new EventSource(`/api/agents/stream?${params.toString()}`);
+      const names = ['agent.idle', 'agent.started', 'agent.clarifying', 'agent.completed'];
 
-      const onIdle = (event: MessageEvent) => {
-        this.zone.run(() => subscriber.next({ event: 'agent.idle', data: event.data }));
-      };
-      source.addEventListener('agent.idle', onIdle as EventListener);
+      const handlers = names.map((name) => {
+        const handler = (event: MessageEvent) => {
+          this.zone.run(() => subscriber.next({ event: name, data: event.data }));
+        };
+        source.addEventListener(name, handler as EventListener);
+        return { name, handler };
+      });
+
       source.onerror = () => {
         this.zone.run(() => subscriber.error(new Error('sse-disconnected')));
       };
 
       return () => {
-        source.removeEventListener('agent.idle', onIdle as EventListener);
+        for (const { name, handler } of handlers) {
+          source.removeEventListener(name, handler as EventListener);
+        }
         source.close();
       };
     });
