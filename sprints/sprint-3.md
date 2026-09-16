@@ -59,12 +59,12 @@
 
 ## Acceptance criteria
 
-- [ ] Complex English queries produce aggregation pipelines using few-shot templates (BRD-FR-03)
-- [ ] Simple queries still skip NIM (regression on Sprint 2)
-- [ ] Syntax failures retry at most 3 times then alert the user (BRD-NFR-06)
-- [ ] Orchestrator never asks more than one question per turn (BRD-NFR-07)
-- [ ] `"just run it"` applies silent defaults
-- [ ] SPA shows streamed agent activity for the query path
+- [x] Complex English queries produce aggregation pipelines using few-shot templates (BRD-FR-03)
+- [x] Simple queries still skip NIM (regression on Sprint 2)
+- [x] Syntax failures retry at most 3 times then alert the user (BRD-NFR-06)
+- [x] Orchestrator never asks more than one question per turn (BRD-NFR-07)
+- [x] `"just run it"` applies silent defaults
+- [x] SPA shows streamed agent activity for the query path
 
 ---
 
