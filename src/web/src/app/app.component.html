@@ -21,5 +21,17 @@
     <h2>Agent swarm</h2>
     <p>Transport: Server-Sent Events</p>
     <p class="status">Status: {{ streamStatus }}</p>
+    <ul class="activity">
+      @for (event of agentActivity; track $index) {
+        <li>{{ event }}</li>
+      }
+    </ul>
+    <form (ngSubmit)="runQuery()">
+      <input name="utterance" [(ngModel)]="queryText" placeholder="Ask about listings" />
+      <button type="submit">Run query</button>
+    </form>
+    @if (queryResult) {
+      <pre class="pipeline">{{ queryResult.mql ?? queryResult.error }}</pre>
+    }
   </section>
 </main>

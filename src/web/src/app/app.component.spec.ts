@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { AppComponent } from './app.component';
 import { SessionService } from './services/session.service';
 import { AgentStreamService } from './services/agent-stream.service';
+import { NlpQueryService } from './services/nlp-query.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -27,6 +28,23 @@ describe('AppComponent', () => {
           provide: AgentStreamService,
           useValue: {
             connect: () => of({ event: 'agent.idle', data: '{"status":"idle"}' })
+          }
+        },
+        {
+          provide: NlpQueryService,
+          useValue: {
+            query: () => of({
+              kind: 'SimpleMql',
+              mql: '[{"$limit":10}]',
+              question: null,
+              semanticCacheHit: false,
+              slotExtractionUsed: true,
+              intent: 'Search',
+              justRunIt: false,
+              llmTokensConsumed: 0,
+              llmAttempts: 0,
+              error: null
+            })
           }
         }
       ]
