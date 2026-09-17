@@ -40,6 +40,8 @@
   .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
   .legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 600; }
   .legend span { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
+  .legend-link { color: var(--accent); text-decoration: none; }
+  .legend-link:hover { text-decoration: underline; }
   .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
   .dot.built { background: var(--built); }
   .dot.coming { background: var(--coming); }
@@ -159,6 +161,8 @@
       </div>
     </div>
     <div class="legend">
+      <a class="legend-link" href="./problem-solution.html">Problem vs solution</a>
+      <a class="legend-link" href="./how-it-works.html">What it does and how</a>
       <span><i class="dot built"></i> Built today</span>
       <span><i class="dot coming"></i> Coming next</span>
     </div>

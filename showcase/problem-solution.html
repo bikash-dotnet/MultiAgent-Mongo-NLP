@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Agent MongoDB NLP - Problem vs Solution</title>
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --text: #16202e;
+    --muted: #5b6676;
+    --muted-2: #8a94a4;
+    --accent: #1d4ed8;
+    --accent-soft: #e8eeff;
+    --accent-ink: #17357f;
+    --bad: #c0392b;
+    --bad-soft: #fdecea;
+    --good: #0f7a4d;
+    --good-soft: #e2f5ec;
+    --border: #e3e7ef;
+    --shadow: 0 14px 34px rgba(18, 32, 56, 0.09);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(1200px 500px at 80% -10%, #e9efff 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 56px;
+  }
+  .app { max-width: 1240px; margin: 0 auto; }
+  a { color: var(--accent); }
+
+  header.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark { width: 42px; height: 42px; border-radius: 11px; background: var(--accent); display: grid; place-items: center; flex: 0 0 auto; }
+  h1 { font-size: 20px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .topnav { display: flex; gap: 16px; font-size: 13px; font-weight: 650; }
+
+  .hero { text-align: center; margin-bottom: 34px; }
+  .hero .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 700; color: var(--accent); }
+  .hero h2 { font-size: 40px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 780; margin-top: 10px; }
+  .hero h2 .from { color: var(--bad); }
+  .hero h2 .to { color: var(--good); }
+  .hero p { font-size: 16px; color: var(--muted); margin: 14px auto 0; max-width: 720px; }
+
+  .compare { display: grid; grid-template-columns: 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); margin-bottom: 40px; }
+  .compare-row { display: grid; grid-template-columns: 190px 1fr 120px; gap: 14px; align-items: center; }
+  .compare-row .who { font-size: 13px; font-weight: 700; }
+  .compare-row .who small { display: block; color: var(--muted-2); font-weight: 600; font-size: 11.5px; }
+  .track { height: 26px; background: #eef1f7; border-radius: 999px; overflow: hidden; position: relative; }
+  .bar { height: 100%; width: 0; border-radius: 999px; transition: width 1.1s cubic-bezier(0.22, 1, 0.36, 1); }
+  .bar.current { background: linear-gradient(90deg, #e06a5c, #c0392b); }
+  .bar.platform { background: linear-gradient(90deg, #3ecf8e, #0f7a4d); }
+  .compare-row .amt { font-size: 16px; font-weight: 780; text-align: right; }
+  .compare-row .amt.bad { color: var(--bad); }
+  .compare-row .amt.good { color: var(--good); }
+  .compare .foot { font-size: 12px; color: var(--muted-2); border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+
+  .block { margin-bottom: 40px; }
+  .block-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; justify-content: space-between; margin-bottom: 16px; }
+  .block-head h2 { font-size: 23px; letter-spacing: -0.02em; font-weight: 750; }
+  .block-head .lead { font-size: 14px; color: var(--muted); margin-top: 5px; max-width: 760px; }
+  .total { display: inline-flex; flex-direction: column; align-items: flex-end; border-radius: 12px; padding: 10px 16px; }
+  .total .lab { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  .total .val { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .total.bad { background: var(--bad-soft); }
+  .total.bad .lab { color: #9c2f24; }
+  .total.bad .val { color: var(--bad); }
+  .total.good { background: var(--good-soft); }
+  .total.good .lab { color: #0b5c3a; }
+  .total.good .val { color: var(--good); }
+
+  .chainwrap { overflow-x: auto; padding: 4px 2px 12px; }
+  .chain { display: flex; align-items: stretch; min-width: 980px; }
+  .node { flex: 1 1 150px; width: 150px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 9px; box-shadow: var(--shadow); position: relative; }
+  .node .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
+  .node .ic svg { display: block; }
+  .node h4 { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+  .node p { font-size: 12px; color: var(--muted); }
+  .node .dur { margin-top: auto; font-size: 11px; font-weight: 750; padding: 4px 9px; border-radius: 999px; width: fit-content; }
+  .node.bad .ic { background: var(--bad-soft); }
+  .node.bad .dur { background: var(--bad-soft); color: var(--bad); }
+  .node.good .ic { background: var(--accent-soft); }
+  .node.good .dur { background: var(--accent-soft); color: var(--accent-ink); }
+  .node.good .dur.fast { background: var(--good-soft); color: var(--good); }
+  .node .waiting { position: absolute; top: -9px; right: 10px; font-size: 9.5px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bad); color: #fff; border-radius: 999px; padding: 2px 8px; }
+  .node.bad.queue::after { content: ""; position: absolute; inset: -1px; border-radius: 14px; border: 1px solid var(--bad); opacity: 0.35; animation: pulse 2.4s ease-in-out infinite; pointer-events: none; }
+  @keyframes pulse { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.015); } }
+
+  .link { flex: 0 0 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 0 6px; }
+  .link .wait { font-size: 10.5px; font-weight: 750; text-align: center; line-height: 1.25; }
+  .link.bad .wait { color: var(--bad); }
+  .link.good .wait { color: var(--good); }
+  .link .rail { width: 100%; height: 2px; position: relative; color: var(--border); background-image: linear-gradient(90deg, currentColor 55%, transparent 0); background-size: 12px 2px; background-repeat: repeat-x; animation: flow 0.7s linear infinite; }
+  .link.bad .rail { color: #e3a49c; }
+  .link.good .rail { color: #9fd9c0; }
+  .link .rail::after { content: ""; position: absolute; right: -1px; top: -3.5px; border-left: 7px solid currentColor; border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; }
+  @keyframes flow { to { background-position: 24px 0; } }
+
+  .arch { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px; box-shadow: var(--shadow); }
+  .arch .layers { display: grid; gap: 12px; margin-top: 18px; }
+  .layer { display: grid; grid-template-columns: 190px 1fr; gap: 16px; align-items: center; border: 1px solid var(--border); border-radius: 13px; padding: 14px 16px; background: #f9fafc; }
+  .layer .lname { font-size: 13px; font-weight: 750; }
+  .layer .lname small { display: block; color: var(--muted-2); font-weight: 650; font-size: 11px; margin-top: 2px; }
+  .layer .comps { display: flex; flex-wrap: wrap; gap: 8px; }
+  .comp { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 7px 11px; font-size: 12.5px; font-weight: 650; }
+  .layer.exp { border-left: 4px solid #6d8cff; }
+  .layer.intel { border-left: 4px solid var(--accent); }
+  .layer.gov { border-left: 4px solid #b7791f; }
+  .layer.data { border-left: 4px solid #0f7a4d; }
+  .down { display: grid; place-items: center; color: var(--muted-2); font-size: 16px; line-height: 1; }
+
+  .closing { margin-top: 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: var(--shadow); }
+  .closing h2 { font-size: 24px; letter-spacing: -0.02em; }
+  .closing p { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 860px; }
+  .disclaimer { margin-top: 24px; font-size: 12px; color: var(--muted-2); border-top: 1px solid var(--border); padding-top: 14px; }
+
+  @media (max-width: 820px) {
+    .hero h2 { font-size: 30px; }
+    .compare-row { grid-template-columns: 1fr; gap: 6px; }
+    .compare-row .amt { text-align: left; }
+    .layer { grid-template-columns: 1fr; gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    .link .rail { animation: none; }
+    .node.bad.queue::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="3.2" fill="#fff"/>
+          <circle cx="11" cy="3" r="1.8" fill="#bfd0ff"/>
+          <circle cx="19" cy="11" r="1.8" fill="#bfd0ff"/>
+          <circle cx="11" cy="19" r="1.8" fill="#bfd0ff"/>
+          <circle cx="3" cy="11" r="1.8" fill="#bfd0ff"/>
+          <path d="M11 4.8v3.2M17.2 11h-3.2M11 17.2v-3.2M4.8 11h3.2" stroke="#bfd0ff" stroke-width="1.1"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="pageTitle"></h1>
+        <p class="subtitle" id="pageSubtitle"></p>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="./index.html">Executive story</a>
+      <a href="./how-it-works.html">What it does and how</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <p class="eyebrow" id="heroEyebrow"></p>
+    <h2 id="heroTitle"></h2>
+    <p id="heroLead"></p>
+  </section>
+
+  <section class="compare" id="compare" aria-label="Turnaround comparison"></section>
+
+  <section class="block">
+    <div class="block-head">
+      <div>
+        <h2 id="currentTitle"></h2>
+        <p class="lead" id="currentLead"></p>
+      </div>
+      <div class="total bad"><span class="lab">Typical turnaround</span><span class="val" id="currentTotal"></span></div>
+    </div>
+    <div class="chainwrap"><div class="chain" id="currentChain"></div></div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <div>
+        <h2 id="solutionTitle"></h2>
+        <p class="lead" id="solutionLead"></p>
+      </div>
+      <div class="total good"><span class="lab">Typical turnaround</span><span class="val" id="solutionTotal"></span></div>
+    </div>
+    <div class="chainwrap"><div class="chain" id="solutionChain"></div></div>
+  </section>
+
+  <section class="arch">
+    <h2 id="archTitle"></h2>
+    <p class="lead" id="archLead" style="font-size:14px;color:var(--muted);margin-top:6px;max-width:820px"></p>
+    <div class="layers" id="archLayers"></div>
+  </section>
+
+  <section class="closing">
+    <h2 id="closingTitle"></h2>
+    <p id="closingBody"></p>
+  </section>
+
+  <p class="disclaimer" id="disclaimer"></p>
+</div>
+
+<script>
+const ICONS = {
+  user: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="6.5" r="3.2"/><path d="M4 16.5c0-3 2.7-5 6-5s6 2 6 5"/></svg>',
+  ticket: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M6 8h8M6 11h5"/></svg>',
+  queue: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>',
+  check: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2.3v4.4c0 3.5-2.4 6.6-6 7.8-3.6-1.2-6-4.3-6-7.8V4.8z"/><path d="M7.2 9.8l2 2 3.6-3.7"/></svg>',
+  dev: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 6l-4 4 4 4M13 6l4 4-4 4"/></svg>',
+  reply: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#c0392b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l14-6-5 13-3-5z"/><path d="M9 12l3.5-3.5"/></svg>',
+  chat: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1d4ed8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="10" rx="2.4"/><path d="M7 17l2.4-3"/><circle cx="7.5" cy="9" r="0.9" fill="#1d4ed8"/><circle cx="10.5" cy="9" r="0.9" fill="#1d4ed8"/><circle cx="13.5" cy="9" r="0.9" fill="#1d4ed8"/></svg>',
+  filter: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1d4ed8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h14l-5.5 6v4.2L8.5 17v-6z"/></svg>',
+  output: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1d4ed8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="14" rx="2"/><path d="M7 7h3M7 10h3"/><path d="M13 13l4-3-4-3"/></svg>',
+  bolt: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1d4ed8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2L4 11h5l-1 7 7-9h-5z"/></svg>'
+};
+
+const VIEW = {
+  meta: {
+    title: 'Problem vs Solution',
+    subtitle: 'Multi-Agent MongoDB NLP - why it exists, in one picture'
+  },
+  hero: {
+    eyebrow: 'How the answer gets to the user',
+    title: 'From <span class="from">days of handoffs</span> to <span class="to">seconds of self-service</span>',
+    lead: 'The same business question takes two very different paths. One moves through people and queues. The other is resolved inside a governed AI workspace. The difference is time, cost, and control.'
+  },
+  compare: {
+    current: { who: 'Today', sub: 'People and queues', time: '2 - 5 days' },
+    platform: { who: 'With the platform', sub: 'Governed AI workspace', time: 'Seconds' },
+    foot: 'Turnaround reflects an illustrative request lifecycle, not a measured production baseline. The platform path assumes the request is not paused for a sensitive-data approval.'
+  },
+  current: {
+    title: 'Current process: the long road',
+    lead: 'Every question becomes a ticket that travels between teams. Each handoff adds queue time, clarification, and rework.',
+    total: '2 - 5 days',
+    steps: [
+      { icon: 'user', title: 'Business user', sub: 'Has a question but no way to query the data directly.', dur: 'Starts request' },
+      { icon: 'ticket', title: 'Queries the system', sub: 'Raises a ticket or email with a written description of what is needed.', dur: '2 - 4 h', queue: true },
+      { icon: 'queue', title: 'OPS team queue', sub: 'Request waits in the support backlog behind other tickets.', dur: '1 - 2 days', queue: true, badge: 'waiting' },
+      { icon: 'check', title: 'OPS validates', sub: 'Scope, fields, and permissions are checked and clarified over email.', dur: '2 - 4 h', queue: true },
+      { icon: 'dev', title: 'Transferred to Dev team', sub: 'A developer picks it up when capacity allows.', dur: '1 - 3 days', queue: true, badge: 'waiting' },
+      { icon: 'reply', title: 'Response returned', sub: 'The result is pasted back into the ticket and reaches the user.', dur: '1 - 2 h' }
+    ],
+    waits: [
+      { label: 'Queue + triage', time: '4 - 8 h' },
+      { label: 'Backlog wait', time: '1 - 2 d' },
+      { label: 'Handoff', time: '4 - 8 h' },
+      { label: 'Dev capacity', time: '1 - 3 d' },
+      { label: 'Follow-up', time: '2 - 6 h' }
+    ]
+  },
+  solution: {
+    title: 'With the platform: the direct path',
+    lead: 'The question is understood, filtered against business rules, and answered inside one governed workspace. No ticket, no handoff.',
+    total: 'Seconds',
+    steps: [
+      { icon: 'user', title: 'Business user', sub: 'Asks the question in plain English, no query language needed.', dur: 'Under 1 min' },
+      { icon: 'chat', title: 'AI chat system', sub: 'Understands intent locally: semantic cache, slots, and routing.', dur: 'Cache < 10 ms', fast: true },
+      { icon: 'filter', title: 'Business filter', sub: 'Applies the schema, sensitivity flags, and read-only guardrails.', dur: 'Guardrail < 1 ms', fast: true },
+      { icon: 'output', title: 'Output shared', sub: 'A governed answer, table, briefing, or in-memory export.', dur: '1.5 - 3 s if AI used', fast: true }
+    ],
+    waits: [
+      { label: 'Typed, no ticket', time: 'Instant' },
+      { label: 'In-memory', time: 'Instant' },
+      { label: 'Validated', time: 'Instant' }
+    ]
+  },
+  arch: {
+    title: 'The system behind the direct path',
+    lead: 'Four layers, one request. Each layer does one job, and only the complex path ever calls the model.',
+    layers: [
+      { cls: 'exp', name: 'Experience layer', sub: 'Angular 21 SPA', comps: ['Personal greeting', 'Quick-action chips', 'Agent activity stream', 'Results grid', 'Approval portal'] },
+      { cls: 'intel', name: 'Intelligence layer', sub: 'Hybrid NLP and agents', comps: ['Semantic cache, bge-small', 'Slot extraction', 'Scriban query templates', 'NVIDIA NIM for complex queries', 'AST validation and self-correction', 'Semantic Kernel orchestration'] },
+      { cls: 'gov', name: 'Governance layer', sub: 'Controls, not paperwork', comps: ['Field sensitivity registry', 'Read-only AST guardrails', 'Approval and manager override', 'Append-only audit trail'] },
+      { cls: 'data', name: 'Data layer', sub: 'MongoDB and enterprise APIs', comps: ['sample_airbnb listings', 'Enterprise Core REST API', 'Access requests', 'Audit logs'] }
+    ]
+  },
+  closing: {
+    title: 'The point of the picture',
+    body: 'The current process is slow because the answer depends on people being free. The platform removes the dependency: simple questions are answered locally and instantly, hard questions are reasoned out and checked, sensitive requests stop for a human by design, and every step is recorded. Speed and governance stop being a trade-off.'
+  },
+  disclaimer: 'This page is a design and process illustration. Times and stage durations are illustrative of a typical enterprise request lifecycle and are not measured production results.'
+};
+
+const $ = (id) => document.getElementById(id);
+
+function chainMarkup(block, tone) {
+  let html = '';
+  block.steps.forEach((s, i) => {
+    const dur = s.fast ? ' fast' : '';
+    const queue = s.queue ? ' queue' : '';
+    const badge = s.badge ? '<span class="waiting">' + s.badge + '</span>' : '';
+    html += '<div class="node ' + tone + queue + '">' + badge +
+      '<div class="ic">' + ICONS[s.icon] + '</div>' +
+      '<h4>' + s.title + '</h4><p>' + s.sub + '</p>' +
+      '<span class="dur' + dur + '">' + s.dur + '</span></div>';
+    if (i < block.steps.length - 1) {
+      const w = block.waits[i];
+      html += '<div class="link ' + tone + '"><span class="wait">' + w.label + '<br>' + w.time + '</span><span class="rail"></span></div>';
+    }
+  });
+  return html;
+}
+
+function render() {
+  const m = VIEW.meta;
+  $('pageTitle').textContent = m.title;
+  $('pageSubtitle').textContent = m.subtitle;
+
+  $('heroEyebrow').textContent = VIEW.hero.eyebrow;
+  $('heroTitle').innerHTML = VIEW.hero.title;
+  $('heroLead').textContent = VIEW.hero.lead;
+
+  const c = VIEW.compare;
+  $('compare').innerHTML =
+    '<div class="compare-row"><div class="who">' + c.current.who + '<small>' + c.current.sub + '</small></div>' +
+    '<div class="track"><div class="bar current" data-w="100%"></div></div>' +
+    '<div class="amt bad">' + c.current.time + '</div></div>' +
+    '<div class="compare-row"><div class="who">' + c.platform.who + '<small>' + c.platform.sub + '</small></div>' +
+    '<div class="track"><div class="bar platform" data-w="3%"></div></div>' +
+    '<div class="amt good">' + c.platform.time + '</div></div>' +
+    '<div class="foot">' + c.foot + '</div>';
+
+  $('currentTitle').textContent = VIEW.current.title;
+  $('currentLead').textContent = VIEW.current.lead;
+  $('currentTotal').textContent = VIEW.current.total;
+  $('currentChain').innerHTML = chainMarkup(VIEW.current, 'bad');
+
+  $('solutionTitle').textContent = VIEW.solution.title;
+  $('solutionLead').textContent = VIEW.solution.lead;
+  $('solutionTotal').textContent = VIEW.solution.total;
+  $('solutionChain').innerHTML = chainMarkup(VIEW.solution, 'good');
+
+  $('archTitle').textContent = VIEW.arch.title;
+  $('archLead').textContent = VIEW.arch.lead;
+  $('archLayers').innerHTML = VIEW.arch.layers.map((l, i) =>
+    '<div class="layer ' + l.cls + '"><div class="lname">' + l.name + '<small>' + l.sub + '</small></div>' +
+    '<div class="comps">' + l.comps.map((x) => '<span class="comp">' + x + '</span>').join('') + '</div></div>' +
+    (i < VIEW.arch.layers.length - 1 ? '<div class="down" aria-hidden="true">&#9660;</div>' : '')
+  ).join('');
+
+  $('closingTitle').textContent = VIEW.closing.title;
+  $('closingBody').textContent = VIEW.closing.body;
+  $('disclaimer').textContent = VIEW.disclaimer;
+
+  const bars = document.querySelectorAll('.bar');
+  bars.forEach((b) => { b.style.width = '0'; });
+  requestAnimationFrame(() => {
+    bars.forEach((b) => { b.style.width = b.dataset.w; });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
