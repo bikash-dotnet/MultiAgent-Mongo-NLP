@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Agent MongoDB NLP - What It Does and How</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --text: #16202e;
+    --muted: #5b6676;
+    --muted-2: #8a94a4;
+    --accent: #1d4ed8;
+    --accent-soft: #e8eeff;
+    --accent-ink: #17357f;
+    --good: #0f7a4d;
+    --good-soft: #e2f5ec;
+    --warn: #a15c00;
+    --warn-soft: #fdf1df;
+    --border: #e3e7ef;
+    --shadow: 0 12px 30px rgba(18, 32, 56, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 28px 20px 56px;
+  }
+  .app { max-width: 1180px; margin: 0 auto; }
+  a { color: var(--accent); }
+
+  header.top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .mark { width: 42px; height: 42px; border-radius: 11px; background: var(--accent); display: grid; place-items: center; flex: 0 0 auto; }
+  .mark svg { display: block; }
+  h1 { font-size: 21px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .topnav { display: flex; align-items: center; gap: 14px; font-size: 13px; font-weight: 650; }
+  .topnav .note { color: var(--muted-2); font-weight: 600; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px; box-shadow: var(--shadow); }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.09em; font-size: 11px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .section { margin-top: 34px; }
+  .section > h2 { font-size: 22px; letter-spacing: -0.015em; font-weight: 750; }
+  .section > .lead { color: var(--muted); font-size: 15px; margin-top: 7px; max-width: 820px; }
+
+  .hero { display: grid; grid-template-columns: 1.25fr 1fr; gap: 22px; }
+  .hero h2 { font-size: 30px; line-height: 1.18; letter-spacing: -0.025em; font-weight: 760; }
+  .hero .statement { margin-top: 14px; font-size: 16px; color: var(--muted); }
+  .hero .kpis { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .kpi { background: #f9fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .kpi .v { font-size: 20px; font-weight: 750; letter-spacing: -0.01em; }
+  .kpi .k { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  .problems { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .problem { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .problem .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 4px 9px; width: fit-content; }
+  .problem h3 { font-size: 15.5px; font-weight: 700; line-height: 1.3; }
+  .problem p { font-size: 13.5px; color: var(--muted); }
+
+  .flow { counter-reset: step; display: grid; grid-template-columns: 1fr; gap: 0; }
+  .step { position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 18px; padding: 0 0 22px 0; }
+  .step:last-child { padding-bottom: 0; }
+  .step::before { content: ""; position: absolute; left: 25px; top: 40px; bottom: 0; width: 2px; background: var(--border); }
+  .step:last-child::before { display: none; }
+  .step .num { counter-increment: step; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 750; font-size: 17px; position: relative; z-index: 1; }
+  .step .body { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .step .body h3 { font-size: 16px; font-weight: 700; }
+  .step .body .does { font-size: 14px; color: var(--text); margin-top: 6px; }
+  .step .body .mech { font-size: 13px; color: var(--muted); margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .mech span { background: #f1f3f8; border: 1px solid var(--border); border-radius: 7px; padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+
+  .solve { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .solve-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .solve-card .issue { font-size: 14px; font-weight: 700; }
+  .solve-card .arrow { color: var(--muted-2); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .solve-card .how { font-size: 13.5px; color: var(--text); }
+  .solve-card .result { font-size: 13px; color: var(--good); font-weight: 650; background: var(--good-soft); border-radius: 9px; padding: 9px 11px; }
+
+  .agents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .agent { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 16px; }
+  .agent h3 { font-size: 14.5px; font-weight: 700; }
+  .agent p { font-size: 13px; color: var(--muted); margin-top: 7px; }
+
+  .guard { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; align-items: start; }
+  .guard ul { list-style: none; display: grid; gap: 10px; }
+  .guard li { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px; font-size: 13.5px; }
+  .guard li b { font-weight: 700; }
+  .roles { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 13px; }
+  .roles th, .roles td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .roles th { background: #f2f4f9; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .roles tr:last-child td { border-bottom: none; }
+
+  .alloc { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 13px; }
+  .alloc th, .alloc td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--border); }
+  .alloc th { background: #f2f4f9; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .alloc tr:last-child td { border-bottom: none; }
+  .alloc td.cost { font-weight: 700; }
+  .alloc td.cost.zero { color: var(--good); }
+  .alloc td.cost.paid { color: var(--warn); }
+
+  .status { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .status-col { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .status-col h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .status-col.now h3 { color: var(--good); }
+  .status-col.next h3 { color: var(--warn); }
+  .status-col ul { list-style: none; display: grid; gap: 9px; }
+  .status-col li { font-size: 13.5px; padding-left: 20px; position: relative; color: var(--text); }
+  .status-col li::before { content: ""; position: absolute; left: 0; top: 6px; width: 8px; height: 8px; border-radius: 50%; }
+  .status-col.now li::before { background: var(--good); }
+  .status-col.next li::before { background: var(--warn); }
+
+  .closing { margin-top: 34px; }
+  .closing h2 { font-size: 24px; letter-spacing: -0.02em; }
+  .closing p { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 820px; }
+  .disclaimer { margin-top: 24px; font-size: 12px; color: var(--muted-2); border-top: 1px solid var(--border); padding-top: 14px; }
+
+  @media (max-width: 1024px) {
+    .hero { grid-template-columns: 1fr; }
+    .problems { grid-template-columns: 1fr 1fr; }
+    .agents { grid-template-columns: 1fr 1fr; }
+    .guard { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 680px) {
+    body { padding: 18px 14px 40px; }
+    .problems, .agents, .solve, .status { grid-template-columns: 1fr; }
+    .step { grid-template-columns: 42px 1fr; gap: 12px; }
+    .step .num { width: 42px; height: 42px; font-size: 15px; }
+    .step::before { left: 20px; top: 34px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="3.2" fill="#fff"/>
+          <circle cx="11" cy="3" r="1.8" fill="#bfd0ff"/>
+          <circle cx="19" cy="11" r="1.8" fill="#bfd0ff"/>
+          <circle cx="11" cy="19" r="1.8" fill="#bfd0ff"/>
+          <circle cx="3" cy="11" r="1.8" fill="#bfd0ff"/>
+          <path d="M11 4.8v3.2M17.2 11h-3.2M11 17.2v-3.2M4.8 11h3.2" stroke="#bfd0ff" stroke-width="1.1"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="pageTitle"></h1>
+        <p class="subtitle" id="pageSubtitle"></p>
+      </div>
+    </div>
+    <div class="topnav">
+      <span class="note" id="navNote"></span>
+      <a href="./index.html">Executive story</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="card">
+      <p class="eyebrow" id="heroEyebrow"></p>
+      <h2 id="heroTitle"></h2>
+      <p class="statement" id="heroStatement"></p>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Why it works</p>
+      <div class="kpis" id="heroKpis"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 id="problemsTitle"></h2>
+    <p class="lead" id="problemsLead"></p>
+    <div class="problems" id="problems" style="margin-top:16px"></div>
+  </section>
+
+  <section class="section">
+    <h2 id="flowTitle"></h2>
+    <p class="lead" id="flowLead"></p>
+    <div class="flow" id="flow" style="margin-top:18px"></div>
+  </section>
+
+  <section class="section">
+    <h2 id="solveTitle"></h2>
+    <p class="lead" id="solveLead"></p>
+    <div class="solve" id="solve" style="margin-top:16px"></div>
+  </section>
+
+  <section class="section">
+    <h2 id="agentsTitle"></h2>
+    <p class="lead" id="agentsLead"></p>
+    <div class="agents" id="agents" style="margin-top:16px"></div>
+  </section>
+
+  <section class="section">
+    <h2 id="guardTitle"></h2>
+    <p class="lead" id="guardLead"></p>
+    <div class="guard" style="margin-top:16px">
+      <ul id="guardRules"></ul>
+      <table class="roles">
+        <thead>
+          <tr><th>Role</th><th>Sensitive data</th><th>Approval authority</th><th>Override</th></tr>
+        </thead>
+        <tbody id="rolesBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 id="allocTitle"></h2>
+    <p class="lead" id="allocLead"></p>
+    <table class="alloc" style="margin-top:16px">
+      <thead>
+        <tr><th>Step</th><th>Engine</th><th>Latency</th><th>Token cost</th></tr>
+      </thead>
+      <tbody id="allocBody"></tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2 id="statusTitle"></h2>
+    <p class="lead" id="statusLead"></p>
+    <div class="status" id="status" style="margin-top:16px"></div>
+  </section>
+
+  <section class="closing card">
+    <h2 id="closingTitle"></h2>
+    <p id="closingBody"></p>
+  </section>
+
+  <p class="disclaimer" id="disclaimer"></p>
+</div>
+
+<script>
+const PLATFORM = {
+  meta: {
+    title: 'What It Does and How',
+    subtitle: 'Multi-Agent MongoDB NLP - capability and design walkthrough',
+    navNote: 'Problem to solution, end to end'
+  },
+  hero: {
+    eyebrow: 'Purpose',
+    title: 'Turn a plain-English question into a governed, auditable answer',
+    statement: 'Business users should not need a developer to reach the data they own. This platform lets them ask in everyday language, answers simple questions instantly and at zero model cost, reserves AI for genuinely hard questions, and puts approvals and audit around anything sensitive. Below is what it does, how each part works, and which existing problems it removes.',
+    kpis: [
+      { v: '< 1 ms', k: 'Personalised greeting, no model call' },
+      { v: '< 10 ms', k: 'Semantic cache lookup, zero tokens' },
+      { v: 'Up to 3', k: 'Automatic self-corrections on a bad query' },
+      { v: '5,000 ms', k: 'Hard execution timeout on every query' }
+    ]
+  },
+  problems: {
+    title: 'The problems we are solving',
+    lead: 'Each capability exists to remove a specific, current source of delay, cost, or risk.',
+    items: [
+      { title: 'Insight is stuck behind specialists', body: 'Semi-structured listing records need hand-written aggregation pipelines, so every question waits on developer or DBA bandwidth and business decisions slip.' },
+      { title: 'Sending everything to an LLM is slow and costly', body: 'Using a large model for routine parsing burns tokens, adds seconds of latency, and invites hallucination on work that is deterministic and predictable.' },
+      { title: 'Sensitive fields have no gate', body: 'Coordinates and host verification details can be exposed without an explicit control point tied to who the user is and why they need the data.' },
+      { title: 'Access is not traceable', body: 'Without an append-only record of who ran what, who approved it, and who overrode it, compliance cannot be demonstrated after the fact.' },
+      { title: 'Generated queries cannot be trusted blindly', body: 'Any natural-language to query translation can emit invalid or unsafe operators; it needs validation before it ever reaches the data source.' },
+      { title: 'Export often leaks to disk', body: 'Report generation that writes temporary files leaves data copies outside the governed path and outside the audit trail.' }
+    ]
+  },
+  flow: {
+    title: 'How a request is handled',
+    lead: 'One pipeline, eight deliberate steps. Work stays local and free wherever it can, and calls the model only where it must.',
+    steps: [
+      { title: 'Ask', does: 'The user signs in and types a normal sentence in the workspace.', mech: ['Angular 21 SPA', 'JWT session identity'] },
+      { title: 'Understand locally first', does: 'Before any model call, the request is checked against previous approved questions and mined for known fields such as city, rooms, price, and amenities.', mech: ['Semantic cache, cosine > 0.95', 'ONNX Runtime, bge-small', 'Regex and gazetteer slots'] },
+      { title: 'Route by difficulty', does: 'A rule-based filter decides whether this is a simple, well-understood request or a complex pipeline that needs reasoning.', mech: ['Rule-based intent filter'] },
+      { title: 'Generate the query', does: 'Simple requests are built from templates. Complex ones are generated by the model using schema and few-shot examples.', mech: ['Scriban templates', 'NVIDIA NIM via Semantic Kernel'] },
+      { title: 'Validate and self-correct', does: 'The query is parsed into a syntax tree and checked against the known schema. On failure it is corrected automatically before the user is ever involved.', mech: ['MQL AST validation', 'Up to 3 attempts'] },
+      { title: 'Enforce governance', does: 'Every field is checked against sensitivity flags. Sensitive requests pause and route to an approver, unless the user is an exempt data owner.', mech: ['schema_field_registry', 'Approval or override'] },
+      { title: 'Execute safely', does: 'Only approved, read-only operations run, against MongoDB or the upstream enterprise API, under a hard timeout.', mech: ['MongoDB or enterprise REST', '5,000 ms timeout'] },
+      { title: 'Explain, deliver, and record', does: 'Results are summarised in business language, exported in memory when asked, and the whole action is written to an append-only trail.', mech: ['Deterministic summary', 'In-memory CSV, XLSX, PDF', 'audit_logs'] }
+    ]
+  },
+  solve: {
+    title: 'Problem to solution',
+    lead: 'The same six issues, mapped to the mechanism that resolves them and the outcome it produces.',
+    items: [
+      { issue: 'Specialist bottleneck', arrow: 'How', how: 'A conversational workspace over MongoDB and the enterprise API, with local query builders for common asks.', result: 'Users self-serve; the developer queue shrinks' },
+      { issue: 'Token cost and latency', arrow: 'How', how: 'Cache, slot extraction, templates, and validation all run locally; the model is reserved for complex pipelines only.', result: 'Routine work costs nothing and returns in milliseconds' },
+      { issue: 'Ungoverned sensitive access', arrow: 'How', how: 'Field-level sensitivity flags pause execution and require approval, with a role-based owner bypass.', result: 'Sensitive data never moves without a decision' },
+      { issue: 'Weak traceability', arrow: 'How', how: 'An immutable, append-only audit trail records every execution, approval, and override with actor and justification.', result: 'Compliance evidence is produced, not reconstructed' },
+      { issue: 'Untrusted generated queries', arrow: 'How', how: 'AST and schema validation, automatic self-correction, and a read-only rule set that blocks write operators.', result: 'Unsafe or invalid queries never reach the data' },
+      { issue: 'Export leaks to disk', arrow: 'How', how: 'CSV, XLSX, and PDF briefings are produced in memory and delivered without temporary files.', result: 'No stray data copies outside the governed path' }
+    ]
+  },
+  agents: {
+    title: 'The agents and their responsibilities',
+    lead: 'A supervisor coordinates specialised agents. Each has one job, which keeps behaviour predictable and auditable.',
+    items: [
+      { title: 'Orchestrator', body: 'Authenticates the session, greets the user in a time-aware way, offers quick actions, asks at most one clarifying question, applies sensible defaults, and pauses for governance holds.' },
+      { title: 'Hybrid Intent and Query', body: 'Checks the cache, extracts slots, builds simple queries, and calls the model for complex pipelines with few-shot templates and up to three self-corrections.' },
+      { title: 'Schema and Semantic Validator', body: 'Parses the query into a syntax tree and checks it against the schema, including correct types for prices and amenity arrays.' },
+      { title: 'Guardrail and Security', body: 'Scans target fields against the sensitivity registry, grants role-based exemptions, otherwise halts and raises a request, and enforces read-only execution.' },
+      { title: 'Execution Runner', body: 'Runs approved read-only operations against MongoDB or the upstream enterprise API under a strict timeout.' },
+      { title: 'Narrative Insights and Export', body: 'Turns raw results into business briefings and produces in-memory CSV, XLSX, or emailed PDF reports.' }
+    ]
+  },
+  guard: {
+    title: 'Governance and guardrails',
+    lead: 'Controls are enforced in the platform, not in documentation. Anything sensitive stops until the right person decides.',
+    rules: [
+      { b: 'Read-only by construction.', t: ' A syntax-tree rule engine blocks write and administrative operators such as $out, $merge, drop, and deleteMany.' },
+      { b: 'Field-level sensitivity flags.', t: ' Each attribute carries is_sensitive, requires_approval, and the roles exempt from gating.' },
+      { b: 'Approval, then override.', t: ' Sensitive requests queue for the direct team lead; a manager or data owner can claim and override when unblocking is urgent.' },
+      { b: 'Every override is tagged.', t: ' The record stores override_invoked, the actor, the timestamp, and the justification, written to both the request and the audit log.' },
+      { b: 'Immutable audit trail.', t: ' Execution, exemption, and override events append to audit_logs and are never rewritten.' }
+    ],
+    roles: [
+      { role: 'Business Analyst', sensitive: 'Approval required, with justification', authority: 'None', override: 'None' },
+      { role: 'Team Lead', sensitive: 'Standard flag check', authority: 'Direct reports', override: 'None' },
+      { role: 'Engineering Manager', sensitive: 'Waiver on standard fields', authority: 'Direct teams', override: 'Lead queues' },
+      { role: 'Data Owner / Admin', sensitive: 'Direct ownership bypass', authority: 'All units', override: 'Master override' }
+    ]
+  },
+  alloc: {
+    title: 'Where the cost actually goes',
+    lead: 'Only one step out of seven can cost money. Everything else is local and effectively free.',
+    rows: [
+      { step: 'Personalised greeting', engine: 'Rule engine and clock', latency: '< 1 ms', cost: '$0.00', zero: true },
+      { step: 'Semantic cache', engine: 'Local ONNX vectors, bge-small', latency: '< 10 ms', cost: '$0.00', zero: true },
+      { step: 'Slot extraction', engine: 'Regex and gazetteer dictionaries', latency: '< 5 ms', cost: '$0.00', zero: true },
+      { step: 'Simple query build', engine: 'Scriban templates and local code', latency: '< 2 ms', cost: '$0.00', zero: true },
+      { step: 'Complex pipeline', engine: 'NVIDIA NIM via Semantic Kernel', latency: '1.5 - 3 s', cost: 'Token cost', zero: false },
+      { step: 'Safety and flag check', engine: 'MQL AST and rule engine', latency: '< 1 ms', cost: '$0.00', zero: true },
+      { step: 'Standard summary', engine: 'Deterministic formatter', latency: '< 1 ms', cost: '$0.00', zero: true }
+    ]
+  },
+  status: {
+    title: 'Where this stands today',
+    lead: 'The page describes the full design. This is an honest read on what is already in place and what is still ahead, without sprint bookkeeping.',
+    now: [
+      'Secure, personalised workspace with session identity',
+      'Instant answers for simple questions at zero model cost',
+      'AI-assisted complex queries with validation and self-correction'
+    ],
+    next: [
+      'Field-level approval workflow and manager override',
+      'Execution with the immutable audit trail',
+      'Insights, exports, analytics, and reliable delivery'
+    ]
+  },
+  closing: {
+    title: 'One platform, not a pile of tools',
+    body: 'The value is in the combination: fast local answers when the question is easy, real reasoning when it is hard, a hard stop when data is sensitive, and a permanent record of every decision. That is what removes the bottleneck, the cost, and the risk at the same time.'
+  },
+  disclaimer: 'This page explains the design and the problems it addresses. It is a companion to the interactive executive story. Metrics shown are design targets from the business requirements, not measured production results.'
+};
+
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  const m = PLATFORM.meta;
+  $('pageTitle').textContent = m.title;
+  $('pageSubtitle').textContent = m.subtitle;
+  $('navNote').textContent = m.navNote;
+
+  const h = PLATFORM.hero;
+  $('heroEyebrow').textContent = h.eyebrow;
+  $('heroTitle').textContent = h.title;
+  $('heroStatement').textContent = h.statement;
+  $('heroKpis').innerHTML = h.kpis.map((k) =>
+    '<div class="kpi"><div class="v">' + k.v + '</div><div class="k">' + k.k + '</div></div>'
+  ).join('');
+
+  $('problemsTitle').textContent = PLATFORM.problems.title;
+  $('problemsLead').textContent = PLATFORM.problems.lead;
+  $('problems').innerHTML = PLATFORM.problems.items.map((p) =>
+    '<div class="problem"><span class="tag">Problem</span><h3>' + p.title + '</h3><p>' + p.body + '</p></div>'
+  ).join('');
+
+  $('flowTitle').textContent = PLATFORM.flow.title;
+  $('flowLead').textContent = PLATFORM.flow.lead;
+  $('flow').innerHTML = PLATFORM.flow.steps.map((s, i) =>
+    '<div class="step"><div class="num">' + (i + 1) + '</div><div class="body"><h3>' + s.title + '</h3>' +
+    '<p class="does">' + s.does + '</p><div class="mech">' + s.mech.map((x) => '<span>' + x + '</span>').join('') + '</div></div></div>'
+  ).join('');
+
+  $('solveTitle').textContent = PLATFORM.solve.title;
+  $('solveLead').textContent = PLATFORM.solve.lead;
+  $('solve').innerHTML = PLATFORM.solve.items.map((s) =>
+    '<div class="solve-card"><div class="issue">' + s.issue + '</div><div class="arrow">' + s.arrow + '</div>' +
+    '<p class="how">' + s.how + '</p><p class="result">' + s.result + '</p></div>'
+  ).join('');
+
+  $('agentsTitle').textContent = PLATFORM.agents.title;
+  $('agentsLead').textContent = PLATFORM.agents.lead;
+  $('agents').innerHTML = PLATFORM.agents.items.map((a) =>
+    '<div class="agent"><h3>' + a.title + '</h3><p>' + a.body + '</p></div>'
+  ).join('');
+
+  $('guardTitle').textContent = PLATFORM.guard.title;
+  $('guardLead').textContent = PLATFORM.guard.lead;
+  $('guardRules').innerHTML = PLATFORM.guard.rules.map((r) =>
+    '<li><b>' + r.b + '</b>' + r.t + '</li>'
+  ).join('');
+  $('rolesBody').innerHTML = PLATFORM.guard.roles.map((r) =>
+    '<tr><td><b>' + r.role + '</b></td><td>' + r.sensitive + '</td><td>' + r.authority + '</td><td>' + r.override + '</td></tr>'
+  ).join('');
+
+  $('allocTitle').textContent = PLATFORM.alloc.title;
+  $('allocLead').textContent = PLATFORM.alloc.lead;
+  $('allocBody').innerHTML = PLATFORM.alloc.rows.map((r) =>
+    '<tr><td>' + r.step + '</td><td>' + r.engine + '</td><td>' + r.latency + '</td>' +
+    '<td class="cost ' + (r.zero ? 'zero' : 'paid') + '">' + r.cost + '</td></tr>'
+  ).join('');
+
+  $('statusTitle').textContent = PLATFORM.status.title;
+  $('statusLead').textContent = PLATFORM.status.lead;
+  $('status').innerHTML =
+    '<div class="status-col now"><h3>In place now</h3><ul>' + PLATFORM.status.now.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>' +
+    '<div class="status-col next"><h3>Still ahead</h3><ul>' + PLATFORM.status.next.map((x) => '<li>' + x + '</li>').join('') + '</ul></div>';
+
+  $('closingTitle').textContent = PLATFORM.closing.title;
+  $('closingBody').textContent = PLATFORM.closing.body;
+  $('disclaimer').textContent = PLATFORM.disclaimer;
+}
+
+render();
+</script>
+</body>
+</html>
