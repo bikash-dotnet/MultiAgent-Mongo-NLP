@@ -74,7 +74,7 @@
   .total.good .lab { color: #0b5c3a; }
   .total.good .val { color: var(--good); }
 
-  .chainwrap { overflow-x: auto; padding: 4px 2px 12px; }
+  .chainwrap { overflow-x: auto; padding: 6px 2px 12px; }
   .chain { display: flex; align-items: stretch; min-width: 980px; }
   .node { flex: 1 1 150px; width: 150px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 9px; box-shadow: var(--shadow); position: relative; }
   .node .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
@@ -87,12 +87,13 @@
   .node.good .ic { background: var(--accent-soft); }
   .node.good .dur { background: var(--accent-soft); color: var(--accent-ink); }
   .node.good .dur.fast { background: var(--good-soft); color: var(--good); }
-  .node .waiting { position: absolute; top: -9px; right: 10px; font-size: 9.5px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bad); color: #fff; border-radius: 999px; padding: 2px 8px; }
+  .node .waiting { align-self: flex-start; font-size: 9.5px; font-weight: 750; letter-spacing: 0.05em; text-transform: uppercase; background: var(--bad); color: #fff; border-radius: 999px; padding: 2px 8px; line-height: 1.4; }
+  .node .waiting.ghost { visibility: hidden; }
   .node.bad.queue::after { content: ""; position: absolute; inset: -1px; border-radius: 14px; border: 1px solid var(--bad); opacity: 0.35; animation: pulse 2.4s ease-in-out infinite; pointer-events: none; }
   @keyframes pulse { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.015); } }
 
   .link { flex: 0 0 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 0 6px; }
-  .link .wait { font-size: 10.5px; font-weight: 750; text-align: center; line-height: 1.25; }
+  .link .wait { font-size: 10.5px; font-weight: 750; text-align: center; line-height: 1.25; min-height: 26px; display: flex; flex-direction: column; justify-content: center; }
   .link.bad .wait { color: var(--bad); }
   .link.good .wait { color: var(--good); }
   .link .rail { width: 100%; height: 2px; position: relative; color: var(--border); background-image: linear-gradient(90deg, currentColor 55%, transparent 0); background-size: 12px 2px; background-repeat: repeat-x; animation: flow 0.7s linear infinite; }
@@ -154,6 +155,7 @@
     <nav class="topnav">
       <a href="./index.html">Executive story</a>
       <a href="./how-it-works.html">What it does and how</a>
+      <a href="./problem-solution.pptx" download>Deck (PPTX)</a>
     </nav>
   </header>
 
@@ -290,7 +292,7 @@ function chainMarkup(block, tone) {
   block.steps.forEach((s, i) => {
     const dur = s.fast ? ' fast' : '';
     const queue = s.queue ? ' queue' : '';
-    const badge = s.badge ? '<span class="waiting">' + s.badge + '</span>' : '';
+    const badge = s.badge ? '<span class="waiting">' + s.badge + '</span>' : '<span class="waiting ghost" aria-hidden="true">Waiting</span>';
     html += '<div class="node ' + tone + queue + '">' + badge +
       '<div class="ic">' + ICONS[s.icon] + '</div>' +
       '<h4>' + s.title + '</h4><p>' + s.sub + '</p>' +
