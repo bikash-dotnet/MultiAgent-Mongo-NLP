@@ -1,0 +1,20 @@
+[
+  {
+    "path": "address.location.coordinates",
+    "isSensitive": true,
+    "requiresApproval": true,
+    "dataOwnerRoles": ["DataOwner", "Admin"]
+  },
+  {
+    "path": "host.host_verifications",
+    "isSensitive": true,
+    "requiresApproval": true,
+    "dataOwnerRoles": ["DataOwner", "Admin"]
+  },
+  {
+    "path": "host.host_identity_verified",
+    "isSensitive": true,
+    "requiresApproval": false,
+    "dataOwnerRoles": ["DataOwner", "Admin"]
+  }
+]
