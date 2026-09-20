@@ -12,7 +12,10 @@ public sealed record NlpQueryResponse(
     bool JustRunIt,
     int LlmTokensConsumed,
     int LlmAttempts,
-    string? Error)
+    string? Error,
+    IReadOnlyList<string>? SensitiveFields,
+    string? AccessRequestId,
+    string? GuardrailReason)
 {
     public static NlpQueryResponse From(NlpRouteResult result)
     {
@@ -26,6 +29,9 @@ public sealed record NlpQueryResponse(
             result.JustRunIt,
             result.LlmTokensConsumed,
             result.LlmAttempts,
-            result.Error);
+            result.Error,
+            result.SensitiveFields,
+            result.AccessRequestId,
+            result.GuardrailReason);
     }
 }

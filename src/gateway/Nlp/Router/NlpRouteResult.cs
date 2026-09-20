@@ -9,7 +9,9 @@ public enum NlpRouteKind
     SimpleMql,
     ClarifyRequired,
     ComplexLlmRequired,
-    ComplexLlmFailed
+    ComplexLlmFailed,
+    GovernancePaused,
+    Rejected
 }
 
 public sealed record NlpRouteResult(
@@ -23,4 +25,7 @@ public sealed record NlpRouteResult(
     MqlDefaults ClarificationsApplied,
     int LlmTokensConsumed,
     int LlmAttempts = 0,
-    string? Error = null);
+    string? Error = null,
+    IReadOnlyList<string>? SensitiveFields = null,
+    string? AccessRequestId = null,
+    string? GuardrailReason = null);

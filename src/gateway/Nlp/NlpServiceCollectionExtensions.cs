@@ -1,6 +1,7 @@
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Embeddings;
+using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
 using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
@@ -43,6 +44,12 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IPipelineValidator, PipelineValidator>();
         services.AddSingleton<ILlmQueryGenerator, SemanticKernelLlmQueryGenerator>();
         services.AddSingleton<SelfCorrectingLlmQueryGenerator>();
+        services.AddSingleton(SchemaWhitelist.LoadFromSchemaFile(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts", "schema.txt")));
+        services.AddSingleton<ISensitiveFieldRegistry>(_ => InMemorySensitiveFieldRegistry.LoadFromDirectory(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Schema")));
+        services.AddSingleton<GuardrailEvaluator>();
+        services.AddSingleton<IAccessRequestStore, InMemoryAccessRequestStore>();
         services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
         services.AddSingleton<IAgentStateStore, InMemoryAgentStateStore>();
         services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();

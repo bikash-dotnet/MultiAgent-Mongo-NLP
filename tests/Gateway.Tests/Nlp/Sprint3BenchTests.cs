@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
+using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
 using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
@@ -35,7 +36,9 @@ public class Sprint3BenchTests
         var router = new NlpRouter(new ConstEmbedder(), new SemanticCache(), builder, gazetteer);
         var corrector = new SelfCorrectingLlmQueryGenerator(new FixedGenerator(), new PipelineValidator(),
             Options.Create(new NvidiaNimOptions { MaxAttempts = 3 }));
-        var orchestrator = new NlpOrchestrator(router, gazetteer, corrector, new InMemoryAgentEventSink(), new InMemoryAgentStateStore());
+        var orchestrator = new NlpOrchestrator(router, gazetteer, corrector, new InMemoryAgentEventSink(),
+            new InMemoryAgentStateStore(), GuardrailTestFactory.FromAssets(), new InMemoryAccessRequestStore(),
+            TimeProvider.System);
 
         // warm
         for (var i = 0; i < 10; i++)
