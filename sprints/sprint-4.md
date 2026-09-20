@@ -58,11 +58,11 @@
 
 ## Acceptance criteria
 
-- [ ] Any write/admin operator is rejected before execution (BRD-FR-04)
-- [ ] Queries touching flagged fields pause unless later exempt (BRD-FR-05)
-- [ ] Clean read queries with non-sensitive fields pass the AST
-- [ ] Unparseable MQL is rejected (fail closed)
-- [ ] AST/flag step stays under 1 ms in bench tests
+- [x] Any write/admin operator is rejected before execution (BRD-FR-04)
+- [x] Queries touching flagged fields pause unless later exempt (BRD-FR-05)
+- [x] Clean read queries with non-sensitive fields pass the AST
+- [x] Unparseable MQL is rejected (fail closed)
+- [x] AST/flag step stays under 1 ms in bench tests
 
 ---
 
