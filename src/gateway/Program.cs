@@ -11,6 +11,7 @@ using Gateway.Nlp.Router;
 using Gateway.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +65,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddOpenApi();
 builder.Services.AddGatewayNlp(builder.Configuration);
 
 var app = builder.Build();
@@ -77,6 +79,9 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 if (app.Environment.IsDevelopment())
 {
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+
     app.MapGet("/dev/token", (IConfiguration config) =>
     {
         var key = config["Jwt:SigningKey"] ?? signingKey;

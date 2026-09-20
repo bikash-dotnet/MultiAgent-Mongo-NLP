@@ -20,6 +20,10 @@ npm start
 
 Open the Angular dev server. The SPA fetches a Development token from `/dev/token`, then loads `GET /api/session/greeting` and an SSE heartbeat from `GET /api/agents/stream`.
 
+## API reference (Development)
+
+With the gateway running, the interactive Scalar UI is at `http://localhost:5235/scalar/v1` and the raw OpenAPI 3.1 document at `http://localhost:5235/openapi/v1.json`. Both are mapped only in the Development environment. To call the protected endpoints, fetch a token from `GET /dev/token` and paste it into the Scalar Auth panel.
+
 ## Executive showcase
 
 `showcase/index.html` is a self-contained, executive-facing walkthrough of the platform: an executive summary plus a six-act story that follows a single request from question to governed answer. Open it by double-clicking the file; it needs no server, build step, or network access.
