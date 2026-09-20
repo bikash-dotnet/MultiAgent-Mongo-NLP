@@ -1,5 +1,6 @@
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
+using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
 using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
@@ -39,7 +40,8 @@ public class NlpOrchestratorTests
         var events = new InMemoryAgentEventSink();
         var corrector = new SelfCorrectingLlmQueryGenerator(generator, new PipelineValidator(),
             Options.Create(new NvidiaNimOptions { MaxAttempts = 3 }));
-        var sut = new NlpOrchestrator(router, gazetteer, corrector, events, new InMemoryAgentStateStore());
+        var sut = new NlpOrchestrator(router, gazetteer, corrector, events, new InMemoryAgentStateStore(),
+            GuardrailTestFactory.FromAssets(), new InMemoryAccessRequestStore(), TimeProvider.System);
         return (sut, generator, events);
     }
 
