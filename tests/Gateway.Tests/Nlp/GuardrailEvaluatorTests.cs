@@ -1,3 +1,4 @@
+using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 
 namespace Gateway.Tests.Nlp;
@@ -11,7 +12,8 @@ public class GuardrailEvaluatorTests
             new SensitiveFieldFlag("address.location.coordinates", true, true, ["DataOwner"]),
             new SensitiveFieldFlag("host.host_verifications", true, true, ["DataOwner"]),
             new SensitiveFieldFlag("host.host_identity_verified", true, false, ["DataOwner"])
-        ]));
+        ]),
+        new InMemoryApprovalFlagStore(true));
 
     [Fact]
     public void Clean_read_query_is_allowed()
