@@ -7,7 +7,8 @@ public sealed record AccessRequest(
     IReadOnlyList<string> SensitiveFields,
     string Status,
     string? Justification,
-    DateTimeOffset CreatedAt)
+    DateTimeOffset CreatedAt,
+    ReportIntake? Intake = null)
 {
     public const string PendingLead = "PENDING_LEAD";
 }

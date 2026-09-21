@@ -21,4 +21,10 @@ public sealed class InMemoryAccessRequestStore : IAccessRequestStore
         _requests.TryGetValue(id, out var request);
         return Task.FromResult(request);
     }
+
+    public Task<AccessRequest> UpdateAsync(AccessRequest request, CancellationToken cancellationToken = default)
+    {
+        _requests[request.Id] = request;
+        return Task.FromResult(request);
+    }
 }
