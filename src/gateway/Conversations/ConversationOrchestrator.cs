@@ -341,7 +341,7 @@ public sealed partial class ConversationOrchestrator
         if (state.ApprovalRequired)
         {
             return $"Approval is required because this report uses sensitive fields ({string.Join(", ", state.SensitiveFields)}). "
-                + $"Your manager {state.Draft.ManagerEmail} has been notified, and request {state.AccessRequestId} is pending lead approval.";
+                + $"Your manager {state.Draft.ManagerEmail} has been notified, and request {state.AccessRequestId} is pending lead approval ({AccessRequest.PendingLead}).";
         }
 
         if (state.Draft.DeliveryFormat == ReportIntake.Csv)
