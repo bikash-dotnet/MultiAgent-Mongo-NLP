@@ -145,6 +145,9 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         }
 
         _events.Publish(new AgentEvent("agent.completed", "completed", result.Kind.ToString()));
-        return result;
+        return result with
+        {
+            SensitiveFields = guard.SensitiveFields.Count > 0 ? guard.SensitiveFields : null
+        };
     }
 }

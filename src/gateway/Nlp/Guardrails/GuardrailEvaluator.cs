@@ -1,14 +1,18 @@
+using Gateway.Governance;
+
 namespace Gateway.Nlp.Guardrails;
 
 public sealed class GuardrailEvaluator
 {
     private readonly SchemaWhitelist _whitelist;
     private readonly ISensitiveFieldRegistry _registry;
+    private readonly IApprovalFlagStore _flags;
 
-    public GuardrailEvaluator(SchemaWhitelist whitelist, ISensitiveFieldRegistry registry)
+    public GuardrailEvaluator(SchemaWhitelist whitelist, ISensitiveFieldRegistry registry, IApprovalFlagStore flags)
     {
         _whitelist = whitelist;
         _registry = registry;
+        _flags = flags;
     }
 
     public GuardrailResult Evaluate(string? pipelineJson)
@@ -43,23 +47,32 @@ public sealed class GuardrailEvaluator
                 []);
         }
 
-        var sensitiveFields = _registry
+        var matched = _registry
             .Match(analysis.FieldPaths)
-            .Where(flag => flag.IsSensitive && flag.RequiresApproval)
+            .Where(flag => flag.IsSensitive)
+            .ToList();
+
+        var sensitiveFields = matched
             .Select(flag => flag.Path)
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        if (sensitiveFields.Count > 0)
+        var approvalFields = matched
+            .Where(flag => flag.RequiresApproval)
+            .Select(flag => flag.Path)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (approvalFields.Count > 0 && _flags.Enabled)
         {
             return new GuardrailResult(
                 GuardrailOutcome.PausedForApproval,
-                $"sensitive field requires approval: {string.Join(", ", sensitiveFields)}",
-                sensitiveFields,
+                $"sensitive field requires approval: {string.Join(", ", approvalFields)}",
+                approvalFields,
                 [],
                 []);
         }
 
-        return GuardrailResult.Allowed;
+        return new GuardrailResult(GuardrailOutcome.Allowed, null, sensitiveFields, [], []);
     }
 }
