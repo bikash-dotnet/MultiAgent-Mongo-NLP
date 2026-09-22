@@ -1,3 +1,5 @@
+using Gateway.Conversations;
+using Gateway.Governance;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Embeddings;
@@ -7,6 +9,7 @@ using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
+using Gateway.Reports;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp;
@@ -17,6 +20,9 @@ public static class NlpServiceCollectionExtensions
     {
         services.Configure<NlpOptions>(configuration.GetSection(NlpOptions.SectionName));
         services.Configure<NvidiaNimOptions>(configuration.GetSection(NvidiaNimOptions.SectionName));
+        services.Configure<GovernanceOptions>(configuration.GetSection(GovernanceOptions.SectionName));
+        services.Configure<ReportsOptions>(configuration.GetSection(ReportsOptions.SectionName));
+        services.AddSingleton(TimeProvider.System);
 
         services.AddSingleton<ITextEmbedder>(sp =>
         {
@@ -53,6 +59,13 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
         services.AddSingleton<IAgentStateStore, InMemoryAgentStateStore>();
         services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();
+
+        services.AddSingleton<IApprovalFlagStore>(sp => new InMemoryApprovalFlagStore(
+            sp.GetRequiredService<IOptions<GovernanceOptions>>().Value.ApprovalEnabled));
+        services.AddSingleton<IConversationStore, InMemoryConversationStore>();
+        services.AddSingleton<INotificationSender, SimulatedNotificationSender>();
+        services.AddSingleton<IColumnCatalog, ColumnCatalog>();
+        services.AddSingleton<ConversationOrchestrator>();
 
         return services;
     }
