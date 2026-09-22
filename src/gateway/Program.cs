@@ -3,12 +3,15 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Gateway.Auth;
+using Gateway.Conversations;
+using Gateway.Governance;
 using Gateway.Greeting;
 using Gateway.Nlp;
 using Gateway.Nlp.Http;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Observability;
+using Gateway.Reports;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -139,6 +142,93 @@ app.MapPost("/api/nlp/query", async (NlpQueryRequest request, ClaimsPrincipal us
     return Results.Ok(NlpQueryResponse.From(result));
 }).RequireAuthorization();
 
+app.MapPost("/api/conversations", async (
+    ConversationStartRequest request,
+    ClaimsPrincipal user,
+    ConversationOrchestrator conversations,
+    CancellationToken cancellationToken) =>
+{
+    var utterance = request.Utterance?.Trim();
+    if (string.IsNullOrWhiteSpace(utterance))
+    {
+        return Results.BadRequest(new { error = "utterance is required" });
+    }
+
+    if (utterance.Length > 500)
+    {
+        return Results.BadRequest(new { error = "utterance must be 500 characters or fewer" });
+    }
+
+    var sessionId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
+    var email = user.FindFirst(SessionClaims.Email)?.Value;
+    var turn = await conversations.StartAsync(utterance, sessionId, email, cancellationToken);
+    return Results.Ok(turn);
+}).RequireAuthorization();
+
+app.MapPost("/api/conversations/{id}/answers", async (
+    string id,
+    ConversationAnswer answer,
+    ConversationOrchestrator conversations,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.AnswerAsync(id, answer, cancellationToken);
+    return turn is null ? Results.NotFound() : Results.Ok(turn);
+}).RequireAuthorization();
+
+app.MapGet("/api/conversations/{id}", async (
+    string id,
+    ConversationOrchestrator conversations,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    return turn is null ? Results.NotFound() : Results.Ok(turn);
+}).RequireAuthorization();
+
+app.MapGet("/api/conversations/{id}/report.csv", async (
+    string id,
+    ConversationOrchestrator conversations,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    if (turn is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (turn.Step != "Complete")
+    {
+        return Results.Conflict(new { error = "conversation is not complete" });
+    }
+
+    var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
+    var build = ReportService.BuildCsv(columns, turn.ApprovalRequired);
+    if (!build.Ready)
+    {
+        return Results.Conflict(new { error = build.Reason });
+    }
+
+    return Results.Text(build.Csv, "text/csv");
+}).RequireAuthorization();
+
+app.MapGet("/api/governance/approval", (IApprovalFlagStore flags) =>
+    Results.Ok(new { enabled = flags.Enabled })).RequireAuthorization();
+
+app.MapPut("/api/governance/approval", async (
+    ApprovalFlagRequest request,
+    ClaimsPrincipal user,
+    IApprovalFlagStore flags,
+    CancellationToken cancellationToken) =>
+{
+    var role = user.FindFirst(SessionClaims.Role)?.Value;
+    if (role != "Data Owner / Admin")
+    {
+        return Results.Forbid();
+    }
+
+    await flags.SetAsync(request.Enabled, cancellationToken);
+    return Results.Ok(new { enabled = flags.Enabled });
+}).RequireAuthorization();
+
 app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
 {
     context.Response.Headers.ContentType = "text/event-stream";
@@ -168,5 +258,7 @@ static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, Ca
     await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
     await context.Response.Body.FlushAsync(cancellationToken);
 }
+
+public sealed record ApprovalFlagRequest(bool Enabled);
 
 public partial class Program;

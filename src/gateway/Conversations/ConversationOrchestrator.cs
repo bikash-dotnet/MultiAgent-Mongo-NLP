@@ -299,7 +299,7 @@ public sealed partial class ConversationOrchestrator
 
         var columns = state.Step == ConversationStep.Columns
             ? _columns.Available(state.Mql)
-            : null;
+            : state.Draft.Columns?.Select(name => new ColumnOption(name, true)).ToList();
 
         var downloadable = state.Step == ConversationStep.Complete
             && !state.ApprovalRequired
