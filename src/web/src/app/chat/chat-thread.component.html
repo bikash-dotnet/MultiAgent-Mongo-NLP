@@ -62,7 +62,7 @@
       <label><input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" /> Download CSV</label>
       <button type="button" [disabled]="pending" (click)="submitDelivery()">Confirm delivery</button>
     </fieldset>
-  } @else if (turn?.control === 'manageremail') {
+  } @else if (turn?.step === 'ManagerEmail') {
     <form class="step" (ngSubmit)="submitManagerEmail()">
       <label for="step-manager">Manager email</label>
       <input id="step-manager" name="managerEmail" type="email" [(ngModel)]="managerEmail" required />
@@ -74,7 +74,7 @@
     <button type="button" class="download" (click)="download()">Download CSV</button>
   }
 
-  @if (!turn || turn?.step === 'Complete') {
+  @if (!turn || turn.step === 'Complete') {
     <form class="composer" (ngSubmit)="send()">
       <label class="sr-only" for="utterance">Ask about listings</label>
       <input id="utterance" name="utterance" [(ngModel)]="text" placeholder="Ask about listings" />

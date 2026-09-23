@@ -99,5 +99,22 @@ describe('ChatThreadComponent', () => {
     component.submitColumns();
 
     expect(answerCalls[0]).toEqual({ email: component.email });
+    expect(answerCalls[1]).toEqual({ columns: ['name'] });
+  });
+
+  it('renders the manager email control on the manager step', () => {
+    const fixture = TestBed.createComponent(ChatThreadComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.turn = {
+      ...emailTurn,
+      step: 'ManagerEmail',
+      control: 'none',
+      assistantMessage: 'Add a manager email so they can be notified.'
+    };
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#step-manager')).toBeTruthy();
   });
 });
