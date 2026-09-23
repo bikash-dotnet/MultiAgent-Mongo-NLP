@@ -42,6 +42,7 @@ export class ChatThreadComponent {
     }
 
     this.messages = [...this.messages, { role: 'user', text: utterance }];
+    this.text = '';
     this.pending = true;
     this.error = null;
 
@@ -119,6 +120,10 @@ export class ChatThreadComponent {
           this.messages = [...this.messages, { role: 'user', text: answer.purpose }];
         } else if (answer.managerEmail) {
           this.messages = [...this.messages, { role: 'user', text: answer.managerEmail }];
+        } else if (answer.columns) {
+          this.messages = [...this.messages, { role: 'user', text: answer.columns.join(', ') }];
+        } else if (answer.delivery) {
+          this.messages = [...this.messages, { role: 'user', text: answer.delivery }];
         }
         this.apply(turn);
       },
