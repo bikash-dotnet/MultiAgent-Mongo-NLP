@@ -60,35 +60,100 @@ public class ApiConversationTests : IClassFixture<GatewayFactory>
     }
 
     [Fact]
-    public async Task Csv_endpoint_blocks_while_awaiting_approval()
+    public async Task Csv_download_returns_ready_report_for_completed_demo_intake()
     {
         var client = AuthedClient("Business Analyst");
 
-        var start = await client.PostAsJsonAsync("/api/conversations", new { utterance = "average coordinates near me" });
+        var start = await client.PostAsJsonAsync("/api/conversations", new { utterance = "average price by market" });
         var turn = await start.Content.ReadFromJsonAsync<ConversationTurnDto>();
-        if (turn!.Step != "Email")
-        {
-            return;
-        }
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        Assert.Equal("Email", turn!.Step);
 
-        var answers = new object[]
-        {
-            new { email = "analyst@enterprise.com" },
-            new { purpose = "Geo analysis", projectCode = "PROJ-GEO" },
-            new { managerEmail = "manager@enterprise.com" },
-            new { columns = new[] { "name" } },
-            new { delivery = "CSV" }
-        };
+        turn = await AnswerAsync(client, turn.ConversationId, new { email = "analyst@enterprise.com" });
+        Assert.Equal("Purpose", turn.Step);
+        turn = await AnswerAsync(client, turn.ConversationId, new { purpose = "Geo analysis", projectCode = "PROJ-GEO" });
+        Assert.Equal("ManagerEmail", turn.Step);
+        turn = await AnswerAsync(client, turn.ConversationId, new { managerEmail = "manager@enterprise.com" });
+        Assert.Equal("Columns", turn.Step);
+        turn = await AnswerAsync(client, turn.ConversationId, new { columns = new[] { "name" } });
+        Assert.Equal("Delivery", turn.Step);
+        turn = await AnswerAsync(client, turn.ConversationId, new { delivery = "CSV" });
 
-        foreach (var answer in answers)
-        {
-            var next = await client.PostAsJsonAsync($"/api/conversations/{turn.ConversationId}/answers", answer);
-            turn = await next.Content.ReadFromJsonAsync<ConversationTurnDto>();
-        }
+        Assert.Equal("Complete", turn.Step);
+        Assert.False(turn.ApprovalRequired);
+        Assert.True(turn.Downloadable);
 
-        var csv = await client.GetAsync($"/api/conversations/{turn!.ConversationId}/report.csv");
+        var csv = await client.GetAsync($"/api/conversations/{turn.ConversationId}/report.csv");
 
-        Assert.True(csv.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, csv.StatusCode);
+        Assert.StartsWith("text/csv", csv.Content.Headers.ContentType!.ToString());
+
+        var body = await csv.Content.ReadAsStringAsync();
+        var lines = body.Split('\n');
+        Assert.StartsWith("name", body);
+        Assert.True(lines.Length >= 2, "expected the CSV to contain at least one data line");
+        Assert.False(string.IsNullOrWhiteSpace(lines[1]));
+    }
+
+    [Fact]
+    public async Task Csv_download_returns_conflict_before_intake_completes()
+    {
+        var client = AuthedClient("Business Analyst");
+
+        var start = await client.PostAsJsonAsync("/api/conversations", new { utterance = "average price by market" });
+        var turn = await start.Content.ReadFromJsonAsync<ConversationTurnDto>();
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        Assert.Equal("Email", turn!.Step);
+
+        var csv = await client.GetAsync($"/api/conversations/{turn.ConversationId}/report.csv");
+
+        Assert.Equal(HttpStatusCode.Conflict, csv.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unknown_conversation_returns_not_found()
+    {
+        var client = AuthedClient("Business Analyst");
+        const string unknownId = "does-not-exist";
+
+        var get = await client.GetAsync($"/api/conversations/{unknownId}");
+        var answers = await client.PostAsJsonAsync($"/api/conversations/{unknownId}/answers", new { email = "analyst@enterprise.com" });
+        var csv = await client.GetAsync($"/api/conversations/{unknownId}/report.csv");
+
+        Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, answers.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, csv.StatusCode);
+    }
+
+    [Fact]
+    public async Task Blank_utterance_returns_bad_request()
+    {
+        var client = AuthedClient("Business Analyst");
+
+        var response = await client.PostAsJsonAsync("/api/conversations", new { utterance = "   " });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Governance_approval_endpoint_reports_the_flag()
+    {
+        var client = AuthedClient("Business Analyst");
+
+        var response = await client.GetAsync("/api/governance/approval");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var payload = await response.Content.ReadFromJsonAsync<ApprovalDto>();
+        Assert.NotNull(payload);
+    }
+
+    private async Task<ConversationTurnDto> AnswerAsync(HttpClient client, string conversationId, object answer)
+    {
+        var next = await client.PostAsJsonAsync($"/api/conversations/{conversationId}/answers", answer);
+        Assert.Equal(HttpStatusCode.OK, next.StatusCode);
+        var turn = await next.Content.ReadFromJsonAsync<ConversationTurnDto>();
+        Assert.NotNull(turn);
+        return turn!;
     }
 
     private HttpClient AuthedClient(string role)
@@ -127,4 +192,6 @@ public class ApiConversationTests : IClassFixture<GatewayFactory>
         string Control,
         bool ApprovalRequired,
         bool Downloadable);
+
+    private sealed record ApprovalDto(bool Enabled);
 }
