@@ -1,0 +1,84 @@
+<section class="chat">
+  <div class="thread" role="log" aria-live="polite">
+    @for (message of messages; track $index) {
+      <article class="bubble" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+        <p>{{ message.text }}</p>
+        @if (message.demo) {
+          <p class="demo">Demo report</p>
+        }
+      </article>
+    }
+    @if (pending) {
+      <p class="typing">Working…</p>
+    }
+  </div>
+
+  @if (!turn) {
+    @if (greeting) {
+      <div class="chips">
+        @for (chip of greeting.chips; track chip) {
+          <button type="button" class="chip" (click)="useChip(chip)">{{ chip }}</button>
+        }
+      </div>
+    }
+  }
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (turn?.control === 'email') {
+    <form class="step" (ngSubmit)="submitEmail()">
+      <label for="step-email">Delivery email</label>
+      <input id="step-email" name="email" type="email" [(ngModel)]="email" required />
+      <button type="submit" [disabled]="pending">Confirm email</button>
+    </form>
+  } @else if (turn?.control === 'purpose') {
+    <form class="step" (ngSubmit)="submitPurpose()">
+      <label for="step-purpose">Purpose</label>
+      <textarea id="step-purpose" name="purpose" [(ngModel)]="purpose" required></textarea>
+      <label for="step-project">Project code (optional)</label>
+      <input id="step-project" name="projectCode" [(ngModel)]="projectCode" />
+      <button type="submit" [disabled]="pending">Confirm purpose</button>
+    </form>
+  } @else if (turn?.control === 'columns') {
+    <fieldset class="step">
+      <legend>Columns</legend>
+      @for (column of turn?.columns ?? []; track column.name) {
+        <label class="column">
+          <input
+            type="checkbox"
+            [checked]="selectedColumns.has(column.name)"
+            (change)="toggleColumn(column.name, $any($event.target).checked)" />
+          {{ column.name }}
+        </label>
+      }
+      <button type="button" [disabled]="pending" (click)="submitColumns()">Confirm columns</button>
+    </fieldset>
+  } @else if (turn?.control === 'delivery') {
+    <fieldset class="step">
+      <legend>Delivery</legend>
+      <label><input type="radio" name="delivery" value="EMAIL" [(ngModel)]="delivery" /> Email report</label>
+      <label><input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" /> Download CSV</label>
+      <button type="button" [disabled]="pending" (click)="submitDelivery()">Confirm delivery</button>
+    </fieldset>
+  } @else if (turn?.control === 'manageremail') {
+    <form class="step" (ngSubmit)="submitManagerEmail()">
+      <label for="step-manager">Manager email</label>
+      <input id="step-manager" name="managerEmail" type="email" [(ngModel)]="managerEmail" required />
+      <button type="submit" [disabled]="pending">Confirm manager</button>
+    </form>
+  }
+
+  @if (turn?.downloadable) {
+    <button type="button" class="download" (click)="download()">Download CSV</button>
+  }
+
+  @if (!turn || turn?.step === 'Complete') {
+    <form class="composer" (ngSubmit)="send()">
+      <label class="sr-only" for="utterance">Ask about listings</label>
+      <input id="utterance" name="utterance" [(ngModel)]="text" placeholder="Ask about listings" />
+      <button type="submit" aria-label="Send message" [disabled]="pending">Send</button>
+    </form>
+  }
+</section>
