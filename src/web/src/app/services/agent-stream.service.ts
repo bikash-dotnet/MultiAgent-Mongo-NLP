@@ -22,7 +22,19 @@ export class AgentStreamService {
         params.set('access_token', token);
       }
       const source = new EventSource(`/api/agents/stream?${params.toString()}`);
-      const names = ['agent.idle', 'agent.started', 'agent.clarifying', 'agent.completed'];
+      const names = [
+        'agent.idle',
+        'agent.started',
+        'agent.clarifying',
+        'agent.completed',
+        'governance.paused',
+        'governance.request_enriched',
+        'governance.manager_notified',
+        'report.ready',
+        'report.email_simulated',
+        'conversation.started',
+        'conversation.completed'
+      ];
 
       const handlers = names.map((name) => {
         const handler = (event: MessageEvent) => {

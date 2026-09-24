@@ -1,17 +1,16 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { retry, Subscription, switchMap, timer } from 'rxjs';
 import { Greeting } from './models/greeting';
-import { NlpQueryResponse } from './models/nlp-query-response';
 import { AgentStreamService } from './services/agent-stream.service';
-import { NlpQueryService } from './services/nlp-query.service';
 import { SessionService } from './services/session.service';
+import { ChatThreadComponent } from './chat/chat-thread.component';
+import { GovernanceToggleComponent } from './governance/governance-toggle.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ChatThreadComponent, GovernanceToggleComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -19,23 +18,23 @@ export class AppComponent implements OnInit, OnDestroy {
   greeting: Greeting | null = null;
   streamStatus = 'connecting';
   agentActivity: string[] = [];
-  queryText = '';
-  queryResult: NlpQueryResponse | null = null;
+  canManageGovernance = false;
   error: string | null = null;
   private sub = new Subscription();
 
   constructor(
     private readonly session: SessionService,
-    private readonly agents: AgentStreamService,
-    private readonly nlp: NlpQueryService
+    private readonly agents: AgentStreamService
   ) {}
 
   ngOnInit(): void {
     this.session.sessionId();
+    this.canManageGovernance = this.session.role() === 'Data Owner / Admin';
     this.sub.add(
       this.session.bootstrap().pipe(switchMap(() => this.session.greeting())).subscribe({
         next: (greeting) => {
           this.greeting = greeting;
+          this.canManageGovernance = this.session.role() === 'Data Owner / Admin';
           this.listen();
         },
         error: () => {
@@ -47,25 +46,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
-  }
-
-  runQuery(): void {
-    const utterance = this.queryText.trim();
-    if (!utterance) {
-      return;
-    }
-
-    this.sub.add(
-      this.nlp.query(utterance).subscribe({
-        next: (result) => {
-          this.queryResult = result;
-          this.streamStatus = result.kind;
-        },
-        error: () => {
-          this.error = 'Query failed. Is the gateway running?';
-        }
-      })
-    );
   }
 
   private listen(): void {

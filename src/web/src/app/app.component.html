@@ -4,11 +4,7 @@
     @if (greeting) {
       <h1>{{ greeting.message }}</h1>
       <p class="period">Session period: {{ greeting.period }}</p>
-      <div class="chips">
-        @for (chip of greeting.chips; track chip) {
-          <button type="button" class="chip">{{ chip }}</button>
-        }
-      </div>
+      <app-governance-toggle [visible]="canManageGovernance"></app-governance-toggle>
     } @else if (error) {
       <h1>Workspace unavailable</h1>
       <p>{{ error }}</p>
@@ -17,21 +13,18 @@
     }
   </header>
 
-  <section class="telemetry">
-    <h2>Agent swarm</h2>
-    <p>Transport: Server-Sent Events</p>
-    <p class="status">Status: {{ streamStatus }}</p>
-    <ul class="activity">
-      @for (event of agentActivity; track $index) {
-        <li>{{ event }}</li>
-      }
-    </ul>
-    <form (ngSubmit)="runQuery()">
-      <input name="utterance" [(ngModel)]="queryText" placeholder="Ask about listings" />
-      <button type="submit">Run query</button>
-    </form>
-    @if (queryResult) {
-      <pre class="pipeline">{{ queryResult.mql ?? queryResult.error }}</pre>
-    }
-  </section>
+  <div class="layout">
+    <app-chat-thread [greeting]="greeting"></app-chat-thread>
+
+    <aside class="telemetry">
+      <h2>Agent swarm</h2>
+      <p>Transport: Server-Sent Events</p>
+      <p class="status">Status: {{ streamStatus }}</p>
+      <ul class="activity">
+        @for (event of agentActivity; track $index) {
+          <li>{{ event }}</li>
+        }
+      </ul>
+    </aside>
+  </div>
 </main>
