@@ -24,6 +24,15 @@ Open the Angular dev server. The SPA fetches a Development token from `/dev/toke
 
 With the gateway running, the interactive Scalar UI is at `http://localhost:5235/scalar/v1` and the raw OpenAPI 3.1 document at `http://localhost:5235/openapi/v1.json`. Both are mapped only in the Development environment. To call the protected endpoints, fetch a token from `GET /dev/token` and paste it into the Scalar Auth panel.
 
+## Report intake chat
+
+Report-producing queries open a chat intake that collects the delivery email, purpose,
+manager notification email, report columns, and delivery choice. A sensitive query creates
+a `PENDING_LEAD` access request and notifies the manager. A global approval flag
+(`Governance:ApprovalEnabled`, default `true`) can be toggled at runtime by a
+`Data Owner / Admin` through the header switch or `PUT /api/governance/approval`. CSV
+downloads use in-memory demo rows until the MongoDB execution and SMTP export work lands.
+
 ## Executive showcase
 
 `showcase/index.html` is a self-contained, executive-facing walkthrough of the platform: an executive summary plus a six-act story that follows a single request from question to governed answer. Open it by double-clicking the file; it needs no server, build step, or network access.
