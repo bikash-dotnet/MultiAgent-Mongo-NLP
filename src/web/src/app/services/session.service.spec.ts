@@ -36,4 +36,21 @@ describe('SessionService', () => {
       chips: ['Listings in Los Angeles']
     });
   });
+
+  it('reads the role from the stored token', () => {
+    const payload = btoa(JSON.stringify({ role: 'Data Owner / Admin' }));
+    sessionStorage.setItem('access_token', `header.${payload}.signature`);
+
+    expect(service.role()).toBe('Data Owner / Admin');
+  });
+
+  it('reads the role from a base64url encoded token', () => {
+    const payload = btoa(JSON.stringify({ role: 'Data Owner / Admin', nonce: '>>>' }))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    sessionStorage.setItem('access_token', `header.${payload}.signature`);
+
+    expect(service.role()).toBe('Data Owner / Admin');
+  });
 });

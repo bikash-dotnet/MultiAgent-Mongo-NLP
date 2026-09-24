@@ -23,6 +23,27 @@ export class SessionService {
     return sessionStorage.getItem(TOKEN_KEY);
   }
 
+  role(): string | null {
+    const token = this.token();
+    if (!token) {
+      return null;
+    }
+
+    const payload = token.split('.')[1];
+    if (!payload) {
+      return null;
+    }
+
+    try {
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+      const decoded = JSON.parse(atob(padded));
+      return typeof decoded.role === 'string' ? decoded.role : null;
+    } catch {
+      return null;
+    }
+  }
+
   bootstrap(): Observable<{ token: string }> {
     return this.http.get<{ token: string }>('/dev/token').pipe(
       tap((payload) => sessionStorage.setItem(TOKEN_KEY, payload.token))

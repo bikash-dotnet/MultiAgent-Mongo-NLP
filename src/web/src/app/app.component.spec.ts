@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { AppComponent } from './app.component';
 import { SessionService } from './services/session.service';
 import { AgentStreamService } from './services/agent-stream.service';
-import { NlpQueryService } from './services/nlp-query.service';
+import { ConversationService } from './services/conversation.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -14,6 +14,7 @@ describe('AppComponent', () => {
           provide: SessionService,
           useValue: {
             sessionId: () => 'sess_test',
+            role: () => null,
             bootstrap: () => of({ token: 't' }),
             greeting: () =>
               of({
@@ -31,31 +32,24 @@ describe('AppComponent', () => {
           }
         },
         {
-          provide: NlpQueryService,
+          provide: ConversationService,
           useValue: {
-            query: () => of({
-              kind: 'SimpleMql',
-              mql: '[{"$limit":10}]',
-              question: null,
-              semanticCacheHit: false,
-              slotExtractionUsed: true,
-              intent: 'Search',
-              justRunIt: false,
-              llmTokensConsumed: 0,
-              llmAttempts: 0,
-              error: null
-            })
+            start: () => of({ conversationId: 'c1', step: 'Email', kind: 'ComplexLlmRequired', assistantMessage: 'Email?', control: 'email', deliveryOptions: ['EMAIL', 'CSV'], approvalRequired: false, downloadable: false, demoReport: false }),
+            answer: () => of({}),
+            get: () => of({}),
+            downloadReport: () => of(new Blob()),
+            getApproval: () => of({ enabled: true }),
+            setApproval: () => of({ enabled: true })
           }
         }
       ]
     }).compileComponents();
   });
 
-  it('renders the personalized greeting and chips', () => {
+  it('hosts the chat thread', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hi Bikash, Good morning');
-    expect(compiled.querySelector('.chip')?.textContent).toContain('Just run it');
+    expect(compiled.querySelector('app-chat-thread')).toBeTruthy();
   });
 });
