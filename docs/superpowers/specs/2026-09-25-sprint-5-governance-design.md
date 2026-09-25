@@ -104,10 +104,13 @@ flowchart TD
     RESUME --> CSV["Report CSV unlocked"]
 ```
 
-The `IGovernanceService` seam owns every governance decision so that `NlpOrchestrator`,
-`ConversationOrchestrator`, the endpoints, and the tests share one implementation. It depends on
-`IAccessRequestStore`, `IConversationStore` (for resume lookup), `IAgentStateStore`, the agent
-event sink, and the clock.
+The `IGovernanceService` seam owns the governance decisions that the endpoints and tests
+share: role-scoped queue queries, the approve/reject/override lifecycle, and the resume hand-off.
+It depends on `IAccessRequestStore`, `IConversationResumeHandler`, the agent event sink, and the
+clock. To keep the dependency graph acyclic, `NlpOrchestrator` and `ConversationOrchestrator`
+keep using `IAccessRequestStore` directly for creation and intake enrichment; they do not depend
+on `IGovernanceService`. Exemption is decided inside `GuardrailEvaluator`. The only edge into the
+conversation layer is `GovernanceService -> IConversationResumeHandler`.
 
 ## 7. Domain model
 
