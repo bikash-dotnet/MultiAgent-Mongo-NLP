@@ -5,6 +5,7 @@ public enum ConversationControl
     None,
     Email,
     Purpose,
+    BusinessImpact,
     Columns,
     Delivery
 }

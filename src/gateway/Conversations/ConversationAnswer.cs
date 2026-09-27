@@ -5,6 +5,7 @@ public sealed record ConversationAnswer(
     string? Email = null,
     string? Purpose = null,
     string? ProjectCode = null,
+    string? BusinessImpact = null,
     string? ManagerEmail = null,
     IReadOnlyList<string>? Columns = null,
     string? Delivery = null);

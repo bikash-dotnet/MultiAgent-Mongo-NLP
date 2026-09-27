@@ -63,7 +63,8 @@ public class ConversationOrchestratorApprovalTests
 
         var turn = await sut.StartAsync("average coordinates near me", "sess_1", "analyst@enterprise.com");
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Email: "analyst@enterprise.com"));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Purpose: "Geo analysis"));
+        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Purpose: "Geo analysis", ProjectCode: "PROJ-1"));
+        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(BusinessImpact: "Target market expansion planning"));
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(ManagerEmail: "manager@enterprise.com"));
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Columns: ["name"]));
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Delivery: delivery));
@@ -84,6 +85,7 @@ public class ConversationOrchestratorApprovalTests
 
         var stored = await requests.GetAsync("req_1");
         Assert.Equal("manager@enterprise.com", stored!.Intake!.ManagerEmail);
+        Assert.Equal("Target market expansion planning", stored.JustificationDetails!.BusinessImpact);
     }
 
     [Fact]

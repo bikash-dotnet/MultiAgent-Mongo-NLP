@@ -155,7 +155,29 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
                     return ToTurn(state) with { ValidationError = "The project code may contain letters, digits, and hyphens only." };
                 }
 
+                var gated = state.Kind == NlpRouteKind.GovernancePaused;
+                if (gated && string.IsNullOrWhiteSpace(projectCode))
+                {
+                    return ToTurn(state) with { ValidationError = "A project code is required for sensitive requests." };
+                }
+
                 draft = draft with { Purpose = purpose.Trim(), ProjectCode = projectCode?.Trim() };
+                state = state with
+                {
+                    Step = gated ? ConversationStep.BusinessImpact : ConversationStep.ManagerEmail
+                };
+                break;
+            }
+
+            case ConversationStep.BusinessImpact:
+            {
+                var impact = FirstNonEmpty(answer.BusinessImpact, answer.Text);
+                if (string.IsNullOrWhiteSpace(impact) || impact.Trim().Length < 8 || impact.Trim().Length > 500)
+                {
+                    return ToTurn(state) with { ValidationError = "Describe the business impact in 8 to 500 characters." };
+                }
+
+                draft = draft with { BusinessImpact = impact.Trim() };
                 state = state with { Step = ConversationStep.ManagerEmail };
                 break;
             }
@@ -258,13 +280,17 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
 
         var approvalRequired = state.Kind == NlpRouteKind.GovernancePaused;
 
+        var justification = approvalRequired
+            ? new GovernanceJustification(draft.Purpose!, draft.BusinessImpact!, draft.ProjectCode)
+            : null;
+
         if (approvalRequired && state.AccessRequestId is not null)
         {
             var existing = await _accessRequests.GetAsync(state.AccessRequestId, cancellationToken);
             if (existing is not null)
             {
                 await _accessRequests.UpdateAsync(
-                    existing with { Intake = intake, Justification = intake.Purpose },
+                    existing with { Intake = intake, Justification = intake.Purpose, JustificationDetails = justification },
                     cancellationToken);
             }
 
@@ -313,6 +339,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         {
             ConversationStep.Email => ConversationControl.Email,
             ConversationStep.Purpose => ConversationControl.Purpose,
+            ConversationStep.BusinessImpact => ConversationControl.BusinessImpact,
             ConversationStep.Columns => ConversationControl.Columns,
             ConversationStep.Delivery => ConversationControl.Delivery,
             _ => ConversationControl.None
@@ -349,6 +376,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         {
             ConversationStep.Email => "I can build that report. Which email should receive it?",
             ConversationStep.Purpose => "What is the purpose of this report?",
+            ConversationStep.BusinessImpact => "What is the business impact of this request?",
             ConversationStep.ManagerEmail => "Add your manager's email so they can be notified.",
             ConversationStep.Columns => "Confirm the columns for your report.",
             ConversationStep.Delivery => "Email the report, or download it as CSV?",
