@@ -6,5 +6,7 @@ public interface IConversationStore
 
     Task<ConversationState?> GetAsync(string id, CancellationToken cancellationToken = default);
 
+    Task<ConversationState?> FindByAccessRequestAsync(string accessRequestId, CancellationToken cancellationToken = default);
+
     Task<ConversationState> UpdateAsync(ConversationState state, CancellationToken cancellationToken = default);
 }
