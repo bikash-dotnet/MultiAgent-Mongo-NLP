@@ -7,4 +7,6 @@ public interface IAccessRequestStore
     Task<AccessRequest?> GetAsync(string id, CancellationToken cancellationToken = default);
 
     Task<AccessRequest> UpdateAsync(AccessRequest request, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<AccessRequest>> ListAsync(CancellationToken cancellationToken = default);
 }
