@@ -47,9 +47,10 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         string utterance,
         string sessionId,
         string? requesterEmail,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        RequesterContext? requester = null)
     {
-        var result = await _nlp.OrchestrateAsync(utterance, sessionId, cancellationToken);
+        var result = await _nlp.OrchestrateAsync(utterance, sessionId, cancellationToken, requester);
 
         var kind = result.Kind;
         var mql = result.Mql;
