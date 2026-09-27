@@ -5,7 +5,8 @@ public sealed record GuardrailResult(
     string? Reason,
     IReadOnlyList<string> SensitiveFields,
     IReadOnlyList<string> UnknownFields,
-    IReadOnlyList<string> BlockedOperators)
+    IReadOnlyList<string> BlockedOperators,
+    string? ExemptionType = null)
 {
     public static readonly GuardrailResult Allowed = new(GuardrailOutcome.Allowed, null, [], [], []);
 }
