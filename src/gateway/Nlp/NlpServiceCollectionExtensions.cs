@@ -66,6 +66,8 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<INotificationSender, SimulatedNotificationSender>();
         services.AddSingleton<IColumnCatalog, ColumnCatalog>();
         services.AddSingleton<ConversationOrchestrator>();
+        services.AddSingleton<IConversationResumeHandler>(sp => sp.GetRequiredService<ConversationOrchestrator>());
+        services.AddSingleton<IGovernanceService, GovernanceService>();
 
         return services;
     }

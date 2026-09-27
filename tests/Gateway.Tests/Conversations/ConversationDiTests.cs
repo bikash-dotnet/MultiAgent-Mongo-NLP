@@ -29,6 +29,9 @@ public class ConversationDiTests
         Assert.NotNull(provider.GetService<INotificationSender>());
         Assert.NotNull(provider.GetService<IColumnCatalog>());
         Assert.NotNull(provider.GetService<ConversationOrchestrator>());
+        Assert.NotNull(provider.GetService<IGovernanceService>());
+        Assert.NotNull(provider.GetService<IConversationResumeHandler>());
+        Assert.Same(provider.GetService<ConversationOrchestrator>(), provider.GetService<IConversationResumeHandler>());
     }
 
     private sealed class StubNlpOrchestrator : INlpOrchestrator
