@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
 using Gateway.Nlp.Router;
@@ -40,7 +41,8 @@ public sealed class NlpOrchestrator : INlpOrchestrator
     public async Task<NlpRouteResult> OrchestrateAsync(
         string utterance,
         string sessionId = "anonymous",
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        RequesterContext? requester = null)
     {
         _events.Publish(new AgentEvent("agent.started", "started", utterance));
 
@@ -104,7 +106,7 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             return result;
         }
 
-        var guard = _guardrails.Evaluate(result.Mql);
+        var guard = _guardrails.Evaluate(result.Mql, requester?.Role);
 
         if (guard.Outcome == GuardrailOutcome.Rejected)
         {
@@ -117,6 +119,12 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             };
         }
 
+        if (guard.ExemptionType is not null)
+        {
+            _events.Publish(new AgentEvent("governance.exempted", "exempted", guard.ExemptionType));
+            return result with { SensitiveFields = guard.SensitiveFields };
+        }
+
         if (guard.Outcome == GuardrailOutcome.PausedForApproval)
         {
             var request = await _accessRequests.CreateAsync(
@@ -127,12 +135,19 @@ public sealed class NlpOrchestrator : INlpOrchestrator
                     guard.SensitiveFields,
                     AccessRequest.PendingLead,
                     Justification: null,
-                    _clock.GetUtcNow()),
+                    _clock.GetUtcNow(),
+                    Requester: requester is null
+                        ? null
+                        : new RequesterInfo(requester.UserId, requester.Name, requester.Role, requester.LeadUserId),
+                    AssignedLeadId: requester?.LeadUserId,
+                    RequestedFlags: guard.SensitiveFields
+                        .Select(field => new RequestedFlag(field, "requires_approval"))
+                        .ToList()),
                 cancellationToken);
 
             _events.Publish(new AgentEvent("governance.paused", "paused", guard.Reason));
             await _stateStore.SaveAsync(
-                new AgentState(sessionId, "governance_paused", guard.Reason, _clock.GetUtcNow()),
+                new AgentState(sessionId, "governance_paused", guard.Reason, _clock.GetUtcNow(), request.Id),
                 cancellationToken);
 
             return result with

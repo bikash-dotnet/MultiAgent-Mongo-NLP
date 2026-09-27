@@ -36,7 +36,8 @@ public class ConversationDiTests
         public Task<NlpRouteResult> OrchestrateAsync(
             string utterance,
             string sessionId = "anonymous",
-            CancellationToken cancellationToken = default) =>
+            CancellationToken cancellationToken = default,
+            Gateway.Governance.RequesterContext? requester = null) =>
             throw new NotImplementedException();
     }
 
