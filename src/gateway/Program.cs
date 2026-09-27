@@ -7,6 +7,7 @@ using Gateway.Conversations;
 using Gateway.Governance;
 using Gateway.Greeting;
 using Gateway.Nlp;
+using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Http;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
@@ -229,6 +230,120 @@ app.MapPut("/api/governance/approval", async (
     return Results.Ok(new { enabled = flags.Enabled });
 }).RequireAuthorization();
 
+app.MapGet("/api/access-requests", async (
+    string? status,
+    ClaimsPrincipal user,
+    IGovernanceService governance,
+    CancellationToken cancellationToken) =>
+{
+    var viewer = SessionClaims.ToRequesterContext(user);
+    var requests = await governance.ListAsync(viewer, status, cancellationToken);
+    return Results.Ok(requests);
+}).RequireAuthorization();
+
+app.MapGet("/api/access-requests/{id}", async (
+    string id,
+    ClaimsPrincipal user,
+    IGovernanceService governance,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var viewer = SessionClaims.ToRequesterContext(user);
+        return Results.Ok(await governance.GetForViewerAsync(id, viewer, cancellationToken));
+    }
+    catch (GovernanceNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (GovernanceForbiddenException)
+    {
+        return Results.Forbid();
+    }
+}).RequireAuthorization();
+
+app.MapPost("/api/access-requests/{id}/approve", async (
+    string id,
+    GovernanceDecisionRequest? body,
+    ClaimsPrincipal user,
+    IGovernanceService governance,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var actor = SessionClaims.ToRequesterContext(user);
+        return Results.Ok(await governance.ApproveAsync(id, actor, body?.Notes, cancellationToken));
+    }
+    catch (GovernanceNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (GovernanceForbiddenException)
+    {
+        return Results.Forbid();
+    }
+    catch (GovernanceConflictException error)
+    {
+        return Results.Conflict(new { error = error.Message });
+    }
+}).RequireAuthorization();
+
+app.MapPost("/api/access-requests/{id}/reject", async (
+    string id,
+    GovernanceDecisionRequest? body,
+    ClaimsPrincipal user,
+    IGovernanceService governance,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var actor = SessionClaims.ToRequesterContext(user);
+        return Results.Ok(await governance.RejectAsync(id, actor, body?.Notes, cancellationToken));
+    }
+    catch (GovernanceNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (GovernanceForbiddenException)
+    {
+        return Results.Forbid();
+    }
+    catch (GovernanceConflictException error)
+    {
+        return Results.Conflict(new { error = error.Message });
+    }
+}).RequireAuthorization();
+
+app.MapPost("/api/access-requests/{id}/override", async (
+    string id,
+    GovernanceDecisionRequest? body,
+    ClaimsPrincipal user,
+    IGovernanceService governance,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var actor = SessionClaims.ToRequesterContext(user);
+        return Results.Ok(await governance.OverrideAsync(id, actor, body?.Notes ?? string.Empty, cancellationToken));
+    }
+    catch (GovernanceNotFoundException)
+    {
+        return Results.NotFound();
+    }
+    catch (GovernanceForbiddenException)
+    {
+        return Results.Forbid();
+    }
+    catch (GovernanceValidationException error)
+    {
+        return Results.BadRequest(new { error = error.Message });
+    }
+    catch (GovernanceConflictException error)
+    {
+        return Results.Conflict(new { error = error.Message });
+    }
+}).RequireAuthorization();
+
 app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
 {
     context.Response.Headers.ContentType = "text/event-stream";
@@ -260,5 +375,7 @@ static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, Ca
 }
 
 public sealed record ApprovalFlagRequest(bool Enabled);
+
+public sealed record GovernanceDecisionRequest(string? Notes);
 
 public partial class Program;
