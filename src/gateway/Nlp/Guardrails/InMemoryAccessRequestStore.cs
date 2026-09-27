@@ -27,4 +27,9 @@ public sealed class InMemoryAccessRequestStore : IAccessRequestStore
         _requests[request.Id] = request;
         return Task.FromResult(request);
     }
+
+    public Task<IReadOnlyList<AccessRequest>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<AccessRequest>>(_requests.Values.ToList());
+    }
 }
