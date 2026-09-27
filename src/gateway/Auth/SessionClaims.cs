@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Gateway.Governance;
 
 namespace Gateway.Auth;
 
@@ -15,6 +16,7 @@ public static class SessionClaims
         "Business Analyst",
         "Team Lead",
         "Engineering Manager",
+        "Director",
         "Data Owner / Admin"
     ];
 
@@ -24,5 +26,18 @@ public static class SessionClaims
             ?? user.FindFirstValue(ClaimTypes.Name)
             ?? user.Identity?.Name
             ?? "there";
+    }
+
+    public static RequesterContext ToRequesterContext(ClaimsPrincipal user)
+    {
+        var userId = user.FindFirstValue(UserId) ?? "anonymous";
+        var role = user.FindFirstValue(Role) ?? string.Empty;
+        var leadUserId = user.FindFirstValue(LeadUserId);
+
+        return new RequesterContext(
+            userId,
+            DisplayName(user),
+            role,
+            string.IsNullOrWhiteSpace(leadUserId) ? null : leadUserId);
     }
 }
