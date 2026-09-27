@@ -15,7 +15,7 @@ public sealed class GuardrailEvaluator
         _flags = flags;
     }
 
-    public GuardrailResult Evaluate(string? pipelineJson)
+    public GuardrailResult Evaluate(string? pipelineJson, string? requesterRole = null)
     {
         var analysis = MqlAnalyzer.Analyze(pipelineJson);
 
@@ -65,6 +65,18 @@ public sealed class GuardrailEvaluator
 
         if (approvalFields.Count > 0 && _flags.Enabled)
         {
+            var approvalFlagList = matched.Where(flag => flag.RequiresApproval).ToList();
+            if (IsExempt(requesterRole, approvalFlagList))
+            {
+                return new GuardrailResult(
+                    GuardrailOutcome.Allowed,
+                    null,
+                    sensitiveFields,
+                    [],
+                    [],
+                    AccessRequest.ExemptionOwnerAccess);
+            }
+
             return new GuardrailResult(
                 GuardrailOutcome.PausedForApproval,
                 $"sensitive field requires approval: {string.Join(", ", approvalFields)}",
@@ -74,5 +86,16 @@ public sealed class GuardrailEvaluator
         }
 
         return new GuardrailResult(GuardrailOutcome.Allowed, null, sensitiveFields, [], []);
+    }
+
+    private static bool IsExempt(string? requesterRole, IReadOnlyList<SensitiveFieldFlag> approvalFlags)
+    {
+        if (string.IsNullOrWhiteSpace(requesterRole) || approvalFlags.Count == 0)
+        {
+            return false;
+        }
+
+        return approvalFlags.All(flag =>
+            flag.DataOwnerRoles.Any(ownerRole => RoleNormalizer.Matches(requesterRole, ownerRole)));
     }
 }
