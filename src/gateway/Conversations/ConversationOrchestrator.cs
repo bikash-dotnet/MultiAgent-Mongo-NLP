@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Gateway.Conversations;
 
-public sealed partial class ConversationOrchestrator
+public sealed partial class ConversationOrchestrator : IConversationResumeHandler
 {
     private readonly INlpOrchestrator _nlp;
     private readonly IConversationStore _store;
@@ -220,6 +220,27 @@ public sealed partial class ConversationOrchestrator
     {
         var state = await _store.GetAsync(conversationId, cancellationToken);
         return state is null ? null : ToTurn(state);
+    }
+
+    public async Task<bool> ResumeAsync(string accessRequestId, CancellationToken cancellationToken = default)
+    {
+        var state = await _store.FindByAccessRequestAsync(accessRequestId, cancellationToken);
+        if (state is null || !state.ApprovalRequired)
+        {
+            return false;
+        }
+
+        var resumed = await _store.UpdateAsync(
+            state with { ApprovalRequired = false, UpdatedAt = _clock.GetUtcNow() },
+            cancellationToken);
+
+        _events.Publish(new AgentEvent("conversation.resumed", "resumed", resumed.Id));
+        if (resumed.Draft.DeliveryFormat == ReportIntake.Csv)
+        {
+            _events.Publish(new AgentEvent("report.ready", "ready", resumed.Id));
+        }
+
+        return true;
     }
 
     private async Task<ConversationState> FinalizeAsync(

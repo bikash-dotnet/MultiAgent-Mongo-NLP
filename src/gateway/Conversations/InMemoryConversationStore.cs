@@ -22,6 +22,12 @@ public sealed class InMemoryConversationStore : IConversationStore
         return Task.FromResult(state);
     }
 
+    public Task<ConversationState?> FindByAccessRequestAsync(string accessRequestId, CancellationToken cancellationToken = default)
+    {
+        var match = _states.Values.FirstOrDefault(state => state.AccessRequestId == accessRequestId);
+        return Task.FromResult(match);
+    }
+
     public Task<ConversationState> UpdateAsync(ConversationState state, CancellationToken cancellationToken = default)
     {
         _states[state.Id] = state;
