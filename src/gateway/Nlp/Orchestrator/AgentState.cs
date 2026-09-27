@@ -4,4 +4,5 @@ public sealed record AgentState(
     string SessionId,
     string Stage,
     string? PendingQuestion,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string? AccessRequestId = null);

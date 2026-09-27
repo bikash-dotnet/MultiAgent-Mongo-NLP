@@ -17,7 +17,7 @@ public class ConversationOrchestratorApprovalTests
 
         public StubOrchestrator(NlpRouteResult result) => _result = result;
 
-        public Task<NlpRouteResult> OrchestrateAsync(string utterance, string sessionId = "anonymous", CancellationToken cancellationToken = default)
+        public Task<NlpRouteResult> OrchestrateAsync(string utterance, string sessionId = "anonymous", CancellationToken cancellationToken = default, Gateway.Governance.RequesterContext? requester = null)
             => Task.FromResult(_result);
     }
 

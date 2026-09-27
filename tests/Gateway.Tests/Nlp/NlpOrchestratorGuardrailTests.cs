@@ -1,3 +1,4 @@
+using Gateway.Governance;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Guardrails;
@@ -48,7 +49,11 @@ public class NlpOrchestratorGuardrailTests
     {
         var (sut, events, requests) = Build("""[{"$match":{"address.location.coordinates.lat":{"$gte":40}}}]""");
 
-        var result = await sut.OrchestrateAsync("average coordinates near me");
+        var result = await sut.OrchestrateAsync(
+            "average coordinates near me",
+            "sess_1",
+            default,
+            new RequesterContext("usr_analyst", "Analyst", "Business Analyst", "usr_lead"));
 
         Assert.Equal(NlpRouteKind.GovernancePaused, result.Kind);
         Assert.Contains("address.location.coordinates", result.SensitiveFields!);
@@ -57,6 +62,8 @@ public class NlpOrchestratorGuardrailTests
         var stored = await requests.GetAsync(result.AccessRequestId!);
         Assert.NotNull(stored);
         Assert.Equal(AccessRequest.PendingLead, stored!.Status);
+        Assert.Equal("usr_analyst", stored.Requester!.UserId);
+        Assert.Equal("usr_lead", stored.AssignedLeadId);
 
         var names = await Read(events, 2);
         Assert.Equal(["agent.started", "governance.paused"], names);
