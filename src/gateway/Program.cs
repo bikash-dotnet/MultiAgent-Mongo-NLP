@@ -138,7 +138,7 @@ app.MapPost("/api/nlp/query", async (NlpQueryRequest request, ClaimsPrincipal us
     }
 
     var sessionId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
-    var result = await orchestrator.OrchestrateAsync(utterance, sessionId, cancellationToken);
+    var result = await orchestrator.OrchestrateAsync(utterance, sessionId, cancellationToken, SessionClaims.ToRequesterContext(user));
     return Results.Ok(NlpQueryResponse.From(result));
 }).RequireAuthorization();
 
@@ -161,7 +161,7 @@ app.MapPost("/api/conversations", async (
 
     var sessionId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
     var email = user.FindFirst(SessionClaims.Email)?.Value;
-    var turn = await conversations.StartAsync(utterance, sessionId, email, cancellationToken);
+    var turn = await conversations.StartAsync(utterance, sessionId, email, cancellationToken, SessionClaims.ToRequesterContext(user));
     return Results.Ok(turn);
 }).RequireAuthorization();
 
