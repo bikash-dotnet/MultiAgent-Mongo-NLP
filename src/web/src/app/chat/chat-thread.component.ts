@@ -27,6 +27,7 @@ export class ChatThreadComponent {
   email = '';
   purpose = '';
   projectCode = '';
+  businessImpact = '';
   managerEmail = '';
   selectedColumns = new Set<string>();
   delivery = 'CSV';
@@ -61,6 +62,10 @@ export class ChatThreadComponent {
 
   submitPurpose(): void {
     this.answer({ purpose: this.purpose.trim(), projectCode: this.projectCode.trim() || undefined });
+  }
+
+  submitBusinessImpact(): void {
+    this.answer({ businessImpact: this.businessImpact.trim() });
   }
 
   submitManagerEmail(): void {
@@ -118,6 +123,8 @@ export class ChatThreadComponent {
           this.messages = [...this.messages, { role: 'user', text: answer.email }];
         } else if (answer.purpose) {
           this.messages = [...this.messages, { role: 'user', text: answer.purpose }];
+        } else if (answer.businessImpact) {
+          this.messages = [...this.messages, { role: 'user', text: answer.businessImpact }];
         } else if (answer.managerEmail) {
           this.messages = [...this.messages, { role: 'user', text: answer.managerEmail }];
         } else if (answer.columns) {
@@ -143,6 +150,9 @@ export class ChatThreadComponent {
     }
     if (turn.control === 'columns' && turn.columns) {
       this.selectedColumns = new Set(turn.columns.filter((column) => column.selected).map((column) => column.name));
+    }
+    if (turn.step !== 'BusinessImpact') {
+      this.businessImpact = '';
     }
     if (turn.validationError) {
       this.error = turn.validationError;

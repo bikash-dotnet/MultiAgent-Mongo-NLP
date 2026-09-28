@@ -25,6 +25,7 @@ export interface ConversationAnswer {
   email?: string;
   purpose?: string;
   projectCode?: string;
+  businessImpact?: string;
   managerEmail?: string;
   columns?: string[];
   delivery?: string;
