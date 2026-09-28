@@ -1,0 +1,30 @@
+<main class="shell">
+  <header class="hero">
+    <p class="eyebrow">Enterprise Multi-Agent Workspace</p>
+    @if (greeting) {
+      <h1>{{ greeting.message }}</h1>
+      <p class="period">Session period: {{ greeting.period }}</p>
+      <app-governance-toggle [visible]="canManageGovernance"></app-governance-toggle>
+    } @else if (error) {
+      <h1>Workspace unavailable</h1>
+      <p>{{ error }}</p>
+    } @else {
+      <h1>Signing you in…</h1>
+    }
+  </header>
+
+  <div class="layout">
+    <app-chat-thread [greeting]="greeting"></app-chat-thread>
+
+    <aside class="telemetry">
+      <h2>Agent swarm</h2>
+      <p>Transport: Server-Sent Events</p>
+      <p class="status">Status: {{ streamStatus }}</p>
+      <ul class="activity">
+        @for (event of agentActivity; track $index) {
+          <li>{{ event }}</li>
+        }
+      </ul>
+    </aside>
+  </div>
+</main>

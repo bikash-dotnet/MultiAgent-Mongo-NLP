@@ -1,0 +1,36 @@
+<section class="queue">
+  <h2>Governance approvals</h2>
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+  @if (requests.length === 0) {
+    <p>No requests in your queue.</p>
+  }
+  @for (request of requests; track request.id) {
+    <article class="card" [attr.data-status]="request.status">
+      <header>
+        <h3>{{ request.requester?.name }}</h3>
+        <span class="status">{{ request.status }}</span>
+      </header>
+      <p class="fields">Fields: {{ request.sensitiveFields.join(', ') }}</p>
+      @if (request.justificationDetails; as justification) {
+        <dl>
+          <dt>Business reason</dt>
+          <dd>{{ justification.businessReason }}</dd>
+          <dt>Business impact</dt>
+          <dd>{{ justification.businessImpact }}</dd>
+          <dt>Project code</dt>
+          <dd>{{ justification.projectCode || 'n/a' }}</dd>
+        </dl>
+      }
+      @if (request.status === 'PENDING_LEAD' && canDecide) {
+        <div class="actions">
+          <button type="button" (click)="approve(request)">Approve</button>
+          <button type="button" (click)="reject(request)">Reject</button>
+          <input name="overrideNotes" placeholder="Override notes" [(ngModel)]="overrideNotes" />
+          <button type="button" (click)="override(request)">Override</button>
+        </div>
+      }
+    </article>
+  }
+</section>
