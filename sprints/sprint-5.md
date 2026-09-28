@@ -61,12 +61,12 @@
 
 ## Acceptance criteria
 
-- [ ] Data Owner / Admin executes sensitive queries without a pending request (BRD-FR-06)
-- [ ] Business Analyst sensitive query creates `PENDING_LEAD` and requires justification
-- [ ] Team Lead can approve subordinate requests and resume execution
-- [ ] Engineering Manager / Director / Data Owner can claim and approve `PENDING_LEAD` items (BRD-FR-07)
-- [ ] Override records `override_invoked`, actor, timestamp, justification
-- [ ] Paused SK state survives the hold and resumes after `APPROVED`
+- [x] Data Owner / Admin executes sensitive queries without a pending request (BRD-FR-06)
+- [x] Business Analyst sensitive query creates `PENDING_LEAD` and requires justification
+- [x] Team Lead can approve subordinate requests and resume execution
+- [x] Engineering Manager / Director / Data Owner can claim and approve `PENDING_LEAD` items (BRD-FR-07)
+- [x] Override records `override_invoked`, actor, timestamp, justification
+- [x] Paused SK state survives the hold and resumes after `APPROVED`
 
 ---
 

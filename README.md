@@ -47,3 +47,25 @@ All copy lives in the `DECK` object at the top of the file so the same content c
 
 Every generated MQL pipeline passes a guardrail step before execution. Unparseable pipelines are rejected, write/admin operators (`$out`, `$merge`, `drop`, `deleteMany`) and unknown field paths are rejected, and queries touching `is_sensitive` registry fields with `requires_approval` pause with a `governance.paused` event plus a `PENDING_LEAD` access request. The seed registry lives in `src/gateway/Nlp/Assets/Schema/field_registry.json`; the step is benchmarked in `docs/benchmarks/sprint-4-nfr01.md`.
 
+## Governance approvals
+
+Sensitive requests move through a hierarchical approval workflow while paused. A user whose
+role is in the field's `data_owner_roles` (currently `DataOwner` or `Admin`, matched with
+role normalization so `Data Owner / Admin` qualifies) is exempt: the guardrail returns
+`EXEMPTION_OWNER_ACCESS`, no `PENDING_LEAD` item is created, and execution continues.
+
+Everyone else who requests a gated field first supplies a business reason, a project code,
+and a business impact in the chat. The request is assigned to the requester's
+`lead_user_id`. A Team Lead sees only requests assigned to them and can approve (status
+`APPROVED`, which resumes the paused conversation and unlocks the CSV download) or reject
+(terminal `REJECTED`, which never resumes). An Engineering Manager, Director, or Data Owner
+can claim any `PENDING_LEAD` item and override it; an override requires notes and is tagged
+`override_invoked = true` with `override_type = HIERARCHICAL_MANAGEMENT_OVERRIDE` plus the
+resolver id, role, and timestamp. Analysts see only their own requests.
+
+The Angular portal exposes this at the `/governance` route, backed by
+`GET /api/access-requests`, `GET /api/access-requests/{id}`, and the
+`POST /api/access-requests/{id}/approve|reject|override` decisions. All state is in-memory:
+the `access_requests` and conversation stores reset when the gateway restarts, and the
+MongoDB persistence and full execution audit land in Sprint 6.
+
