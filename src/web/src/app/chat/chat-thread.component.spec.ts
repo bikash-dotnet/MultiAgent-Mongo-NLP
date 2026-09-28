@@ -117,4 +117,21 @@ describe('ChatThreadComponent', () => {
 
     expect(fixture.nativeElement.querySelector('#step-manager')).toBeTruthy();
   });
+
+  it('submits the business impact answer', () => {
+    const fixture = TestBed.createComponent(ChatThreadComponent);
+    const component = fixture.componentInstance;
+    let captured: any = null;
+    const conversations = TestBed.inject(ConversationService) as any;
+    conversations.answer = (_id: string, answer: any) => {
+      captured = answer;
+      return of({ conversationId: 'c1', step: 'ManagerEmail', kind: 'GovernancePaused', assistantMessage: 'Manager?', control: 'none', deliveryOptions: ['EMAIL', 'CSV'], approvalRequired: true, downloadable: false, demoReport: false });
+    };
+    component.turn = { conversationId: 'c1', step: 'BusinessImpact', kind: 'GovernancePaused', assistantMessage: 'Impact?', control: 'businessimpact', deliveryOptions: ['EMAIL', 'CSV'], approvalRequired: true, downloadable: false, demoReport: false } as any;
+
+    component.businessImpact = 'Target market expansion planning';
+    component.submitBusinessImpact();
+
+    expect(captured).toEqual({ businessImpact: 'Target market expansion planning' });
+  });
 });

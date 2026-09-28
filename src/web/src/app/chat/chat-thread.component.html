@@ -41,6 +41,12 @@
       <input id="step-project" name="projectCode" [(ngModel)]="projectCode" />
       <button type="submit" [disabled]="pending">Confirm purpose</button>
     </form>
+  } @else if (turn?.control === 'businessimpact') {
+    <form class="step" (ngSubmit)="submitBusinessImpact()">
+      <label for="step-impact">Business impact</label>
+      <textarea id="step-impact" name="businessImpact" [(ngModel)]="businessImpact" required></textarea>
+      <button type="submit" [disabled]="pending">Confirm impact</button>
+    </form>
   } @else if (turn?.control === 'columns') {
     <fieldset class="step">
       <legend>Columns</legend>
