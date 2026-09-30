@@ -33,11 +33,13 @@ public static class SessionClaims
         var userId = user.FindFirstValue(UserId) ?? "anonymous";
         var role = user.FindFirstValue(Role) ?? string.Empty;
         var leadUserId = user.FindFirstValue(LeadUserId);
+        var email = user.FindFirstValue(Email);
 
         return new RequesterContext(
             userId,
             DisplayName(user),
             role,
-            string.IsNullOrWhiteSpace(leadUserId) ? null : leadUserId);
+            string.IsNullOrWhiteSpace(leadUserId) ? null : leadUserId,
+            string.IsNullOrWhiteSpace(email) ? null : email);
     }
 }
