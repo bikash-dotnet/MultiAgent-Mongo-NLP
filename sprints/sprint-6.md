@@ -60,12 +60,12 @@
 
 ## Acceptance criteria
 
-- [ ] Every execution writes a complete `audit_logs` document (BRD-FR-08)
-- [ ] Execution Runner can target MongoDB or Enterprise Core REST without client change (BRD-FR-10)
-- [ ] Queries exceeding 5,000 ms are cancelled and audited
-- [ ] `audit_logs` has no update/delete path (BRD-NFR-09)
-- [ ] Sensitive query after approval returns listing rows
-- [ ] Paused state survives gateway restart (BRD-NFR-13)
+- [x] Every execution writes a complete `audit_logs` document (BRD-FR-08)
+- [x] Execution Runner can target MongoDB or Enterprise Core REST without client change (BRD-FR-10)
+- [x] Queries exceeding 5,000 ms are cancelled and audited
+- [x] `audit_logs` has no update/delete path (BRD-NFR-09)
+- [x] Sensitive query after approval returns listing rows
+- [x] Paused state survives gateway restart (BRD-NFR-13)
 
 ---
 
