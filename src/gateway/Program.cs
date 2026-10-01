@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Gateway.Auth;
 using Gateway.Conversations;
+using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Greeting;
 using Gateway.Nlp;
@@ -109,6 +110,28 @@ if (app.Environment.IsDevelopment())
             expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: creds);
         return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(jwt) });
+    });
+
+    app.MapPost("/dev/enterprise-core/query", (EnterpriseCoreQueryRequest body) =>
+    {
+        var columns = body.Columns is { Count: > 0 } list
+            ? list
+            : new List<string> { "name", "address.market", "price" };
+        var request = new ExecutionRequest(
+            body.Query ?? "[]",
+            "dev",
+            "dev",
+            ExecutionDataSource.EnterpriseCoreREST,
+            body.Collection ?? "listingsAndReviews",
+            columns,
+            new Dictionary<string, string>(),
+            false,
+            false,
+            0,
+            new RequesterContext("dev", "dev", "Business Analyst", null),
+            GovernanceDecision.None);
+        var result = DemoTabularSource.Build(request);
+        return Results.Ok(new { columns = result.Columns, rows = result.Rows });
     });
 }
 
@@ -379,5 +402,7 @@ static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, Ca
 public sealed record ApprovalFlagRequest(bool Enabled);
 
 public sealed record GovernanceDecisionRequest(string? Notes);
+
+public sealed record EnterpriseCoreQueryRequest(string? Query, string? Collection, IReadOnlyList<string>? Columns);
 
 public partial class Program;
