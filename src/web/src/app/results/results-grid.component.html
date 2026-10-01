@@ -1,0 +1,25 @@
+<div class="grid" *ngIf="execution; else empty">
+  <div class="grid-meta">
+    <span>{{ execution.rowCount }} rows</span>
+    <span>{{ execution.dataSource }}</span>
+    <span>{{ execution.durationMs }} ms</span>
+    <span class="grid-error" *ngIf="execution.error">{{ execution.error }}</span>
+  </div>
+  <div class="grid-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th *ngFor="let column of execution.columns">{{ column }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of execution.rows">
+          <td *ngFor="let column of execution.columns">{{ value(row, column) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<ng-template #empty>
+  <p class="grid-empty">No rows to display.</p>
+</ng-template>
