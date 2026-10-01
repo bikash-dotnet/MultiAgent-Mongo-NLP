@@ -1,9 +1,11 @@
 using System.Text.Json;
+using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
+using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp.Orchestrator;
 
@@ -17,6 +19,8 @@ public sealed class NlpOrchestrator : INlpOrchestrator
     private readonly GuardrailEvaluator _guardrails;
     private readonly IAccessRequestStore _accessRequests;
     private readonly TimeProvider _clock;
+    private readonly ITabularQueryExecutor? _executor;
+    private readonly ExecutionOptions _execution;
 
     public NlpOrchestrator(
         INlpRouter router,
@@ -26,7 +30,9 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         IAgentStateStore stateStore,
         GuardrailEvaluator guardrails,
         IAccessRequestStore accessRequests,
-        TimeProvider clock)
+        TimeProvider clock,
+        ITabularQueryExecutor? executor = null,
+        IOptions<ExecutionOptions>? executionOptions = null)
     {
         _router = router;
         _gazetteer = gazetteer;
@@ -36,6 +42,8 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         _guardrails = guardrails;
         _accessRequests = accessRequests;
         _clock = clock;
+        _executor = executor;
+        _execution = executionOptions?.Value ?? new ExecutionOptions();
     }
 
     public async Task<NlpRouteResult> OrchestrateAsync(
@@ -119,12 +127,6 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             };
         }
 
-        if (guard.ExemptionType is not null)
-        {
-            _events.Publish(new AgentEvent("governance.exempted", "exempted", guard.ExemptionType));
-            return result with { SensitiveFields = guard.SensitiveFields };
-        }
-
         if (guard.Outcome == GuardrailOutcome.PausedForApproval)
         {
             var request = await _accessRequests.CreateAsync(
@@ -159,10 +161,58 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             };
         }
 
-        _events.Publish(new AgentEvent("agent.completed", "completed", result.Kind.ToString()));
+        if (guard.ExemptionType is not null)
+        {
+            _events.Publish(new AgentEvent("governance.exempted", "exempted", guard.ExemptionType));
+        }
+
+        var sensitiveFields = guard.SensitiveFields.Count > 0 ? guard.SensitiveFields : null;
+
+        if (_executor is null || result.Mql is null)
+        {
+            _events.Publish(new AgentEvent("agent.completed", "completed", result.Kind.ToString()));
+            return result with { SensitiveFields = sensitiveFields };
+        }
+
+        var governance = new GovernanceDecision(
+            guard.SensitiveFields.Count > 0,
+            guard.SensitiveFields,
+            guard.ExemptionType,
+            false,
+            guard.ExemptionType is not null ? requester?.Name : null);
+
+        var columns = MqlAnalyzer.Analyze(result.Mql).FieldPaths;
+        var user = requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null);
+        var execution = await _executor.ExecuteAsync(
+            new ExecutionRequest(
+                result.Mql,
+                sessionId,
+                utterance,
+                _execution.DataSource,
+                _execution.Collection,
+                columns,
+                new Dictionary<string, string>
+                {
+                    ["limit"] = result.ClarificationsApplied.Limit.ToString(),
+                    ["sort"] = result.ClarificationsApplied.Sort,
+                    ["market"] = result.ClarificationsApplied.Market
+                },
+                result.SemanticCacheHit,
+                result.SlotExtractionUsed,
+                result.LlmTokensConsumed,
+                user,
+                governance),
+            cancellationToken);
+
         return result with
         {
-            SensitiveFields = guard.SensitiveFields.Count > 0 ? guard.SensitiveFields : null
+            SensitiveFields = sensitiveFields,
+            Columns = execution.Columns,
+            Rows = execution.Rows,
+            DataSource = execution.DataSource,
+            RowCount = execution.RowCount,
+            DurationMs = execution.DurationMs,
+            ExecutionError = execution.Error
         };
     }
 }
