@@ -1,3 +1,5 @@
+import { ExecutionPayload } from './execution';
+
 export interface NlpQueryResponse {
   kind: string;
   mql: string | null;
@@ -9,4 +11,5 @@ export interface NlpQueryResponse {
   llmTokensConsumed: number;
   llmAttempts: number;
   error: string | null;
+  execution?: ExecutionPayload | null;
 }

@@ -1,3 +1,5 @@
+import { ExecutionPayload } from './execution';
+
 export interface ColumnOption {
   name: string;
   selected: boolean;
@@ -18,6 +20,7 @@ export interface ConversationTurn {
   demoReport: boolean;
   result?: unknown;
   validationError?: string | null;
+  execution?: ExecutionPayload | null;
 }
 
 export interface ConversationAnswer {

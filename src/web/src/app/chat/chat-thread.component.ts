@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Greeting } from '../models/greeting';
 import { ConversationAnswer, ConversationTurn } from '../models/conversation';
 import { ConversationService } from '../services/conversation.service';
+import { ResultsGridComponent } from '../results/results-grid.component';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -14,7 +15,7 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat-thread',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ResultsGridComponent],
   templateUrl: './chat-thread.component.html',
   styleUrl: './chat-thread.component.scss'
 })

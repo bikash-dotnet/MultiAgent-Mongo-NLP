@@ -80,6 +80,8 @@
     <button type="button" class="download" (click)="download()">Download CSV</button>
   }
 
+  <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
+
   @if (!turn || turn.step === 'Complete') {
     <form class="composer" (ngSubmit)="send()">
       <label class="sr-only" for="utterance">Ask about listings</label>
