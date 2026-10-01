@@ -260,12 +260,32 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
             return false;
         }
 
+        var request = state.AccessRequestId is null
+            ? null
+            : await _accessRequests.GetAsync(state.AccessRequestId, cancellationToken);
+
+        var governance = new GovernanceDecision(
+            state.SensitiveFields.Count > 0,
+            state.SensitiveFields,
+            null,
+            request?.Resolution?.OverrideInvoked ?? false,
+            request?.Resolution?.ResolvedByName);
+
         var resumed = await _store.UpdateAsync(
             state with { ApprovalRequired = false, UpdatedAt = _clock.GetUtcNow() },
             cancellationToken);
 
         _events.Publish(new AgentEvent("conversation.resumed", "resumed", resumed.Id));
-        if (resumed.Draft.DeliveryFormat == ReportIntake.Csv)
+
+        if (resumed.Mql is not null && _executor is not null)
+        {
+            var execution = await _executor.ExecuteAsync(
+                BuildRequest(resumed, governance, resumed.Draft.DeliveryFormat),
+                cancellationToken);
+            resumed = await _store.UpdateAsync(resumed with { Execution = execution }, cancellationToken);
+        }
+
+        if (resumed.Draft.DeliveryFormat == ReportIntake.Csv && resumed.Execution?.Error is null)
         {
             _events.Publish(new AgentEvent("report.ready", "ready", resumed.Id));
         }
