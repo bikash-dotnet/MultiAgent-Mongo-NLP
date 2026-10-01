@@ -134,4 +134,33 @@ describe('ChatThreadComponent', () => {
 
     expect(captured).toEqual({ businessImpact: 'Target market expansion planning' });
   });
+
+  it('renders the results grid when a turn carries an execution payload', () => {
+    const fixture = TestBed.createComponent(ChatThreadComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.turn = {
+      conversationId: 'c1',
+      step: 'Complete',
+      kind: 'ComplexLlmRequired',
+      assistantMessage: 'done',
+      control: 'none',
+      deliveryOptions: ['EMAIL', 'CSV'],
+      approvalRequired: false,
+      downloadable: true,
+      demoReport: false,
+      execution: {
+        columns: ['name'],
+        rows: [{ name: 'row-1' }],
+        dataSource: 'Mongo',
+        rowCount: 1,
+        durationMs: 3,
+        timedOut: false
+      }
+    };
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('row-1');
+  });
 });
