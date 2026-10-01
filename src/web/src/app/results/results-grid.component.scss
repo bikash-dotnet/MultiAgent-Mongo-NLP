@@ -1,0 +1,49 @@
+.grid {
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.grid-meta {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #55606e;
+  border-bottom: 1px solid #e2e5ea;
+}
+
+.grid-error {
+  color: #b3261e;
+}
+
+.grid-scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid #eef0f3;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: #f7f8fa;
+}
+
+.grid-empty {
+  color: #55606e;
+  font-size: 13px;
+}
