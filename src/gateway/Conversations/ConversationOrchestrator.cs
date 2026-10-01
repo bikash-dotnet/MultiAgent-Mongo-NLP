@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Http;
@@ -20,6 +21,8 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
     private readonly IAgentEventSink _events;
     private readonly ReportsOptions _reports;
     private readonly TimeProvider _clock;
+    private readonly ITabularQueryExecutor? _executor;
+    private readonly ExecutionOptions _execution;
 
     public ConversationOrchestrator(
         INlpOrchestrator nlp,
@@ -30,7 +33,9 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         IColumnCatalog columns,
         IAgentEventSink events,
         IOptions<ReportsOptions> reports,
-        TimeProvider clock)
+        TimeProvider clock,
+        ITabularQueryExecutor? executor = null,
+        IOptions<ExecutionOptions>? executionOptions = null)
     {
         _nlp = nlp;
         _store = store;
@@ -41,6 +46,8 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         _events = events;
         _reports = reports.Value;
         _clock = clock;
+        _executor = executor;
+        _execution = executionOptions?.Value ?? new ExecutionOptions();
     }
 
     public async Task<ConversationTurn> StartAsync(
@@ -319,19 +326,46 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
             _events.Publish(new AgentEvent("report.email_simulated", "sent", intake.RequesterEmail));
         }
 
-        if (intake.DeliveryFormat == ReportIntake.Csv && !approvalRequired)
-        {
-            _events.Publish(new AgentEvent("report.ready", "ready", state.Id));
-        }
-
-        _events.Publish(new AgentEvent("conversation.completed", "completed", state.Id));
-
-        return state with
+        var updated = state with
         {
             Step = ConversationStep.Complete,
             ApprovalRequired = approvalRequired,
             UpdatedAt = _clock.GetUtcNow()
         };
+
+        if (!approvalRequired && updated.Mql is not null && _executor is not null)
+        {
+            var execution = await _executor.ExecuteAsync(
+                BuildRequest(updated, GovernanceDecision.None, updated.Draft.DeliveryFormat),
+                cancellationToken);
+            updated = updated with { Execution = execution };
+        }
+
+        if (intake.DeliveryFormat == ReportIntake.Csv && !approvalRequired && updated.Execution?.Error is null)
+        {
+            _events.Publish(new AgentEvent("report.ready", "ready", updated.Id));
+        }
+
+        _events.Publish(new AgentEvent("conversation.completed", "completed", updated.Id));
+        return updated;
+    }
+
+    private ExecutionRequest BuildRequest(ConversationState state, GovernanceDecision governance, string? exportFormat)
+    {
+        return new ExecutionRequest(
+            state.Mql ?? "[]",
+            state.SessionId,
+            state.Utterance,
+            _execution.DataSource,
+            _execution.Collection,
+            state.Draft.Columns ?? [],
+            new Dictionary<string, string>(),
+            false,
+            false,
+            0,
+            new RequesterContext(state.SessionId, state.SessionId, string.Empty, null, state.Draft.RequesterEmail),
+            governance,
+            exportFormat);
     }
 
     private ConversationTurn ToTurn(ConversationState state)
@@ -368,7 +402,8 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
             downloadable,
             state.DemoReport,
             state.Result,
-            null);
+            null,
+            state.Execution);
     }
 
     private string StepMessage(ConversationState state)

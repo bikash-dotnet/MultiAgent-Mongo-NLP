@@ -1,3 +1,4 @@
+using Gateway.Execution;
 using Gateway.Nlp.Http;
 using Gateway.Nlp.Router;
 
@@ -18,4 +19,5 @@ public sealed record ConversationState(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     string? Message = null,
-    NlpQueryResponse? Result = null);
+    NlpQueryResponse? Result = null,
+    TabularResult? Execution = null);

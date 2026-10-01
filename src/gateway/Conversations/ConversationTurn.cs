@@ -1,3 +1,4 @@
+using Gateway.Execution;
 using Gateway.Nlp.Http;
 
 namespace Gateway.Conversations;
@@ -16,4 +17,5 @@ public sealed record ConversationTurn(
     bool Downloadable,
     bool DemoReport,
     NlpQueryResponse? Result,
-    string? ValidationError);
+    string? ValidationError,
+    TabularResult? Execution = null);

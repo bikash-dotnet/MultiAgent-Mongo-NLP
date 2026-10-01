@@ -202,7 +202,9 @@ app.MapGet("/api/conversations/{id}/report.csv", async (
     }
 
     var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
-    var build = ReportService.BuildCsv(columns, turn.ApprovalRequired);
+    var build = turn.Execution is not null
+        ? ReportService.BuildCsv(turn.Execution.Rows, columns)
+        : ReportService.BuildCsv(columns, turn.ApprovalRequired);
     if (!build.Ready)
     {
         return Results.Conflict(new { error = build.Reason });

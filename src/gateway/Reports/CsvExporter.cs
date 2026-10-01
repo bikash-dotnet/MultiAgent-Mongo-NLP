@@ -31,6 +31,21 @@ public static class CsvExporter
         return builder.ToString();
     }
 
+    public static string Export(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<string> columns)
+    {
+        var builder = new StringBuilder();
+        builder.Append(string.Join(',', columns.Select(Escape)));
+
+        foreach (var row in rows)
+        {
+            builder.Append('\n');
+            builder.Append(string.Join(',', columns.Select(column =>
+                Escape(row.TryGetValue(column, out var value) ? value ?? string.Empty : string.Empty))));
+        }
+
+        return builder.ToString();
+    }
+
     private static string Value(ListingRow row, string column)
     {
         return Selectors.TryGetValue(column, out var selector) ? selector(row) : string.Empty;
