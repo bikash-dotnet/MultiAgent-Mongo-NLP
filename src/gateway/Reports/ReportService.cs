@@ -21,4 +21,14 @@ public static class ReportService
 
         return new ReportBuild(true, CsvExporter.Export(DemoListingSource.Rows(), columns), null);
     }
+
+    public static ReportBuild BuildCsv(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<string> columns)
+    {
+        if (columns.Count == 0)
+        {
+            return new ReportBuild(false, null, "No columns were confirmed for this report.");
+        }
+
+        return new ReportBuild(true, CsvExporter.Export(rows, columns), null);
+    }
 }
