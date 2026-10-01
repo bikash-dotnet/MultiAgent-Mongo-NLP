@@ -15,7 +15,13 @@ public sealed record NlpQueryResponse(
     string? Error,
     IReadOnlyList<string>? SensitiveFields,
     string? AccessRequestId,
-    string? GuardrailReason)
+    string? GuardrailReason,
+    IReadOnlyList<string>? Columns = null,
+    IReadOnlyList<IReadOnlyDictionary<string, string?>>? Rows = null,
+    string? DataSource = null,
+    int? RowCount = null,
+    long? DurationMs = null,
+    string? ExecutionError = null)
 {
     public static NlpQueryResponse From(NlpRouteResult result)
     {
@@ -32,6 +38,12 @@ public sealed record NlpQueryResponse(
             result.Error,
             result.SensitiveFields,
             result.AccessRequestId,
-            result.GuardrailReason);
+            result.GuardrailReason,
+            result.Columns,
+            result.Rows,
+            result.DataSource,
+            result.RowCount,
+            result.DurationMs,
+            result.ExecutionError);
     }
 }

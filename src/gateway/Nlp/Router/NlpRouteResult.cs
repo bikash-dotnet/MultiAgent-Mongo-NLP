@@ -28,4 +28,10 @@ public sealed record NlpRouteResult(
     string? Error = null,
     IReadOnlyList<string>? SensitiveFields = null,
     string? AccessRequestId = null,
-    string? GuardrailReason = null);
+    string? GuardrailReason = null,
+    IReadOnlyList<string>? Columns = null,
+    IReadOnlyList<IReadOnlyDictionary<string, string?>>? Rows = null,
+    string? DataSource = null,
+    int? RowCount = null,
+    long? DurationMs = null,
+    string? ExecutionError = null);
