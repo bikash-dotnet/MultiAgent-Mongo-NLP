@@ -65,7 +65,23 @@ resolver id, role, and timestamp. Analysts see only their own requests.
 
 The Angular portal exposes this at the `/governance` route, backed by
 `GET /api/access-requests`, `GET /api/access-requests/{id}`, and the
-`POST /api/access-requests/{id}/approve|reject|override` decisions. All state is in-memory:
-the `access_requests` and conversation stores reset when the gateway restarts, and the
-MongoDB persistence and full execution audit land in Sprint 6.
+`POST /api/access-requests/{id}/approve|reject|override` decisions. All state is durable:
+the `access_requests` and conversation stores survive a gateway restart, as described in
+the execution and durable holds section below.
+
+## Execution, audit, and durable holds
+
+Approved or unrestricted read-only pipelines execute through the Execution Runner. The server
+picks the transport from `Execution:DataSource` (`Mongo` or `EnterpriseCoreREST`); the client
+never chooses it, and both paths return the same tabular payload that the SPA renders in the
+results grid. Execution is capped at `Execution:TimeoutMs` (default 5,000 ms); a timeout is
+cancelled and audited rather than thrown. Every execution appends one BRD 6.1 document to the
+append-only `audit_logs` collection, and the store exposes no update or delete path.
+
+Persistence is selected at startup by `Persistence:Mode`: `auto` uses MongoDB when reachable and
+otherwise falls back to a file-backed store under `Persistence:DataDirectory`. Access requests,
+agent state, conversations, and the audit trail all go through this seam, so a governance hold
+survives a gateway restart and an approved request still resumes. Without a MongoDB server the
+Development build routes Enterprise Core calls to the local `POST /dev/enterprise-core/query`
+stub, and the demo tabular source keeps the preview working when neither backend is reachable.
 
