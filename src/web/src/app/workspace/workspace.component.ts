@@ -7,6 +7,13 @@ import { SessionService } from '../services/session.service';
 import { ChatThreadComponent } from '../chat/chat-thread.component';
 import { GovernanceToggleComponent } from '../governance/governance-toggle.component';
 
+interface Conversation {
+  intent: string;
+  appliedSlots: string[];
+  reportProgress: number;
+  governanceStatus: string;
+}
+
 @Component({
   selector: 'app-workspace',
   standalone: true,
@@ -20,6 +27,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   agentActivity: string[] = [];
   canManageGovernance = false;
   error: string | null = null;
+  activeConversation: Conversation | null = null;
   private sub = new Subscription();
 
   constructor(
@@ -60,5 +68,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         }
       })
     );
+  }
+
+  setActiveConversation(conversation: Conversation): void {
+    this.activeConversation = conversation;
   }
 }

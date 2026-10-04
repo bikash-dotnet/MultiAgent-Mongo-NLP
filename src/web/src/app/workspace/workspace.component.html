@@ -13,18 +13,24 @@
     }
   </header>
 
-  <div class="layout">
+  <div class="chat-layout">
     <app-chat-thread [greeting]="greeting"></app-chat-thread>
 
-    <aside class="telemetry">
-      <h2>Agent swarm</h2>
-      <p>Transport: Server-Sent Events</p>
-      <p class="status">Status: {{ streamStatus }}</p>
-      <ul class="activity">
-        @for (event of agentActivity; track $index) {
-          <li>{{ event }}</li>
-        }
-      </ul>
+    <aside class="case-context">
+      <h2>Case Context</h2>
+      @if (activeConversation) {
+        <p><strong>Intent:</strong> {{ activeConversation.intent }}</p>
+        <p><strong>Slots:</strong> {{ activeConversation.appliedSlots | json }}</p>
+        <p><strong>Report intake progress:</strong> {{ activeConversation.reportProgress }}%</p>
+        <p><strong>Governance status:</strong> {{ activeConversation.governanceStatus }}</p>
+        <div class="export-actions">
+          <button pButton label="Export CSV" icon="pi pi-download"></button>
+          <button pButton label="Export XLSX" icon="pi pi-file-excel"></button>
+          <button pButton label="Export PDF" icon="pi pi-file-pdf"></button>
+        </div>
+      } @else {
+        <p>Select a conversation to view case context.</p>
+      }
     </aside>
   </div>
 </main>
