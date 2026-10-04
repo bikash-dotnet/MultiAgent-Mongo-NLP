@@ -25,14 +25,19 @@ export class AgentStreamService {
       const names = [
         'agent.idle',
         'agent.started',
+        'agent.executing',
         'agent.clarifying',
         'agent.completed',
         'governance.paused',
+        'governance.exempted',
         'governance.request_enriched',
         'governance.manager_notified',
+        'governance.approved',
+        'governance.rejected',
         'report.ready',
         'report.email_simulated',
         'conversation.started',
+        'conversation.resumed',
         'conversation.completed'
       ];
 
