@@ -1,0 +1,64 @@
+<section class="analytics">
+  <header class="head">
+    <h2>Admin analytics</h2>
+    @if (refreshedAt) {
+      <span class="refreshed">Refreshed {{ refreshedAt | date: 'mediumTime' }}</span>
+    }
+  </header>
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (metrics; as m) {
+    <div class="cards">
+      <article class="card">
+        <h3>{{ m.totalExecutions }}</h3>
+        <p>Executions</p>
+      </article>
+      <article class="card">
+        <h3>{{ cacheHitRatePercent }}%</h3>
+        <p>Cache hit rate</p>
+      </article>
+      <article class="card">
+        <h3>{{ m.totalLlmTokens }}</h3>
+        <p>LLM tokens</p>
+      </article>
+      <article class="card">
+        <h3>{{ m.sensitiveAccessCount }}</h3>
+        <p>Sensitive access</p>
+      </article>
+      <article class="card">
+        <h3>{{ m.overrideCount }}</h3>
+        <p>Overrides</p>
+      </article>
+      <article class="card">
+        <h3>{{ m.p95DurationMs }}</h3>
+        <p>p95 duration (ms)</p>
+      </article>
+    </div>
+
+    <div class="breakdowns">
+      <section>
+        <h3>Exports</h3>
+        @if (exportEntries().length === 0) {
+          <p>No exports yet.</p>
+        }
+        @for (entry of exportEntries(); track entry.name) {
+          <p>{{ entry.name }}: {{ entry.count }}</p>
+        }
+      </section>
+      <section>
+        <h3>Data sources</h3>
+        @if (dataSourceEntries().length === 0) {
+          <p>No executions yet.</p>
+        }
+        @for (entry of dataSourceEntries(); track entry.name) {
+          <p>{{ entry.name }}: {{ entry.count }}</p>
+        }
+      </section>
+    </div>
+  } @else {
+    <p>Loading metrics...</p>
+  }
+</section>
