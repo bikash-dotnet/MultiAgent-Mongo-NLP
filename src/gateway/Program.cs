@@ -2,6 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Gateway.Analytics;
+using Gateway.Audit;
 using Gateway.Auth;
 using Gateway.Conversations;
 using Gateway.Execution;
@@ -236,6 +238,81 @@ app.MapGet("/api/conversations/{id}/report.csv", async (
     return Results.Text(build.Csv, "text/csv");
 }).RequireAuthorization();
 
+app.MapGet("/api/conversations/{id}/report.xlsx", async (
+    string id,
+    ConversationOrchestrator conversations,
+    ExportDeliveryService exports,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    if (turn is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (turn.Step != "Complete")
+    {
+        return Results.Conflict(new { error = "conversation is not complete" });
+    }
+
+    var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
+    if (turn.Execution is null || columns.Count == 0)
+    {
+        return Results.Conflict(new { error = "No columns were confirmed for this report." });
+    }
+
+    var result = exports.Xlsx(columns, turn.Execution.Rows);
+    return Results.File(result.Content, result.ContentType, result.FileName);
+}).RequireAuthorization();
+
+app.MapPost("/api/conversations/{id}/report/briefing", async (
+    string id,
+    ConversationOrchestrator conversations,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    if (turn is null)
+    {
+        return Results.NotFound();
+    }
+
+    var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
+    IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = turn.Execution?.Rows ?? [];
+    return Results.Ok(NarrativeInsights.Standard(columns, rows));
+}).RequireAuthorization();
+
+app.MapPost("/api/conversations/{id}/report/email", async (
+    string id,
+    EmailBriefingRequest? body,
+    ConversationOrchestrator conversations,
+    ExportDeliveryService exports,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    if (turn is null)
+    {
+        return Results.NotFound();
+    }
+
+    var recipient = string.IsNullOrWhiteSpace(body?.Recipient) ? turn.EmailPrefill : body!.Recipient;
+    if (string.IsNullOrWhiteSpace(recipient))
+    {
+        return Results.BadRequest(new { error = "a recipient email is required" });
+    }
+
+    var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
+    IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = turn.Execution?.Rows ?? [];
+    var briefing = NarrativeInsights.Standard(columns, rows);
+    var sent = await exports.EmailBriefingAsync(recipient, "Report briefing", briefing, cancellationToken);
+    return Results.Ok(new { sent, recipient, format = "PDF" });
+}).RequireAuthorization();
+
+app.MapGet("/api/admin/analytics", async (IAuditLogStore audit, CancellationToken cancellationToken) =>
+{
+    var documents = await audit.ListAsync(cancellationToken);
+    return Results.Ok(AdminAnalytics.Aggregate(documents));
+}).RequireAuthorization();
+
 app.MapGet("/api/governance/approval", (IApprovalFlagStore flags) =>
     Results.Ok(new { enabled = flags.Enabled })).RequireAuthorization();
 
@@ -402,6 +479,8 @@ static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, Ca
 public sealed record ApprovalFlagRequest(bool Enabled);
 
 public sealed record GovernanceDecisionRequest(string? Notes);
+
+public sealed record EmailBriefingRequest(string? Recipient);
 
 public sealed record EnterpriseCoreQueryRequest(string? Query, string? Collection, IReadOnlyList<string>? Columns);
 

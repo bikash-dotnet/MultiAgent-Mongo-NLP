@@ -1,0 +1,48 @@
+.analytics {
+  padding: 1.5rem;
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .refreshed {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  .error {
+    color: #b91c1c;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    p {
+      margin: 0.25rem 0 0;
+      color: #6b7280;
+    }
+  }
+
+  .breakdowns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+}

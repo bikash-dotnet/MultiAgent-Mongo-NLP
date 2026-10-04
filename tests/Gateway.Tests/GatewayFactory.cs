@@ -1,4 +1,5 @@
 using Gateway.Execution;
+using Gateway.Reports;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,8 @@ public class GatewayFactory : WebApplicationFactory<Program>
 
     public string DataDirectory { get; } = Path.Combine(Path.GetTempPath(), "gateway-tests", Guid.NewGuid().ToString("N"));
 
+    public CapturingEmailSender Emails { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -31,7 +34,20 @@ public class GatewayFactory : WebApplicationFactory<Program>
             services.AddSingleton<TimeProvider>(Time);
             services.RemoveAll<ITabularQueryExecutor>();
             services.AddSingleton<ITabularQueryExecutor>(new StubTabularQueryExecutor());
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(Emails);
         });
+    }
+
+    public sealed class CapturingEmailSender : IEmailSender
+    {
+        public List<EmailMessage> Sent { get; } = [];
+
+        public Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
+        {
+            Sent.Add(message);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubTabularQueryExecutor : ITabularQueryExecutor

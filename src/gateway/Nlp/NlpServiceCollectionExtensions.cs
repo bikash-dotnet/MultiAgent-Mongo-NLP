@@ -64,6 +64,8 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IApprovalFlagStore>(sp => new InMemoryApprovalFlagStore(
             sp.GetRequiredService<IOptions<GovernanceOptions>>().Value.ApprovalEnabled));
         services.AddSingleton<INotificationSender, SimulatedNotificationSender>();
+        services.AddSingleton<IEmailSender, MailKitEmailSender>();
+        services.AddSingleton<ExportDeliveryService>();
         services.AddSingleton<IColumnCatalog, ColumnCatalog>();
         services.AddSingleton<ConversationOrchestrator>();
         services.AddSingleton<IConversationResumeHandler>(sp => sp.GetRequiredService<ConversationOrchestrator>());
