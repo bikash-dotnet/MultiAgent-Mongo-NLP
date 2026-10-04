@@ -1,11 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TableModule } from 'primeng/table';
 import { ExecutionPayload } from '../models/execution';
 
 @Component({
   selector: 'app-results-grid',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TableModule],
   templateUrl: './results-grid.component.html',
   styleUrl: './results-grid.component.scss'
 })

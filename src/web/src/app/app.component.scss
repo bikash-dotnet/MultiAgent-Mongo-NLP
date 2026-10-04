@@ -1,5 +1,92 @@
-.nav {
+.app-layout {
   display: flex;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8fafc;
 }
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 1.5rem;
+  background-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .product-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: #f8fafc;
+    }
+    
+    .menu-toggle {
+      color: #94a3b8;
+      &:hover {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    button {
+      color: #94a3b8;
+      &:hover {
+        color: #ffffff;
+      }
+    }
+  }
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+}
+
+.app-sidebar {
+  width: 250px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  transition: width 0.2s ease, transform 0.2s ease;
+  overflow-y: auto;
+
+  &.collapsed {
+    width: 0;
+    transform: translateX(-100%);
+    overflow: hidden;
+  }
+}
+
+.app-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .app-sidebar {
+    position: fixed;
+    top: 60px;
+    bottom: 0;
+    left: 0;
+    z-index: 99;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+
+    &.collapsed {
+      transform: translateX(-100%);
+    }
+  }
+}
+

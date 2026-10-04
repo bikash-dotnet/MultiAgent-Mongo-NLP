@@ -6,18 +6,18 @@
     <span class="grid-error" *ngIf="execution.error">{{ execution.error }}</span>
   </div>
   <div class="grid-scroll">
-    <table>
-      <thead>
+    <p-table [value]="execution.rows" [tableStyle]="{ 'min-width': '50rem' }" styleClass="p-datatable-striped p-datatable-sm">
+      <ng-template pTemplate="header">
         <tr>
           <th *ngFor="let column of execution.columns">{{ column }}</th>
         </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of execution.rows">
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
           <td *ngFor="let column of execution.columns">{{ value(row, column) }}</td>
         </tr>
-      </tbody>
-    </table>
+      </ng-template>
+    </p-table>
   </div>
 </div>
 <ng-template #empty>

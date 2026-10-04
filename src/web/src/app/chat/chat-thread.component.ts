@@ -1,6 +1,12 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { CheckboxModule } from 'primeng/checkbox';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { ChipModule } from 'primeng/chip';
 import { Greeting } from '../models/greeting';
 import { ConversationAnswer, ConversationTurn } from '../models/conversation';
 import { ConversationService } from '../services/conversation.service';
@@ -15,7 +21,17 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat-thread',
   standalone: true,
-  imports: [CommonModule, FormsModule, ResultsGridComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ButtonModule,
+    InputTextModule,
+    TextareaModule,
+    CheckboxModule,
+    RadioButtonModule,
+    ChipModule,
+    ResultsGridComponent
+  ],
   templateUrl: './chat-thread.component.html',
   styleUrl: './chat-thread.component.scss'
 })

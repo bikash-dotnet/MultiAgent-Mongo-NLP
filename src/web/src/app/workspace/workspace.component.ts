@@ -1,6 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { retry, Subscription, switchMap, timer } from 'rxjs';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { Greeting } from '../models/greeting';
 import { AgentStreamService } from '../services/agent-stream.service';
 import { SessionService } from '../services/session.service';
@@ -17,7 +19,7 @@ interface Conversation {
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, ChatThreadComponent, GovernanceToggleComponent],
+  imports: [CommonModule, ButtonModule, CardModule, ChatThreadComponent, GovernanceToggleComponent],
   templateUrl: './workspace.component.html',
   styleUrl: './workspace.component.scss'
 })

@@ -1,26 +1,21 @@
-<div class="layout">
-  <p-panelMenu [collapsed]="isMenuCollapsed" [collapsedChange]="onMenuCollapsedChange"
-    *ngIf="!isMobile">
-    <ng-template pTemplate="header">
-      <div class="topbar">
-        <span class="product-name">Multi-Agent NLP</span>
-        <button pButton icon="pi pi-user" (click)="toggleMenu()"></button>
-      </div>
-    </ng-template>
-    <ng-template pTemplate="item" let-item>
-      <a [routerLink]="item.command">{{ item.label }}</a>
-    </ng-template>
-  </p-panelMenu>
+<div class="app-layout">
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button pButton icon="pi pi-bars" [text]="true" class="menu-toggle" (click)="toggleMenu()" aria-label="Toggle menu"></button>
+      <span class="product-name">Multi-Agent NLP</span>
+    </div>
+    <div class="topbar-right">
+      <button pButton icon="pi pi-user" [rounded]="true" [text]="true" aria-label="User profile"></button>
+    </div>
+  </header>
 
-  <ng-container *ngIf="isMobile; else desktop">
-    <button pButton mode="menu" (click)="isMenuCollapsed = !isMenuCollapsed" class="menu-button"></button>
-  </ng-container>
+  <div class="app-body">
+    <aside class="app-sidebar" [class.collapsed]="isMenuCollapsed">
+      <p-panelMenu [model]="menuItems"></p-panelMenu>
+    </aside>
 
-  <router-outlet></router-outlet>
-</div>
-
-<ng-template #desktop>
-  <p-panelMenu [collapsed]="isMenuCollapsed" [collapsedChange]="onMenuCollapsedChange"
-    [items]="menuItems">
-  </p-panelMenu>
-</ng-template>
+    <main class="app-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

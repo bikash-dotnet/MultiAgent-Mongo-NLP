@@ -1,40 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { PanelMenuModule } from 'primeng/panelmenu';
 import { ButtonModule } from 'primeng/button';
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, PanelMenuModule, ButtonModule],
+  imports: [CommonModule, RouterOutlet, PanelMenuModule, ButtonModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  schemas: [NO_ERRORS_SCHEMA]
+  styleUrl: './app.component.scss'
 })
 export class AppComponent {
   isMenuCollapsed = false;
-  isMobile = false;
-  menuItems = [
-    { label: 'Chat', command: ['/'] },
-    { label: 'Governance', command: ['/governance'] },
-    { label: 'Admin', command: ['/admin'] },
-    { label: 'Schemas', command: ['/schemas'] },
-    { label: 'Configuration', command: ['/configuration'] },
-    { label: 'Business Rules', command: ['/business-rules'] }
+  menuItems: MenuItem[] = [
+    { label: 'Chat', icon: 'pi pi-comments', routerLink: '/' },
+    { label: 'Governance', icon: 'pi pi-shield', routerLink: '/governance' },
+    { label: 'Admin', icon: 'pi pi-chart-bar', routerLink: '/admin' },
+    { label: 'Schemas', icon: 'pi pi-database', routerLink: '/schemas' },
+    { label: 'Configuration', icon: 'pi pi-cog', routerLink: '/configuration' },
+    { label: 'Business Rules', icon: 'pi pi-sliders-h', routerLink: '/business-rules' }
   ];
-
-  constructor() {
-    if (typeof window !== 'undefined') {
-      this.isMobile = window.innerWidth < 768;
-    }
-  }
-
-  onMenuCollapsedChange(event: any): void {
-    this.isMenuCollapsed = event.value;
-  }
 
   toggleMenu(): void {
     this.isMenuCollapsed = !this.isMenuCollapsed;
   }
-}
+}
