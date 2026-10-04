@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import { PanelMenuModule } from 'primeng/panelmenu';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink],
+  imports: [CommonModule, RouterOutlet, RouterLink, PanelMenuModule, ButtonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   schemas: [NO_ERRORS_SCHEMA]
