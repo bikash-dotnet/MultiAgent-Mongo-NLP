@@ -1,96 +1,185 @@
-<section class="chat">
-  <div class="thread" role="log" aria-live="polite">
-    @for (message of messages; track $index) {
-      <article class="bubble" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
-        <p>{{ message.text }}</p>
-        @if (message.demo) {
-          <p class="demo">Demo report</p>
-        }
-      </article>
-    }
-    @if (pending) {
-      <p class="typing">Working…</p>
-    }
-  </div>
-
-  @if (!turn) {
-    @if (greeting) {
-      <div class="chips">
-        @for (chip of greeting.chips; track chip) {
-          <p-chip [label]="chip" styleClass="chip-item" (click)="useChip(chip)"></p-chip>
-        }
+<div class="chat-app">
+  <!-- Contacts Sidebar -->
+  <aside class="chat-contacts" [class.show-mobile]="showContactsMobile">
+    <div class="contacts-search">
+      <div class="p-input-icon-left w-full">
+        <input type="text" pInputText placeholder="Search contacts..." [(ngModel)]="contactSearchQuery" class="w-full p-inputtext-sm" />
       </div>
-    }
-  }
-
-  @if (error) {
-    <p class="error" role="alert">{{ error }}</p>
-  }
-
-  @if (turn?.control === 'email') {
-    <form class="step" (ngSubmit)="submitEmail()">
-      <label for="step-email">Delivery email</label>
-      <input id="step-email" name="email" type="email" pInputText [(ngModel)]="email" required />
-      <button pButton type="submit" label="Confirm email" [disabled]="pending"></button>
-    </form>
-  } @else if (turn?.control === 'purpose') {
-    <form class="step" (ngSubmit)="submitPurpose()">
-      <label for="step-purpose">Purpose</label>
-      <textarea id="step-purpose" name="purpose" pTextarea [(ngModel)]="purpose" required rows="3"></textarea>
-      <label for="step-project">Project code (optional)</label>
-      <input id="step-project" name="projectCode" pInputText [(ngModel)]="projectCode" />
-      <button pButton type="submit" label="Confirm purpose" [disabled]="pending"></button>
-    </form>
-  } @else if (turn?.control === 'businessimpact') {
-    <form class="step" (ngSubmit)="submitBusinessImpact()">
-      <label for="step-impact">Business impact</label>
-      <textarea id="step-impact" name="businessImpact" pTextarea [(ngModel)]="businessImpact" required rows="3"></textarea>
-      <button pButton type="submit" label="Confirm impact" [disabled]="pending"></button>
-    </form>
-  } @else if (turn?.control === 'columns') {
-    <fieldset class="step">
-      <legend>Columns</legend>
-      @for (column of turn?.columns ?? []; track column.name) {
-        <label class="column flex align-items-center gap-2">
-          <input
-            type="checkbox"
-            [checked]="selectedColumns.has(column.name)"
-            (change)="toggleColumn(column.name, $any($event.target).checked)" />
-          {{ column.name }}
-        </label>
+    </div>
+    <div class="contacts-list">
+      @for (contact of filteredContacts(); track contact.id) {
+        <a class="chat-contact" [class.active]="contact.id === activeContactId" (click)="selectContact(contact)">
+          <span class="chat-avatar" [ngClass]="contact.avatarClass" [class.online]="contact.online">
+            {{ contact.initials }}
+          </span>
+          <div class="contact-info">
+            <div class="contact-header">
+              <span class="contact-name">{{ contact.name }}</span>
+              <small class="contact-time">{{ contact.time }}</small>
+            </div>
+            <div class="contact-preview">
+              <small class="contact-last-msg">{{ contact.lastMessage }}</small>
+              @if (contact.unreadCount) {
+                <span class="badge-unread">{{ contact.unreadCount }}</span>
+              }
+            </div>
+          </div>
+        </a>
       }
-      <button pButton type="button" label="Confirm columns" [disabled]="pending" (click)="submitColumns()"></button>
-    </fieldset>
-  } @else if (turn?.control === 'delivery') {
-    <fieldset class="step">
-      <legend>Delivery</legend>
-      <label class="flex align-items-center gap-2">
-        <input type="radio" name="delivery" value="EMAIL" [(ngModel)]="delivery" /> Email report
-      </label>
-      <label class="flex align-items-center gap-2">
-        <input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" /> Download CSV
-      </label>
-      <button pButton type="button" label="Confirm delivery" [disabled]="pending" (click)="submitDelivery()"></button>
-    </fieldset>
-  } @else if (turn?.step === 'ManagerEmail') {
-    <form class="step" (ngSubmit)="submitManagerEmail()">
-      <label for="step-manager">Manager email</label>
-      <input id="step-manager" name="managerEmail" type="email" pInputText [(ngModel)]="managerEmail" required />
-      <button pButton type="submit" label="Confirm manager" [disabled]="pending"></button>
-    </form>
-  }
+    </div>
+  </aside>
 
-  @if (turn?.downloadable) {
-    <button pButton type="button" label="Download CSV" icon="pi pi-download" class="download" (click)="download()"></button>
-  }
+  <!-- Conversation Main Box -->
+  <section class="chat-conversation">
+    <header class="chat-header">
+      <button pButton icon="pi pi-users" class="p-button-text p-button-sm mobile-contacts-toggle" (click)="showContactsMobile = !showContactsMobile" aria-label="Toggle contacts"></button>
+      <span class="chat-avatar" [ngClass]="activeContact.avatarClass" [class.online]="activeContact.online">
+        {{ activeContact.initials }}
+      </span>
+      <div class="header-info flex-grow-1">
+        <h3 class="contact-title">{{ activeContact.name }}</h3>
+        <small class="status-online" [class.offline]="!activeContact.online">
+          <i class="pi pi-circle-fill"></i> {{ activeContact.online ? 'Online' : 'Offline' }} &middot; {{ pending ? 'typing...' : activeContact.statusText }}
+        </small>
+      </div>
+      <div class="header-actions">
+        <button pButton icon="pi pi-phone" class="p-button-text p-button-rounded p-button-sm" title="Call"></button>
+        <button pButton icon="pi pi-video" class="p-button-text p-button-rounded p-button-sm" title="Video call"></button>
+        <button pButton icon="pi pi-ellipsis-v" class="p-button-text p-button-rounded p-button-sm" title="Options"></button>
+      </div>
+    </header>
 
-  <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
+    <!-- Messages Container -->
+    <div class="chat-messages" #scrollContainer role="log" aria-live="polite">
+      @for (message of messages; track $index) {
+        <div class="chat-message" [class.me]="message.role === 'user'" [class.them]="message.role === 'assistant'">
+          <div class="chat-bubble">
+            <p class="bubble-text">{{ message.text }}</p>
+            @if (message.demo) {
+              <span class="demo-tag"><i class="pi pi-info-circle"></i> Demo report</span>
+            }
+            <span class="chat-time">{{ message.timestamp || 'Just now' }}</span>
+          </div>
+        </div>
+      }
 
-  @if (!turn || turn.step === 'Complete') {
-    <form class="composer" (ngSubmit)="send()">
-      <label class="sr-only" for="utterance">Ask about listings</label>
-      <input id="utterance" name="utterance" pInputText [(ngModel)]="text" placeholder="Ask about listings" />
-      <button pButton type="submit" label="Send" icon="pi pi-send" aria-label="Send message" [disabled]="pending"></button>
-    </form>
-  }
-</section>
+      @if (pending) {
+        <div class="chat-message them">
+          <div class="chat-bubble typing-bubble">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+      }
+
+      @if (!turn && greeting) {
+        <div class="chips-container">
+          <p class="chips-label">Suggested prompts:</p>
+          <div class="chips-grid">
+            @for (chip of greeting.chips; track chip) {
+              <p-chip [label]="chip" icon="pi pi-sparkles" styleClass="chip-item clickable" (click)="useChip(chip)"></p-chip>
+            }
+          </div>
+        </div>
+      }
+
+      @if (error) {
+        <div class="chat-error-banner" role="alert">
+          <i class="pi pi-exclamation-triangle"></i> {{ error }}
+        </div>
+      }
+
+      <!-- Dynamic Form Steps -->
+      @if (turn?.control === 'email') {
+        <div class="chat-step-card">
+          <form (ngSubmit)="submitEmail()">
+            <label for="step-email" class="step-label">Delivery Email</label>
+            <div class="p-inputgroup">
+              <input id="step-email" name="email" type="email" pInputText [(ngModel)]="email" required placeholder="name@company.com" />
+              <button pButton type="submit" label="Confirm" icon="pi pi-check" [disabled]="pending"></button>
+            </div>
+          </form>
+        </div>
+      } @else if (turn?.control === 'purpose') {
+        <div class="chat-step-card">
+          <form (ngSubmit)="submitPurpose()" class="step-form">
+            <label for="step-purpose" class="step-label">Purpose of Query</label>
+            <textarea id="step-purpose" name="purpose" pTextarea [(ngModel)]="purpose" required rows="2" placeholder="State reason for access..."></textarea>
+            <label for="step-project" class="step-label mt-2">Project Code (optional)</label>
+            <input id="step-project" name="projectCode" pInputText [(ngModel)]="projectCode" placeholder="e.g. PRJ-2026" />
+            <button pButton type="submit" label="Confirm Purpose" icon="pi pi-check" class="mt-2" [disabled]="pending"></button>
+          </form>
+        </div>
+      } @else if (turn?.control === 'businessimpact') {
+        <div class="chat-step-card">
+          <form (ngSubmit)="submitBusinessImpact()" class="step-form">
+            <label for="step-impact" class="step-label">Business Impact</label>
+            <textarea id="step-impact" name="businessImpact" pTextarea [(ngModel)]="businessImpact" required rows="2" placeholder="Describe business impact..."></textarea>
+            <button pButton type="submit" label="Confirm Impact" icon="pi pi-check" class="mt-2" [disabled]="pending"></button>
+          </form>
+        </div>
+      } @else if (turn?.control === 'columns') {
+        <div class="chat-step-card">
+          <fieldset class="step-fieldset">
+            <legend>Select Columns to Include</legend>
+            <div class="columns-grid">
+              @for (column of turn?.columns ?? []; track column.name) {
+                <label class="column-item">
+                  <input type="checkbox" [checked]="selectedColumns.has(column.name)" (change)="toggleColumn(column.name, $any($event.target).checked)" />
+                  <span>{{ column.name }}</span>
+                </label>
+              }
+            </div>
+            <button pButton type="button" label="Confirm Columns" icon="pi pi-check" class="mt-2" [disabled]="pending" (click)="submitColumns()"></button>
+          </fieldset>
+        </div>
+      } @else if (turn?.control === 'delivery') {
+        <div class="chat-step-card">
+          <fieldset class="step-fieldset">
+            <legend>Select Delivery Method</legend>
+            <div class="delivery-options">
+              <label class="radio-option">
+                <input type="radio" name="delivery" value="EMAIL" [(ngModel)]="delivery" />
+                <span>Email report</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" />
+                <span>Download CSV</span>
+              </label>
+            </div>
+            <button pButton type="button" label="Confirm Delivery" icon="pi pi-check" class="mt-2" [disabled]="pending" (click)="submitDelivery()"></button>
+          </fieldset>
+        </div>
+      } @else if (turn?.step === 'ManagerEmail') {
+        <div class="chat-step-card">
+          <form (ngSubmit)="submitManagerEmail()" class="step-form">
+            <label for="step-manager" class="step-label">Manager Email for Approval</label>
+            <input id="step-manager" name="managerEmail" type="email" pInputText [(ngModel)]="managerEmail" required placeholder="manager@company.com" />
+            <button pButton type="submit" label="Confirm Manager" icon="pi pi-check" class="mt-2" [disabled]="pending"></button>
+          </form>
+        </div>
+      }
+
+      @if (turn?.downloadable) {
+        <div class="download-banner mt-2">
+          <button pButton type="button" label="Download CSV Report" icon="pi pi-download" class="p-button-success" (click)="download()"></button>
+        </div>
+      }
+
+      <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
+    </div>
+
+    <!-- Composer Footer -->
+    @if (!turn || turn.step === 'Complete') {
+      <form class="chat-composer" (ngSubmit)="send()">
+        <div class="composer-group">
+          <button pButton type="button" icon="pi pi-paperclip" class="p-button-text p-button-secondary p-button-rounded" title="Attach file"></button>
+          <input id="utterance" name="utterance" pInputText [(ngModel)]="text" placeholder="Type a message..." autocomplete="off" />
+          <button pButton type="button" icon="pi pi-smile" class="p-button-text p-button-secondary p-button-rounded" title="Emoji"></button>
+          <button pButton type="submit" label="Send" icon="pi pi-send" aria-label="Send message" [disabled]="pending || !text.trim()"></button>
+        </div>
+      </form>
+    }
+  </section>
+</div>

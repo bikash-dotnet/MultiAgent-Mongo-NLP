@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +16,19 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   demo?: boolean;
+  timestamp?: string;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  initials: string;
+  avatarClass: string;
+  online: boolean;
+  time: string;
+  lastMessage: string;
+  unreadCount?: number;
+  statusText: string;
 }
 
 @Component({
@@ -37,6 +50,7 @@ interface ChatMessage {
 })
 export class ChatThreadComponent {
   @Input() greeting: Greeting | null = null;
+  @ViewChild('scrollContainer') private scrollContainer?: ElementRef;
 
   messages: ChatMessage[] = [];
   turn: ConversationTurn | null = null;
@@ -50,6 +64,33 @@ export class ChatThreadComponent {
   delivery = 'CSV';
   pending = false;
   error: string | null = null;
+  contactSearchQuery = '';
+  showContactsMobile = false;
+
+  contacts: Contact[] = [
+    { id: '1', name: 'Multi-Agent Assistant', initials: 'AI', avatarClass: 'avatar-primary', online: true, time: 'Now', lastMessage: 'Ready to query listings & reports...', statusText: 'Online' },
+    { id: '2', name: 'Olivia Bennett', initials: 'OB', avatarClass: 'avatar-info', online: true, time: '2m', lastMessage: 'Approved — a few small notes…', unreadCount: 2, statusText: 'Online' },
+    { id: '3', name: 'Marcus Reyes', initials: 'MR', avatarClass: 'avatar-success', online: true, time: '1h', lastMessage: 'Data model validation completed.', statusText: 'Online' },
+    { id: '4', name: 'Sara Khan', initials: 'SK', avatarClass: 'avatar-info', online: false, time: '3h', lastMessage: 'Customer interview notes are up.', statusText: 'Offline' },
+    { id: '5', name: 'Diego Smania', initials: 'DS', avatarClass: 'avatar-warning', online: true, time: 'Yesterday', lastMessage: 'PR is ready for review.', unreadCount: 1, statusText: 'Online' }
+  ];
+
+  activeContactId = '1';
+
+  get activeContact(): Contact {
+    return this.contacts.find((c) => c.id === this.activeContactId) || this.contacts[0];
+  }
+
+  filteredContacts(): Contact[] {
+    const query = this.contactSearchQuery.toLowerCase().trim();
+    if (!query) return this.contacts;
+    return this.contacts.filter((c) => c.name.toLowerCase().includes(query) || c.lastMessage.toLowerCase().includes(query));
+  }
+
+  selectContact(contact: Contact): void {
+    this.activeContactId = contact.id;
+    this.showContactsMobile = false;
+  }
 
   constructor(private readonly conversations: ConversationService) {}
 
@@ -59,10 +100,12 @@ export class ChatThreadComponent {
       return;
     }
 
-    this.messages = [...this.messages, { role: 'user', text: utterance }];
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.messages = [...this.messages, { role: 'user', text: utterance, timestamp: timeStr }];
     this.text = '';
     this.pending = true;
     this.error = null;
+    this.scrollToBottom();
 
     this.conversations.start(utterance).subscribe({
       next: (turn) => this.apply(turn),
@@ -134,20 +177,21 @@ export class ChatThreadComponent {
 
     this.pending = true;
     this.error = null;
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     this.conversations.answer(this.turn.conversationId, answer).subscribe({
       next: (turn) => {
         if (answer.email) {
-          this.messages = [...this.messages, { role: 'user', text: answer.email }];
+          this.messages = [...this.messages, { role: 'user', text: answer.email, timestamp: timeStr }];
         } else if (answer.purpose) {
-          this.messages = [...this.messages, { role: 'user', text: answer.purpose }];
+          this.messages = [...this.messages, { role: 'user', text: answer.purpose, timestamp: timeStr }];
         } else if (answer.businessImpact) {
-          this.messages = [...this.messages, { role: 'user', text: answer.businessImpact }];
+          this.messages = [...this.messages, { role: 'user', text: answer.businessImpact, timestamp: timeStr }];
         } else if (answer.managerEmail) {
-          this.messages = [...this.messages, { role: 'user', text: answer.managerEmail }];
+          this.messages = [...this.messages, { role: 'user', text: answer.managerEmail, timestamp: timeStr }];
         } else if (answer.columns) {
-          this.messages = [...this.messages, { role: 'user', text: answer.columns.join(', ') }];
+          this.messages = [...this.messages, { role: 'user', text: answer.columns.join(', '), timestamp: timeStr }];
         } else if (answer.delivery) {
-          this.messages = [...this.messages, { role: 'user', text: answer.delivery }];
+          this.messages = [...this.messages, { role: 'user', text: answer.delivery, timestamp: timeStr }];
         }
         this.apply(turn);
       },
@@ -161,7 +205,8 @@ export class ChatThreadComponent {
   private apply(turn: ConversationTurn): void {
     this.turn = turn;
     this.pending = false;
-    this.messages = [...this.messages, { role: 'assistant', text: turn.assistantMessage, demo: turn.demoReport }];
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.messages = [...this.messages, { role: 'assistant', text: turn.assistantMessage, demo: turn.demoReport, timestamp: timeStr }];
     if (turn.control === 'email') {
       this.email = turn.emailPrefill ?? this.email;
     }
@@ -174,5 +219,14 @@ export class ChatThreadComponent {
     if (turn.validationError) {
       this.error = turn.validationError;
     }
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      if (this.scrollContainer) {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      }
+    }, 50);
   }
 }
