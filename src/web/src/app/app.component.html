@@ -1,6 +1,26 @@
-<nav class="nav">
-  <a routerLink="/">Workspace</a>
-  <a routerLink="/governance">Governance</a>
-  <a routerLink="/admin">Admin</a>
-</nav>
-<router-outlet></router-outlet>
+<div class="layout">
+  <p-panelMenu [collapsed]="isMenuCollapsed" [collapsedChange]="onMenuCollapsedChange"
+    *ngIf="!isMobile">
+    <ng-template pTemplate="header">
+      <div class="topbar">
+        <span class="product-name">Multi-Agent NLP</span>
+        <button pButton icon="pi pi-user" (click)="toggleMenu()"></button>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="item" let-item>
+      <a [routerLink]="item.command">{{ item.label }}</a>
+    </ng-template>
+  </p-panelMenu>
+
+  <ng-container *ngIf="isMobile; else desktop">
+    <button pButton mode="menu" (click)="isMenuCollapsed = !isMenuCollapsed" class="menu-button"></button>
+  </ng-container>
+
+  <router-outlet></router-outlet>
+</div>
+
+<ng-template #desktop>
+  <p-panelMenu [collapsed]="isMenuCollapsed" [collapsedChange]="onMenuCollapsedChange"
+    [items]="menuItems">
+  </p-panelMenu>
+</ng-template>
