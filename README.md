@@ -33,6 +33,10 @@ a `PENDING_LEAD` access request and notifies the manager. A global approval flag
 `Data Owner / Admin` through the header switch or `PUT /api/governance/approval`. CSV
 downloads use in-memory demo rows until the MongoDB execution and SMTP export work lands.
 
+## CI/CD (Sprint 8)
+
+GitHub Actions runs `dotnet restore`, `dotnet build`, `dotnet test`, `ng test`, and `ng build` on every push and PR; a `gitleaks` secret scan and a Trivy image scan gate every merge. Tags `v*.*.*` trigger CD: images build with `docker/build-push-action`, push to GHCR, and deploy to staging automatically then production on approval. Docker Compose runs the gateway and nginx SPA on a Linux VPS; nginx reverse-proxies `/api` to the gateway. See `docs/deploy/runbook.md`.
+
 ## Executive showcase
 
 `showcase/index.html` is a self-contained, executive-facing walkthrough of the platform: an executive summary plus a six-act story that follows a single request from question to governed answer. Open it by double-clicking the file; it needs no server, build step, or network access.
