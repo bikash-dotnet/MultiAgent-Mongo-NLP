@@ -1,4 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
+import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { Observable } from 'rxjs';
 import { SessionService } from './session.service';
 
@@ -9,6 +10,8 @@ export interface AgentEvent {
 
 @Injectable({ providedIn: 'root' })
 export class AgentStreamService {
+  private hubConnection: HubConnection | null = null;
+
   constructor(
     private readonly session: SessionService,
     private readonly zone: NgZone
@@ -17,47 +20,40 @@ export class AgentStreamService {
   connect(): Observable<AgentEvent> {
     return new Observable((subscriber) => {
       const token = this.session.token();
-      const params = new URLSearchParams();
-      if (token) {
-        params.set('access_token', token);
-      }
-      const source = new EventSource(`/api/agents/stream?${params.toString()}`);
-      const names = [
-        'agent.idle',
-        'agent.started',
-        'agent.executing',
-        'agent.clarifying',
-        'agent.completed',
-        'governance.paused',
-        'governance.exempted',
-        'governance.request_enriched',
-        'governance.manager_notified',
-        'governance.approved',
-        'governance.rejected',
-        'report.ready',
-        'report.email_simulated',
-        'conversation.started',
-        'conversation.resumed',
-        'conversation.completed'
-      ];
+      const connection = new HubConnectionBuilder()
+        .withUrl('/hubs/agent-stream', {
+          accessTokenFactory: () => token ?? ''
+        })
+        .withAutomaticReconnect()
+        .build();
 
-      const handlers = names.map((name) => {
-        const handler = (event: MessageEvent) => {
-          this.zone.run(() => subscriber.next({ event: name, data: event.data }));
-        };
-        source.addEventListener(name, handler as EventListener);
-        return { name, handler };
+      this.hubConnection = connection;
+
+      connection.on('ReceiveAgentEvent', (name: string, status: string, detail: string) => {
+        const payload = JSON.stringify({ status, detail });
+        this.zone.run(() => subscriber.next({ event: name, data: payload }));
       });
 
-      source.onerror = () => {
-        this.zone.run(() => subscriber.error(new Error('sse-disconnected')));
-      };
+      connection.onreconnecting(() => {
+        this.zone.run(() => subscriber.next({ event: 'sse-disconnected', data: 'reconnecting' }));
+      });
+
+      connection.onreconnected(() => {
+        this.zone.run(() => subscriber.next({ event: 'agent.idle', data: 'idle' }));
+      });
+
+      connection.onclose(() => {
+        this.zone.run(() => subscriber.error(new Error('signalr-disconnected')));
+      });
+
+      connection
+        .start()
+        .catch(() => {
+          this.zone.run(() => subscriber.error(new Error('signalr-connection-failed')));
+        });
 
       return () => {
-        for (const { name, handler } of handlers) {
-          source.removeEventListener(name, handler as EventListener);
-        }
-        source.close();
+        connection.stop();
       };
     });
   }

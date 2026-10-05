@@ -14,7 +14,7 @@
   </header>
 
   <div class="chat-layout">
-    <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent"></app-chat-thread>
+    <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent" (turnChange)="onTurnChange($event)"></app-chat-thread>
 
     <aside class="case-context">
       <div class="stream-event-bar" *ngIf="streamStatus">

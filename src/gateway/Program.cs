@@ -9,6 +9,7 @@ using Gateway.Conversations;
 using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Greeting;
+using Gateway.Hubs;
 using Gateway.Nlp;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Http;
@@ -61,8 +62,9 @@ builder.Services
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"].ToString();
+                var path = context.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
-                    context.Request.Path.StartsWithSegments("/api/agents/stream"))
+                    (path.StartsWithSegments("/api/agents/stream") || path.StartsWithSegments("/hubs/agent-stream")))
                 {
                     context.Token = accessToken;
                 }
@@ -72,6 +74,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 builder.Services.AddGatewayNlp(builder.Configuration);
 
@@ -467,6 +470,8 @@ app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink eve
     {
     }
 }).RequireAuthorization();
+
+app.MapHub<AgentHub>("/hubs/agent-stream").RequireAuthorization();
 
 app.Run();
 

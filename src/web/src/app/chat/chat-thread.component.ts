@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -52,6 +52,7 @@ interface Contact {
 export class ChatThreadComponent implements OnChanges {
   @Input() greeting: Greeting | null = null;
   @Input() latestEvent: AgentEvent | null = null;
+  @Output() turnChange = new EventEmitter<ConversationTurn | null>();
   @ViewChild('scrollContainer') private scrollContainer?: ElementRef;
 
   messages: ChatMessage[] = [];
@@ -96,7 +97,10 @@ export class ChatThreadComponent implements OnChanges {
     this.showContactsMobile = false;
   }
 
-  constructor(private readonly conversations: ConversationService) {}
+  constructor(
+    private readonly conversations: ConversationService,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['latestEvent'] && this.latestEvent) {
@@ -119,8 +123,31 @@ export class ChatThreadComponent implements OnChanges {
         }
       ];
       this.hasAutoGreeted = true;
+      this.cdr.markForCheck();
       this.scrollToBottom();
     }
+  }
+
+  private apply(turn: ConversationTurn): void {
+    this.turn = turn;
+    this.pending = false;
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    this.messages = [...this.messages, { role: 'assistant', text: turn.assistantMessage, demo: turn.demoReport, timestamp: timeStr }];
+    if (turn.control === 'email') {
+      this.email = turn.emailPrefill ?? this.email;
+    }
+    if (turn.control === 'columns' && turn.columns) {
+      this.selectedColumns = new Set(turn.columns.filter((column) => column.selected).map((column) => column.name));
+    }
+    if (turn.step !== 'BusinessImpact') {
+      this.businessImpact = '';
+    }
+    if (turn.validationError) {
+      this.error = turn.validationError;
+    }
+    this.turnChange.emit(turn);
+    this.cdr.markForCheck();
+    this.scrollToBottom();
   }
 
   private handleAgentEvent(event: AgentEvent): void {
@@ -285,26 +312,6 @@ export class ChatThreadComponent implements OnChanges {
         this.pending = false;
       }
     });
-  }
-
-  private apply(turn: ConversationTurn): void {
-    this.turn = turn;
-    this.pending = false;
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    this.messages = [...this.messages, { role: 'assistant', text: turn.assistantMessage, demo: turn.demoReport, timestamp: timeStr }];
-    if (turn.control === 'email') {
-      this.email = turn.emailPrefill ?? this.email;
-    }
-    if (turn.control === 'columns' && turn.columns) {
-      this.selectedColumns = new Set(turn.columns.filter((column) => column.selected).map((column) => column.name));
-    }
-    if (turn.step !== 'BusinessImpact') {
-      this.businessImpact = '';
-    }
-    if (turn.validationError) {
-      this.error = turn.validationError;
-    }
-    this.scrollToBottom();
   }
 
   private scrollToBottom(): void {
