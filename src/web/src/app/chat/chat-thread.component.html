@@ -39,7 +39,7 @@
       <div class="header-info flex-grow-1">
         <h3 class="contact-title">{{ activeContact.name }}</h3>
         <small class="status-online" [class.offline]="!activeContact.online">
-          <i class="pi pi-circle-fill"></i> {{ activeContact.online ? 'Online' : 'Offline' }} &middot; {{ pending ? 'typing...' : activeContact.statusText }}
+          <i class="pi pi-circle-fill"></i> {{ activeContact.online ? 'Online' : 'Offline' }} &middot; {{ activeEventText || (pending ? 'typing...' : activeContact.statusText) }}
         </small>
       </div>
       <div class="header-actions">
@@ -51,6 +51,14 @@
 
     <!-- Messages Container -->
     <div class="chat-messages" #scrollContainer role="log" aria-live="polite">
+      @if (latestEvent && latestEvent.event !== 'agent.idle') {
+        <div class="chat-event-badge">
+          <i class="pi pi-spin pi-spinner" *ngIf="pending"></i>
+          <i class="pi pi-bolt" *ngIf="!pending"></i>
+          <span>Event: {{ activeEventText || latestEvent.event }}</span>
+        </div>
+      }
+
       @for (message of messages; track $index) {
         <div class="chat-message" [class.me]="message.role === 'user'" [class.them]="message.role === 'assistant'">
           <div class="chat-bubble">

@@ -4,4 +4,4 @@ AST analysis, read-only enforcement, schema whitelist, and field-flag verificati
 
 | Step | Measured | Budget |
 | --- | --- | --- |
-| guardrail (analyze + rules + registry) | 0.1574 ms | < 1 ms |
+| guardrail (analyze + rules + registry) | 0.0220 ms | < 1 ms |

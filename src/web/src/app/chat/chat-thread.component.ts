@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -10,6 +10,7 @@ import { ChipModule } from 'primeng/chip';
 import { Greeting } from '../models/greeting';
 import { ConversationAnswer, ConversationTurn } from '../models/conversation';
 import { ConversationService } from '../services/conversation.service';
+import { AgentEvent } from '../services/agent-stream.service';
 import { ResultsGridComponent } from '../results/results-grid.component';
 
 interface ChatMessage {
@@ -48,8 +49,9 @@ interface Contact {
   templateUrl: './chat-thread.component.html',
   styleUrl: './chat-thread.component.scss'
 })
-export class ChatThreadComponent {
+export class ChatThreadComponent implements OnChanges {
   @Input() greeting: Greeting | null = null;
+  @Input() latestEvent: AgentEvent | null = null;
   @ViewChild('scrollContainer') private scrollContainer?: ElementRef;
 
   messages: ChatMessage[] = [];
@@ -66,6 +68,8 @@ export class ChatThreadComponent {
   error: string | null = null;
   contactSearchQuery = '';
   showContactsMobile = false;
+  activeEventText: string | null = null;
+  private hasAutoGreeted = false;
 
   contacts: Contact[] = [
     { id: '1', name: 'Multi-Agent Assistant', initials: 'AI', avatarClass: 'avatar-primary', online: true, time: 'Now', lastMessage: 'Ready to query listings & reports...', statusText: 'Online' },
@@ -93,6 +97,87 @@ export class ChatThreadComponent {
   }
 
   constructor(private readonly conversations: ConversationService) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['latestEvent'] && this.latestEvent) {
+      this.handleAgentEvent(this.latestEvent);
+    }
+    if (changes['greeting'] || changes['latestEvent']) {
+      this.checkAutoGreeting();
+    }
+  }
+
+  private checkAutoGreeting(): void {
+    if (!this.hasAutoGreeted && this.greeting) {
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      this.messages = [
+        ...this.messages,
+        {
+          role: 'assistant',
+          text: this.greeting.message,
+          timestamp: timeStr
+        }
+      ];
+      this.hasAutoGreeted = true;
+      this.scrollToBottom();
+    }
+  }
+
+  private handleAgentEvent(event: AgentEvent): void {
+    switch (event.event) {
+      case 'agent.idle':
+        this.activeEventText = 'Agent Stream Connected';
+        break;
+      case 'agent.started':
+        this.activeEventText = 'Agent Started Processing...';
+        break;
+      case 'agent.executing':
+        this.activeEventText = 'Executing Query across Data Sources...';
+        break;
+      case 'agent.clarifying':
+        this.activeEventText = 'Agent Requesting Clarification...';
+        break;
+      case 'agent.completed':
+        this.activeEventText = 'Agent Execution Completed';
+        break;
+      case 'governance.paused':
+        this.activeEventText = 'Governance Review Triggered (Paused)';
+        break;
+      case 'governance.request_enriched':
+        this.activeEventText = 'Governance Request Enriched';
+        break;
+      case 'governance.manager_notified':
+        this.activeEventText = 'Manager Approval Notification Sent';
+        break;
+      case 'governance.approved':
+        this.activeEventText = 'Governance Request Approved';
+        break;
+      case 'governance.rejected':
+        this.activeEventText = 'Governance Request Rejected';
+        break;
+      case 'report.ready':
+        this.activeEventText = 'Report Ready for Download';
+        break;
+      case 'report.email_simulated':
+        this.activeEventText = 'Report Email Dispatched';
+        break;
+      case 'conversation.started':
+        this.activeEventText = 'Conversation Active';
+        break;
+      case 'conversation.resumed':
+        this.activeEventText = 'Conversation Resumed';
+        break;
+      case 'conversation.completed':
+        this.activeEventText = 'Conversation Finished';
+        break;
+      case 'sse-disconnected':
+        this.activeEventText = 'Reconnecting Stream...';
+        break;
+      default:
+        this.activeEventText = event.event;
+        break;
+    }
+  }
 
   send(): void {
     const utterance = this.text.trim();

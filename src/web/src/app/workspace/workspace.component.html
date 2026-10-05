@@ -14,9 +14,14 @@
   </header>
 
   <div class="chat-layout">
-    <app-chat-thread [greeting]="greeting"></app-chat-thread>
+    <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent"></app-chat-thread>
 
     <aside class="case-context">
+      <div class="stream-event-bar" *ngIf="streamStatus">
+        <span class="badge" [ngClass]="{'badge-online': streamStatus === 'agent.idle' || streamStatus.startsWith('agent') || streamStatus.startsWith('conversation') || streamStatus.startsWith('governance') || streamStatus.startsWith('report'), 'badge-warning': streamStatus === 'reconnecting' || streamStatus === 'connecting'}">
+          <i class="pi pi-bolt"></i> Stream Event: {{ streamStatus }}
+        </span>
+      </div>
       <h2>Case Context</h2>
       @if (activeConversation) {
         <p><strong>Intent:</strong> {{ activeConversation.intent }}</p>

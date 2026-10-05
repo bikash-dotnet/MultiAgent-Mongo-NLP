@@ -449,8 +449,10 @@ app.MapPost("/api/access-requests/{id}/override", async (
 app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
 {
     context.Response.Headers.ContentType = "text/event-stream";
-    context.Response.Headers.CacheControl = "no-cache";
+    context.Response.Headers.CacheControl = "no-cache, no-transform";
     context.Response.Headers.Connection = "keep-alive";
+    context.Response.Headers["X-Accel-Buffering"] = "no";
+    context.Response.Headers["Pragma"] = "no-cache";
 
     await WriteAgentEvent(context, new AgentEvent("agent.idle", "idle"), cancellationToken);
 

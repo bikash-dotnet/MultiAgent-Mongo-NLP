@@ -1,4 +1,9 @@
 {
+  "/api/agents/stream": {
+    "target": "http://localhost:5235",
+    "secure": false,
+    "changeOrigin": true
+  },
   "/api": {
     "target": "http://localhost:5235",
     "secure": false,
