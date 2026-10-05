@@ -1,7 +1,7 @@
 .chat-app {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 108px);
   min-height: 500px;
   border-radius: 12px;
   overflow: hidden;
@@ -9,97 +9,6 @@
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
   position: relative;
-}
-
-/* Contacts Sidebar */
-.chat-contacts {
-  background: #f8fafc;
-  border-right: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-
-  .contacts-search {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #ffffff;
-  }
-
-  .contacts-list {
-    flex: 1;
-    overflow-y: auto;
-  }
-}
-
-.chat-contact {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid #f1f5f9;
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: #ffffff;
-  }
-
-  &.active {
-    background: #ffffff;
-    border-left: 3px solid #0284c7;
-    padding-left: calc(1rem - 3px);
-  }
-
-  .contact-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .contact-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2px;
-  }
-
-  .contact-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #0f172a;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .contact-time {
-    font-size: 0.725rem;
-    color: #94a3b8;
-  }
-
-  .contact-preview {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .contact-last-msg {
-    font-size: 0.775rem;
-    color: #64748b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .badge-unread {
-    background: #0284c7;
-    color: #ffffff;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 9999px;
-  }
 }
 
 /* Avatar Styles */
@@ -152,8 +61,41 @@
 .chat-conversation {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  height: 100%;
   min-height: 0;
   background: #ffffff;
+}
+
+.agent-unavailable-center {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1rem;
+
+  .unavailable-icon {
+    font-size: 2.5rem;
+    color: #ef4444;
+    margin-bottom: 0.75rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    max-width: 320px;
+    line-height: 1.4;
+  }
 }
 
 .chat-header {
@@ -161,10 +103,13 @@
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   background: #ffffff;
 
   .header-info {
+    flex: 1;
+
     .contact-title {
       margin: 0;
       font-size: 1rem;
@@ -175,10 +120,17 @@
     .status-online {
       font-size: 0.75rem;
       color: #16a34a;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
 
       i {
         font-size: 0.45rem;
         vertical-align: middle;
+      }
+
+      &.working {
+        color: #0284c7;
       }
 
       &.offline {
@@ -190,6 +142,7 @@
   .header-actions {
     display: flex;
     gap: 0.25rem;
+    margin-left: auto;
   }
 }
 
@@ -206,9 +159,12 @@
 /* Messages & Bubbles */
 .chat-message {
   display: flex;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 85%;
 
   &.them {
+    align-self: flex-start;
     justify-content: flex-start;
 
     .chat-bubble {
@@ -220,7 +176,9 @@
   }
 
   &.me {
+    align-self: flex-end;
     justify-content: flex-end;
+    margin-left: auto;
 
     .chat-bubble {
       background: #0284c7;
@@ -231,12 +189,40 @@
   }
 }
 
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  &.avatar-assistant {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+  }
+
+  &.avatar-user {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+}
+
 .chat-bubble {
-  max-width: 72%;
   padding: 0.65rem 1rem;
   border-radius: 1rem;
   font-size: 0.9rem;
   line-height: 1.45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 
   .bubble-text {
     margin: 0;
@@ -253,11 +239,10 @@
   }
 
   .chat-time {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     opacity: 0.75;
-    display: block;
-    margin-top: 0.25rem;
-    text-align: right;
+    white-space: nowrap;
+    margin-left: auto;
   }
 }
 
@@ -275,19 +260,31 @@
     border-radius: 50%;
     animation: typingBounce 1.4s infinite ease-in-out both;
 
-    &:nth-child(1) { animation-delay: -0.32s; }
-    &:nth-child(2) { animation-delay: -0.16s; }
+    &:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    &:nth-child(2) {
+      animation-delay: -0.16s;
+    }
   }
 }
 
 @keyframes typingBounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
 }
 
 /* Suggested Prompts / Chips */
 .chips-container {
-  margin: 0.5rem 0;
   padding: 0.75rem 1rem;
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -381,7 +378,8 @@
     gap: 0.5rem;
   }
 
-  .column-item, .radio-option {
+  .column-item,
+  .radio-option {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -396,42 +394,49 @@
   padding: 0.75rem 1rem;
   border-top: 1px solid #e2e8f0;
   background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 
   .composer-group {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 0.5rem;
 
-    input {
+    textarea {
       flex: 1;
+      resize: none;
+      max-height: 140px;
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      border-radius: 8px;
     }
-  }
-}
 
-.mobile-contacts-toggle {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .chat-app {
-    grid-template-columns: 1fr;
-  }
-
-  .chat-contacts {
-    display: none;
-
-    &.show-mobile {
-      display: flex;
-      position: absolute;
-      z-index: 10;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+    button {
+      height: auto;
+      align-self: stretch;
     }
   }
 
-  .mobile-contacts-toggle {
-    display: inline-flex;
+  .composer-footer-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .word-counter {
+      font-size: 0.75rem;
+      color: #94a3b8;
+
+      &.exceeded {
+        color: #ef4444;
+        font-weight: 600;
+      }
+    }
+
+    .word-limit-error {
+      font-size: 0.75rem;
+      color: #ef4444;
+    }
   }
 }

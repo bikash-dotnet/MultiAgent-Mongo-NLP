@@ -1,14 +1,12 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { retry, Subscription, switchMap, timer } from 'rxjs';
+import { retry, Subscription, timer } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { Greeting } from '../models/greeting';
 import { ConversationTurn } from '../models/conversation';
 import { AgentEvent, AgentStreamService } from '../services/agent-stream.service';
 import { SessionService } from '../services/session.service';
 import { ChatThreadComponent } from '../chat/chat-thread.component';
-import { GovernanceToggleComponent } from '../governance/governance-toggle.component';
 
 interface Conversation {
   intent: string;
@@ -20,7 +18,7 @@ interface Conversation {
 @Component({
   selector: 'app-workspace',
   standalone: true,
-  imports: [CommonModule, ButtonModule, CardModule, ChatThreadComponent, GovernanceToggleComponent],
+  imports: [CommonModule, ButtonModule, ChatThreadComponent],
   templateUrl: './workspace.component.html',
   styleUrl: './workspace.component.scss'
 })
@@ -29,24 +27,25 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   streamStatus = 'connecting';
   agentActivity: string[] = [];
   latestEvent: AgentEvent | null = null;
-  canManageGovernance = false;
   error: string | null = null;
   activeConversation: Conversation | null = null;
   private sub = new Subscription();
+
+  get isAgentAvailable(): boolean {
+    return !this.error && this.streamStatus !== 'reconnecting';
+  }
 
   constructor(
     private readonly session: SessionService,
     private readonly agents: AgentStreamService,
     private readonly cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.session.sessionId();
-    this.canManageGovernance = this.session.role() === 'Data Owner / Admin';
     this.sub.add(
       this.session.bootstrap().subscribe({
         next: () => {
-          this.canManageGovernance = this.session.role() === 'Data Owner / Admin';
           this.listen();
           this.loadGreeting();
           this.cdr.markForCheck();

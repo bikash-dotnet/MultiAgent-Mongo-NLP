@@ -1,40 +1,28 @@
 <main class="shell">
-  <header class="hero">
-    <p class="eyebrow">Enterprise Multi-Agent Workspace</p>
-    @if (greeting) {
-      <h1>{{ greeting.message }}</h1>
-      <p class="period">Session period: {{ greeting.period }}</p>
-      <app-governance-toggle [visible]="canManageGovernance"></app-governance-toggle>
-    } @else if (error) {
-      <h1>Workspace unavailable</h1>
-      <p>{{ error }}</p>
-    } @else {
-      <h1>Signing you in…</h1>
-    }
-  </header>
-
   <div class="chat-layout">
-    <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent" (turnChange)="onTurnChange($event)"></app-chat-thread>
+    <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent" [isAvailable]="isAgentAvailable"
+      (turnChange)="onTurnChange($event)"></app-chat-thread>
 
     <aside class="case-context">
       <div class="stream-event-bar" *ngIf="streamStatus">
-        <span class="badge" [ngClass]="{'badge-online': streamStatus === 'agent.idle' || streamStatus.startsWith('agent') || streamStatus.startsWith('conversation') || streamStatus.startsWith('governance') || streamStatus.startsWith('report'), 'badge-warning': streamStatus === 'reconnecting' || streamStatus === 'connecting'}">
+        <span class="badge"
+          [ngClass]="{'badge-online': streamStatus === 'agent.idle' || streamStatus.startsWith('agent') || streamStatus.startsWith('conversation') || streamStatus.startsWith('governance') || streamStatus.startsWith('report'), 'badge-warning': streamStatus === 'reconnecting' || streamStatus === 'connecting'}">
           <i class="pi pi-bolt"></i> Stream Event: {{ streamStatus }}
         </span>
       </div>
       <h2>Case Context</h2>
       @if (activeConversation) {
-        <p><strong>Intent:</strong> {{ activeConversation.intent }}</p>
-        <p><strong>Slots:</strong> {{ activeConversation.appliedSlots | json }}</p>
-        <p><strong>Report intake progress:</strong> {{ activeConversation.reportProgress }}%</p>
-        <p><strong>Governance status:</strong> {{ activeConversation.governanceStatus }}</p>
-        <div class="export-actions">
-          <button pButton label="Export CSV" icon="pi pi-download"></button>
-          <button pButton label="Export XLSX" icon="pi pi-file-excel"></button>
-          <button pButton label="Export PDF" icon="pi pi-file-pdf"></button>
-        </div>
+      <p><strong>Intent:</strong> {{ activeConversation.intent }}</p>
+      <p><strong>Slots:</strong> {{ activeConversation.appliedSlots | json }}</p>
+      <p><strong>Report intake progress:</strong> {{ activeConversation.reportProgress }}%</p>
+      <p><strong>Governance status:</strong> {{ activeConversation.governanceStatus }}</p>
+      <div class="export-actions">
+        <button pButton label="Export CSV" icon="pi pi-download"></button>
+        <button pButton label="Export XLSX" icon="pi pi-file-excel"></button>
+        <button pButton label="Export PDF" icon="pi pi-file-pdf"></button>
+      </div>
       } @else {
-        <p>Select a conversation to view case context.</p>
+      <p>Select a conversation to view case context.</p>
       }
     </aside>
   </div>

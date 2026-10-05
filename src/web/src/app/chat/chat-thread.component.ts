@@ -4,32 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
-import { CheckboxModule } from 'primeng/checkbox';
-import { RadioButtonModule } from 'primeng/radiobutton';
 import { ChipModule } from 'primeng/chip';
 import { Greeting } from '../models/greeting';
 import { ConversationAnswer, ConversationTurn } from '../models/conversation';
 import { ConversationService } from '../services/conversation.service';
 import { AgentEvent } from '../services/agent-stream.service';
 import { ResultsGridComponent } from '../results/results-grid.component';
+import { AgentStatus } from '../models/agent-status';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   demo?: boolean;
   timestamp?: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  initials: string;
-  avatarClass: string;
-  online: boolean;
-  time: string;
-  lastMessage: string;
-  unreadCount?: number;
-  statusText: string;
 }
 
 @Component({
@@ -41,8 +28,6 @@ interface Contact {
     ButtonModule,
     InputTextModule,
     TextareaModule,
-    CheckboxModule,
-    RadioButtonModule,
     ChipModule,
     ResultsGridComponent
   ],
@@ -50,8 +35,11 @@ interface Contact {
   styleUrl: './chat-thread.component.scss'
 })
 export class ChatThreadComponent implements OnChanges {
+  readonly AgentStatus = AgentStatus;
+
   @Input() greeting: Greeting | null = null;
   @Input() latestEvent: AgentEvent | null = null;
+  @Input() isAvailable = true;
   @Output() turnChange = new EventEmitter<ConversationTurn | null>();
   @ViewChild('scrollContainer') private scrollContainer?: ElementRef;
 
@@ -67,34 +55,28 @@ export class ChatThreadComponent implements OnChanges {
   delivery = 'CSV';
   pending = false;
   error: string | null = null;
-  contactSearchQuery = '';
-  showContactsMobile = false;
   activeEventText: string | null = null;
   private hasAutoGreeted = false;
 
-  contacts: Contact[] = [
-    { id: '1', name: 'Multi-Agent Assistant', initials: 'AI', avatarClass: 'avatar-primary', online: true, time: 'Now', lastMessage: 'Ready to query listings & reports...', statusText: 'Online' },
-    { id: '2', name: 'Olivia Bennett', initials: 'OB', avatarClass: 'avatar-info', online: true, time: '2m', lastMessage: 'Approved — a few small notes…', unreadCount: 2, statusText: 'Online' },
-    { id: '3', name: 'Marcus Reyes', initials: 'MR', avatarClass: 'avatar-success', online: true, time: '1h', lastMessage: 'Data model validation completed.', statusText: 'Online' },
-    { id: '4', name: 'Sara Khan', initials: 'SK', avatarClass: 'avatar-info', online: false, time: '3h', lastMessage: 'Customer interview notes are up.', statusText: 'Offline' },
-    { id: '5', name: 'Diego Smania', initials: 'DS', avatarClass: 'avatar-warning', online: true, time: 'Yesterday', lastMessage: 'PR is ready for review.', unreadCount: 1, statusText: 'Online' }
-  ];
-
-  activeContactId = '1';
-
-  get activeContact(): Contact {
-    return this.contacts.find((c) => c.id === this.activeContactId) || this.contacts[0];
+  get agentStatus(): AgentStatus {
+    if (!this.isAvailable) {
+      return AgentStatus.Unavailable;
+    }
+    if (this.pending || (this.latestEvent && ['agent.started', 'agent.executing', 'agent.clarifying'].includes(this.latestEvent.event))) {
+      return AgentStatus.Working;
+    }
+    return AgentStatus.Idle;
   }
 
-  filteredContacts(): Contact[] {
-    const query = this.contactSearchQuery.toLowerCase().trim();
-    if (!query) return this.contacts;
-    return this.contacts.filter((c) => c.name.toLowerCase().includes(query) || c.lastMessage.toLowerCase().includes(query));
-  }
-
-  selectContact(contact: Contact): void {
-    this.activeContactId = contact.id;
-    this.showContactsMobile = false;
+  get agentStatusText(): string {
+    switch (this.agentStatus) {
+      case AgentStatus.Working:
+        return 'Working...';
+      case AgentStatus.Idle:
+        return 'Idle';
+      case AgentStatus.Unavailable:
+        return 'Unavailable';
+    }
   }
 
   constructor(
@@ -206,7 +188,31 @@ export class ChatThreadComponent implements OnChanges {
     }
   }
 
+  get wordCount(): number {
+    const trimmed = this.text.trim();
+    if (!trimmed) {
+      return 0;
+    }
+    return trimmed.split(/\s+/).length;
+  }
+
+  get isWordLimitExceeded(): boolean {
+    return this.wordCount > 1000;
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      if (this.isAvailable && !this.pending && this.text.trim() && !this.isWordLimitExceeded && (!this.turn || this.turn.step === 'Complete')) {
+        this.send();
+      }
+    }
+  }
+
   send(): void {
+    if (this.isWordLimitExceeded) {
+      return;
+    }
     const utterance = this.text.trim();
     if (!utterance) {
       return;
