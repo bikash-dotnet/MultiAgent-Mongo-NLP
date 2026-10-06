@@ -5,4 +5,4 @@ Live NVIDIA NIM network latency (budget 1.5–3 s) is measured manually with a c
 
 | Step | Measured | Budget |
 | --- | --- | --- |
-| complex route (validation + single attempt, no network) | 0.05 ms | n/a (excludes LLM) |
+| complex route (validation + single attempt, no network) | 0.13 ms | n/a (excludes LLM) |

@@ -84,7 +84,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
         },
         error: () => {
           this.streamStatus = 'reconnecting';
-          this.latestEvent = { event: 'sse-disconnected', data: 'reconnecting' };
+          this.latestEvent = { event: 'agent.reconnecting', data: 'reconnecting' };
           this.cdr.markForCheck();
         }
       })

@@ -179,7 +179,7 @@ export class ChatThreadComponent implements OnChanges {
       case 'conversation.completed':
         this.activeEventText = 'Conversation Finished';
         break;
-      case 'sse-disconnected':
+      case 'agent.reconnecting':
         this.activeEventText = 'Reconnecting Stream...';
         break;
       default:

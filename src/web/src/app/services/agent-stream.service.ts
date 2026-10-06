@@ -1,5 +1,5 @@
-import { Injectable, NgZone } from '@angular/core';
-import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import { Inject, Injectable, InjectionToken, NgZone } from '@angular/core';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 import { Observable } from 'rxjs';
 import { SessionService } from './session.service';
 
@@ -8,24 +8,44 @@ export interface AgentEvent {
   data: string;
 }
 
+export interface AgentHubConnection {
+  on(methodName: string, newMethod: (...args: any[]) => any): void;
+  onreconnecting(callback: (...args: any[]) => void): void;
+  onreconnected(callback: (...args: any[]) => void): void;
+  onclose(callback: (...args: any[]) => void): void;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+}
+
+export type AgentHubConnectionFactory = (url: string, token: string) => AgentHubConnection;
+
+export const AGENT_HUB_CONNECTION_FACTORY = new InjectionToken<AgentHubConnectionFactory>(
+  'AGENT_HUB_CONNECTION_FACTORY',
+  {
+    providedIn: 'root',
+    factory: () => (url: string, token: string) =>
+      new HubConnectionBuilder()
+        .withUrl(url, { accessTokenFactory: () => token })
+        .withAutomaticReconnect()
+        .build()
+  }
+);
+
 @Injectable({ providedIn: 'root' })
 export class AgentStreamService {
-  private hubConnection: HubConnection | null = null;
+  private hubConnection: AgentHubConnection | null = null;
 
   constructor(
     private readonly session: SessionService,
-    private readonly zone: NgZone
+    private readonly zone: NgZone,
+    @Inject(AGENT_HUB_CONNECTION_FACTORY)
+    private readonly createConnection: AgentHubConnectionFactory
   ) {}
 
   connect(): Observable<AgentEvent> {
     return new Observable((subscriber) => {
       const token = this.session.token();
-      const connection = new HubConnectionBuilder()
-        .withUrl('/hubs/agent-stream', {
-          accessTokenFactory: () => token ?? ''
-        })
-        .withAutomaticReconnect()
-        .build();
+      const connection = this.createConnection('/hubs/agent-stream', token ?? '');
 
       this.hubConnection = connection;
 
@@ -35,7 +55,7 @@ export class AgentStreamService {
       });
 
       connection.onreconnecting(() => {
-        this.zone.run(() => subscriber.next({ event: 'sse-disconnected', data: 'reconnecting' }));
+        this.zone.run(() => subscriber.next({ event: 'agent.reconnecting', data: 'reconnecting' }));
       });
 
       connection.onreconnected(() => {
