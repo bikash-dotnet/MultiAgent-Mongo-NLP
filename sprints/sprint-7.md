@@ -57,11 +57,11 @@
 
 ## Acceptance criteria
 
-- [ ] CSV/XLSX/PDF export completes in memory; no disk temp files; PDF can be emailed via SMTP (BRD-FR-11)
-- [ ] Admin dashboard shows live metrics derived from `audit_logs` (BRD-FR-09)
-- [ ] Standard executive summary does not call NVIDIA
-- [ ] Export and briefing events appear on the corresponding `audit_logs` row
-- [ ] Full FR set BRD-FR-01 … BRD-FR-11 demonstrable on a staging environment
+- [x] CSV/XLSX/PDF export completes in memory; no disk temp files; PDF can be emailed via SMTP (BRD-FR-11)
+- [x] Admin dashboard shows live metrics derived from `audit_logs` (BRD-FR-09)
+- [x] Standard executive summary does not call NVIDIA
+- [x] Export and briefing events appear on the corresponding `audit_logs` row
+- [ ] Full FR set BRD-FR-01 … BRD-FR-11 demonstrable on a staging environment (deferred: Sprint 8 deployment was skipped)
 
 ---
 
@@ -78,3 +78,13 @@
 - Narrative + Export agents
 - Admin analytics dashboard
 - Production-ready demo path covering all BRD FRs
+
+**Status:** Implemented and verified against the code. `Gateway.Analytics.AdminAnalytics.Aggregate`
+reads `IAuditLogStore` read-only and `GET /api/admin/analytics` feeds the SPA `/admin` dashboard;
+`ExportDeliveryService` builds CSV/XLSX/PDF entirely in memory (`ClosedXML`, `QuestPDF`) and dispatches
+briefings through the `MailKit`-backed `IEmailSender` seam (`GET report.csv`, `GET report.xlsx`,
+`POST report/briefing`, `POST report/email`); `NarrativeInsights.Standard` is a deterministic,
+zero-token formatter. The `export_format` value is written to the execution's `audit_logs` row by
+`AuditLogFactory` via `ExecutionRequest.ExportFormat`. Tests: `Reports/*`, `Analytics/AdminAnalyticsTests`,
+`ApiExportTests`, `ApiAnalyticsTests`. Design and plan: `docs/superpowers/specs|plans/2026-10-03-sprint-7-export-narrative*`.
+The staging-environment acceptance item is deferred because Sprint 8 (deployment) was skipped.

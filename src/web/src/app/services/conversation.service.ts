@@ -23,6 +23,14 @@ export class ConversationService {
     return this.http.get(`/api/conversations/${conversationId}/report.csv`, { responseType: 'blob' });
   }
 
+  downloadXlsxReport(conversationId: string): Observable<Blob> {
+    return this.http.get(`/api/conversations/${conversationId}/report.xlsx`, { responseType: 'blob' });
+  }
+
+  downloadPdfReport(conversationId: string): Observable<Blob> {
+    return this.http.get(`/api/conversations/${conversationId}/briefing`, { responseType: 'blob' });
+  }
+
   getApproval(): Observable<ApprovalFlag> {
     return this.http.get<ApprovalFlag>('/api/governance/approval');
   }
