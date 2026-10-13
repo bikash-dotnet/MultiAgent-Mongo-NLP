@@ -1,7 +1,6 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { retry, Subscription, switchMap, timer, take } from 'rxjs';
-import { retry, Subscription, timer } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { Greeting } from '../models/greeting';
 import { ConversationTurn } from '../models/conversation';
@@ -150,6 +149,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   onTurnChange(turn: ConversationTurn | null): void {
     if (turn) {
       this.activeConversation = {
+        conversationId: turn.conversationId,
         intent: turn.kind || 'Query',
         appliedSlots: turn.columns ? turn.columns.filter((c) => c.selected).map((c) => c.name) : [],
         reportProgress: turn.step === 'Complete' ? 100 : turn.step === 'BusinessImpact' ? 75 : 50,
