@@ -20,6 +20,9 @@
 | 12 | `sprints/sprint-12.md` | Business rules and column definitions via UI | §5.2, §5.3, FR-05, FR-06, NFR-08 |
 | 13 | `sprints/sprint-13.md` | MCP server registry (DB-backed), connectivity, tool allow-list | §3.2, §4, §11, NFR-08, NFR-12 |
 
+**Sprint 8 (CI/CD) is skipped/descoped** — see `sprints/sprint-8.md`. Sprints remain numbered
+1–13 so their files and references stay stable; no renumbering was applied.
+
 See `docs/adr/0001-ui-framework.md` for the UI framework decision (PrimeNG) that governs Sprints 9–13.
 
 Add later sprints as `sprints/sprint-14.md`, `sprints/sprint-15.md`, and so on.
