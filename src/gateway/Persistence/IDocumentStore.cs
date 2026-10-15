@@ -7,4 +7,6 @@ public interface IDocumentStore
     Task<IReadOnlyList<T>> GetAllAsync<T>(string collection, CancellationToken cancellationToken = default);
 
     Task UpsertAsync<T>(string collection, string id, T document, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteAsync(string collection, string id, CancellationToken cancellationToken = default);
 }

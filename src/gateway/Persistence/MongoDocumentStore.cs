@@ -46,6 +46,14 @@ public sealed class MongoDocumentStore : IDocumentStore
             cancellationToken);
     }
 
+    public async Task<bool> DeleteAsync(string collection, string id, CancellationToken cancellationToken = default)
+    {
+        var result = await Collection(collection).DeleteOneAsync(
+            Builders<BsonDocument>.Filter.Eq("_id", id),
+            cancellationToken);
+        return result.DeletedCount > 0;
+    }
+
     private IMongoCollection<BsonDocument> Collection(string collection)
     {
         return _database.GetCollection<BsonDocument>(collection);
