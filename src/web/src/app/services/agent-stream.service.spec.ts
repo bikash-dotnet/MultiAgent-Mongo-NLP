@@ -1,104 +1,77 @@
 import { TestBed } from '@angular/core/testing';
-import { AgentStreamService } from './agent-stream.service';
+import { AgentHubConnection, AGENT_HUB_CONNECTION_FACTORY, AgentStreamService } from './agent-stream.service';
 import { SessionService } from './session.service';
 
-type Handler = (event: MessageEvent) => void;
+class FakeHubConnection implements AgentHubConnection {
+  handlers = new Map<string, Function>();
+  started = false;
+  stopped = false;
 
-class FakeEventSource {
-  static instances: FakeEventSource[] = [];
-  private readonly listeners = new Map<string, Set<Handler>>();
-  onerror: ((event: Event) => void) | null = null;
-  closed = false;
+  constructor(public readonly url: string) {}
 
-  constructor(public readonly url: string) {
-    FakeEventSource.instances.push(this);
+  on(methodName: string, newMethod: (...args: any[]) => any): void {
+    this.handlers.set(methodName, newMethod);
   }
 
-  addEventListener(name: string, handler: EventListener): void {
-    const set = this.listeners.get(name) ?? new Set<Handler>();
-    set.add(handler as Handler);
-    this.listeners.set(name, set);
+  onreconnecting(): void {}
+  onreconnected(): void {}
+  onclose(): void {}
+
+  start(): Promise<void> {
+    this.started = true;
+    return Promise.resolve();
   }
 
-  removeEventListener(name: string, handler: EventListener): void {
-    this.listeners.get(name)?.delete(handler as Handler);
+  stop(): Promise<void> {
+    this.stopped = true;
+    return Promise.resolve();
   }
 
-  close(): void {
-    this.closed = true;
-  }
-
-  listens(name: string): boolean {
-    return (this.listeners.get(name)?.size ?? 0) > 0;
-  }
-
-  emit(name: string, data: string): void {
-    for (const handler of this.listeners.get(name) ?? []) {
-      handler(new MessageEvent(name, { data }));
+  emit(eventName: string, status: string, detail: string): void {
+    const handler = this.handlers.get('ReceiveAgentEvent');
+    if (handler) {
+      handler(eventName, status, detail);
     }
   }
 }
 
-const gatewayEventNames = [
-  'agent.idle',
-  'agent.started',
-  'agent.executing',
-  'agent.clarifying',
-  'agent.completed',
-  'governance.paused',
-  'governance.exempted',
-  'governance.request_enriched',
-  'governance.manager_notified',
-  'governance.approved',
-  'governance.rejected',
-  'report.ready',
-  'report.email_simulated',
-  'conversation.started',
-  'conversation.resumed',
-  'conversation.completed'
-];
-
-describe('AgentStreamService', () => {
+describe('AgentStreamService (SignalR)', () => {
   let service: AgentStreamService;
+  let connection!: FakeHubConnection;
 
   beforeEach(() => {
-    FakeEventSource.instances = [];
-    (globalThis as unknown as { EventSource: unknown }).EventSource = FakeEventSource;
-    sessionStorage.setItem('access_token', 'token-123');
     TestBed.configureTestingModule({
-      providers: [{ provide: SessionService, useValue: { token: () => 'token-123' } }]
+      providers: [
+        { provide: SessionService, useValue: { token: () => 'token-123' } },
+        {
+          provide: AGENT_HUB_CONNECTION_FACTORY,
+          useValue: (url: string) => {
+            connection = new FakeHubConnection(url);
+            return connection;
+          }
+        }
+      ]
     });
     service = TestBed.inject(AgentStreamService);
   });
 
-  it('subscribes to every event the gateway publishes', () => {
+  it('connects to SignalR hub endpoint /hubs/agent-stream', () => {
     const sub = service.connect().subscribe();
-    const source = FakeEventSource.instances[0]!;
 
-    for (const name of gatewayEventNames) {
-      expect(source.listens(name)).toBe(true);
-    }
-
+    expect(connection.url).toBe('/hubs/agent-stream');
+    expect(connection.started).toBe(true);
     sub.unsubscribe();
-    expect(source.closed).toBe(true);
+    expect(connection.stopped).toBe(true);
   });
 
-  it('forwards each gateway event to the subscriber', () => {
+  it('forwards ReceiveAgentEvent from hub to subscriber', () => {
     const received: string[] = [];
     const sub = service.connect().subscribe((event) => received.push(event.event));
-    const source = FakeEventSource.instances[0]!;
 
-    source.emit('agent.executing', JSON.stringify({ status: 'executing', detail: 'Mongo' }));
-    source.emit('governance.approved', JSON.stringify({ status: 'approved', detail: 'req_1' }));
+    connection.emit('agent.executing', 'executing', 'Mongo');
+    connection.emit('governance.approved', 'approved', 'req_1');
 
     expect(received).toEqual(['agent.executing', 'governance.approved']);
-    sub.unsubscribe();
-  });
-
-  it('carries the access token on the stream url', () => {
-    const sub = service.connect().subscribe();
-
-    expect(FakeEventSource.instances[0]!.url).toContain('access_token=token-123');
     sub.unsubscribe();
   });
 });

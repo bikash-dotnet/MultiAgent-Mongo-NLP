@@ -1,73 +1,442 @@
-.chat {
+.chat-app {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 108px);
+  min-height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  position: relative;
+}
+
+/* Avatar Styles */
+.chat-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+
+  &.online::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+  }
+
+  &.avatar-primary {
+    background: #e0f2fe;
+    color: #0284c7;
+  }
+
+  &.avatar-info {
+    background: #f0f9ff;
+    color: #0369a1;
+  }
+
+  &.avatar-success {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &.avatar-warning {
+    background: #fef3c7;
+    color: #b45309;
+  }
+}
+
+/* Conversation Box */
+.chat-conversation {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.agent-unavailable-center {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1rem;
+
+  .unavailable-icon {
+    font-size: 2.5rem;
+    color: #ef4444;
+    margin-bottom: 0.75rem;
+  }
+
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #64748b;
+    max-width: 320px;
+    line-height: 1.4;
+  }
+}
+
+.chat-header {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #ffffff;
+
+  .header-info {
+    flex: 1;
+
+    .contact-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .status-online {
+      font-size: 0.75rem;
+      color: #16a34a;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      i {
+        font-size: 0.45rem;
+        vertical-align: middle;
+      }
+
+      &.working {
+        color: #0284c7;
+      }
+
+      &.offline {
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+  }
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  height: 100%;
 }
 
-.thread {
+/* Messages & Bubbles */
+.chat-message {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 85%;
+
+  &.them {
+    align-self: flex-start;
+    justify-content: flex-start;
+
+    .chat-bubble {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-bottom-left-radius: 0.25rem;
+      color: #1e293b;
+    }
+  }
+
+  &.me {
+    align-self: flex-end;
+    justify-content: flex-end;
+    margin-left: auto;
+
+    .chat-bubble {
+      background: #0284c7;
+      color: #ffffff;
+      border-bottom-right-radius: 0.25rem;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    }
+  }
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  &.avatar-assistant {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+  }
+
+  &.avatar-user {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+}
+
+.chat-bubble {
+  padding: 0.65rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 0.5rem;
-  overflow-y: auto;
-  flex: 1;
+
+  .bubble-text {
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .demo-tag {
+    display: inline-block;
+    font-size: 0.725rem;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+
+  .chat-time {
+    font-size: 0.65rem;
+    opacity: 0.75;
+    white-space: nowrap;
+    margin-left: auto;
+  }
 }
 
-.bubble {
-  max-width: 70%;
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.75rem;
-  background: #f2f4f8;
+/* Typing Indicator */
+.typing-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.75rem 1.25rem !important;
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #94a3b8;
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+
+    &:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    &:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+  }
 }
 
-.bubble.user {
-  align-self: flex-end;
-  background: #1f4fa3;
-  color: #fff;
+@keyframes typingBounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
 }
 
-.bubble.assistant {
-  align-self: flex-start;
+/* Suggested Prompts / Chips */
+.chips-container {
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  .chips-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip-item {
+    cursor: pointer;
+    font-size: 0.8rem;
+    background: #f1f5f9;
+    color: #334155;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+  }
 }
 
-.demo {
+/* Event Badge */
+.chat-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: center;
+  padding: 0.35rem 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  border-radius: 9999px;
   font-size: 0.75rem;
-  color: #8a5a00;
+  font-weight: 500;
 }
 
-.typing,
-.error {
+/* Error Banner */
+.chat-error-banner {
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 8px;
   font-size: 0.85rem;
 }
 
-.error {
-  color: #b00020;
+/* Step Cards & Dynamic Forms */
+.chat-step-card {
+  margin: 0.5rem 0;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+
+  .step-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1e293b;
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+
+  .step-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    legend {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .columns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .column-item,
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+  }
 }
 
-.chips,
-.step,
-.composer {
+/* Composer Footer */
+.chat-composer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.step {
   flex-direction: column;
-  align-items: stretch;
-}
+  gap: 0.35rem;
 
-.column {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-}
+  .composer-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+    textarea {
+      flex: 1;
+      resize: none;
+      max-height: 140px;
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      border-radius: 8px;
+    }
+
+    button {
+      height: auto;
+      align-self: stretch;
+    }
+  }
+
+  .composer-footer-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .word-counter {
+      font-size: 0.75rem;
+      color: #94a3b8;
+
+      &.exceeded {
+        color: #ef4444;
+        font-weight: 600;
+      }
+    }
+
+    .word-limit-error {
+      font-size: 0.75rem;
+      color: #ef4444;
+    }
+  }
 }

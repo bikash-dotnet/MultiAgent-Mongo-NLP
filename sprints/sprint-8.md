@@ -1,5 +1,12 @@
 # Sprint 8 — CI/CD Pipeline (GitHub Actions + Docker Compose)
 
+**Status:** Skipped (deliberately descoped). No container images, Compose topology, or
+release pipeline were delivered. The only CI in the repository is the build/test workflow
+`.github/workflows/build.yml`, which restores, builds, and tests the gateway and runs the
+Angular tests and production build; the CD/GHCR/VPS deployment stories below were not built.
+Sprint 9 onward are therefore developed and demonstrated against a local run rather than a
+staging environment.
+
 **Duration:** 2 weeks  
 **Sprint goal:** Automate build, test, image publish, and zero-downtime deployment of the gateway and SPA to a Linux VPS via GitHub Actions and Docker Compose.
 

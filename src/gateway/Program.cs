@@ -9,6 +9,7 @@ using Gateway.Conversations;
 using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Greeting;
+using Gateway.Hubs;
 using Gateway.Nlp;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Http;
@@ -61,8 +62,9 @@ builder.Services
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"].ToString();
+                var path = context.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
-                    context.Request.Path.StartsWithSegments("/api/agents/stream"))
+                    (path.StartsWithSegments("/api/agents/stream") || path.StartsWithSegments("/hubs/agent-stream")))
                 {
                     context.Token = accessToken;
                 }
@@ -72,6 +74,7 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 builder.Services.AddGatewayNlp(builder.Configuration);
 
@@ -265,6 +268,30 @@ app.MapGet("/api/conversations/{id}/report.xlsx", async (
     return Results.File(result.Content, result.ContentType, result.FileName);
 }).RequireAuthorization();
 
+app.MapGet("/api/conversations/{id}/report.pdf", async (
+    string id,
+    ConversationOrchestrator conversations,
+    ExportDeliveryService exports,
+    CancellationToken cancellationToken) =>
+{
+    var turn = await conversations.GetAsync(id, cancellationToken);
+    if (turn is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (turn.Step != "Complete")
+    {
+        return Results.Conflict(new { error = "conversation is not complete" });
+    }
+
+    var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
+    IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = turn.Execution?.Rows ?? [];
+    var briefing = NarrativeInsights.Standard(columns, rows);
+    var result = exports.Pdf("Report briefing", briefing);
+    return Results.File(result.Content, result.ContentType, result.FileName);
+}).RequireAuthorization();
+
 app.MapPost("/api/conversations/{id}/report/briefing", async (
     string id,
     ConversationOrchestrator conversations,
@@ -449,8 +476,10 @@ app.MapPost("/api/access-requests/{id}/override", async (
 app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
 {
     context.Response.Headers.ContentType = "text/event-stream";
-    context.Response.Headers.CacheControl = "no-cache";
+    context.Response.Headers.CacheControl = "no-cache, no-transform";
     context.Response.Headers.Connection = "keep-alive";
+    context.Response.Headers["X-Accel-Buffering"] = "no";
+    context.Response.Headers["Pragma"] = "no-cache";
 
     await WriteAgentEvent(context, new AgentEvent("agent.idle", "idle"), cancellationToken);
 
@@ -465,6 +494,8 @@ app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink eve
     {
     }
 }).RequireAuthorization();
+
+app.MapHub<AgentHub>("/hubs/agent-stream").RequireAuthorization();
 
 app.Run();
 

@@ -1,92 +1,195 @@
-<section class="chat">
-  <div class="thread" role="log" aria-live="polite">
-    @for (message of messages; track $index) {
-      <article class="bubble" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
-        <p>{{ message.text }}</p>
-        @if (message.demo) {
-          <p class="demo">Demo report</p>
-        }
-      </article>
-    }
-    @if (pending) {
-      <p class="typing">Working…</p>
-    }
-  </div>
+<div class="chat-app">
+  <!-- Conversation Main Box -->
+  <section class="chat-conversation">
+    <header class="chat-header">
+      <span class="chat-avatar avatar-primary" [class.online]="isAvailable">
+        AI
+      </span>
+      <div class="header-info flex-grow-1">
+        <h3 class="contact-title">Your DB Assistant</h3>
+        <small class="status-online" [class.offline]="agentStatus === AgentStatus.Unavailable"
+          [class.working]="agentStatus === AgentStatus.Working">
+          {{ agentStatusText }}
+        </small>
+      </div>
+      <div class="header-actions">
+        <button pButton icon="pi pi-ellipsis-v" class="p-button-text p-button-rounded p-button-sm"
+          title="Options"></button>
+      </div>
+    </header>
 
-  @if (!turn) {
-    @if (greeting) {
-      <div class="chips">
-        @for (chip of greeting.chips; track chip) {
-          <button type="button" class="chip" (click)="useChip(chip)">{{ chip }}</button>
+    <!-- Messages Container -->
+    <div class="chat-messages" #scrollContainer role="log" aria-live="polite">
+      @if (!isAvailable) {
+      <div class="agent-unavailable-center">
+        <i class="pi pi-exclamation-circle unavailable-icon"></i>
+        <h3>Agent is not available</h3>
+        <p>Unable to connect to the AI Agent service. Please try again later.</p>
+      </div>
+      } @else {
+      @for (message of messages; track $index) {
+      <div class="chat-message" [class.me]="message.role === 'user'" [class.them]="message.role === 'assistant'">
+        @if (message.role === 'assistant') {
+        <span class="message-avatar avatar-assistant">
+          <i class="pi pi-microchip-ai"></i>
+        </span>
+        }
+        <div class="chat-bubble">
+          <p class="bubble-text">{{ message.text }}</p>
+          @if (message.demo) {
+          <span class="demo-tag"><i class="pi pi-info-circle"></i> Demo report</span>
+          }
+          <span class="chat-time">{{ message.timestamp || 'Just now' }}</span>
+        </div>
+        @if (message.role === 'user') {
+        <span class="message-avatar avatar-user">
+          <i class="pi pi-user"></i>
+        </span>
         }
       </div>
-    }
-  }
-
-  @if (error) {
-    <p class="error" role="alert">{{ error }}</p>
-  }
-
-  @if (turn?.control === 'email') {
-    <form class="step" (ngSubmit)="submitEmail()">
-      <label for="step-email">Delivery email</label>
-      <input id="step-email" name="email" type="email" [(ngModel)]="email" required />
-      <button type="submit" [disabled]="pending">Confirm email</button>
-    </form>
-  } @else if (turn?.control === 'purpose') {
-    <form class="step" (ngSubmit)="submitPurpose()">
-      <label for="step-purpose">Purpose</label>
-      <textarea id="step-purpose" name="purpose" [(ngModel)]="purpose" required></textarea>
-      <label for="step-project">Project code (optional)</label>
-      <input id="step-project" name="projectCode" [(ngModel)]="projectCode" />
-      <button type="submit" [disabled]="pending">Confirm purpose</button>
-    </form>
-  } @else if (turn?.control === 'businessimpact') {
-    <form class="step" (ngSubmit)="submitBusinessImpact()">
-      <label for="step-impact">Business impact</label>
-      <textarea id="step-impact" name="businessImpact" [(ngModel)]="businessImpact" required></textarea>
-      <button type="submit" [disabled]="pending">Confirm impact</button>
-    </form>
-  } @else if (turn?.control === 'columns') {
-    <fieldset class="step">
-      <legend>Columns</legend>
-      @for (column of turn?.columns ?? []; track column.name) {
-        <label class="column">
-          <input
-            type="checkbox"
-            [checked]="selectedColumns.has(column.name)"
-            (change)="toggleColumn(column.name, $any($event.target).checked)" />
-          {{ column.name }}
-        </label>
       }
-      <button type="button" [disabled]="pending" (click)="submitColumns()">Confirm columns</button>
-    </fieldset>
-  } @else if (turn?.control === 'delivery') {
-    <fieldset class="step">
-      <legend>Delivery</legend>
-      <label><input type="radio" name="delivery" value="EMAIL" [(ngModel)]="delivery" /> Email report</label>
-      <label><input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" /> Download CSV</label>
-      <button type="button" [disabled]="pending" (click)="submitDelivery()">Confirm delivery</button>
-    </fieldset>
-  } @else if (turn?.step === 'ManagerEmail') {
-    <form class="step" (ngSubmit)="submitManagerEmail()">
-      <label for="step-manager">Manager email</label>
-      <input id="step-manager" name="managerEmail" type="email" [(ngModel)]="managerEmail" required />
-      <button type="submit" [disabled]="pending">Confirm manager</button>
+
+      @if (pending) {
+      <div class="chat-message them">
+        <span class="message-avatar avatar-assistant">
+          <i class="pi pi-microchip-ai"></i>
+        </span>
+        <div class="chat-bubble typing-bubble">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      </div>
+      }
+
+      @if (!turn && greeting) {
+      <div class="chips-container">
+        <p class="chips-label">Suggested prompts:</p>
+        <div class="chips-grid">
+          @for (chip of greeting.chips; track chip) {
+          <p-chip [label]="chip" icon="pi pi-sparkles" styleClass="chip-item clickable"
+            (click)="useChip(chip)"></p-chip>
+          }
+        </div>
+      </div>
+      }
+
+      @if (error) {
+      <div class="chat-error-banner" role="alert">
+        <i class="pi pi-exclamation-triangle"></i> {{ error }}
+      </div>
+      }
+
+      <!-- Dynamic Form Steps -->
+      @if (turn?.control === 'email') {
+      <div class="chat-step-card">
+        <form (ngSubmit)="submitEmail()">
+          <label for="step-email" class="step-label">Delivery Email</label>
+          <div class="p-inputgroup">
+            <input id="step-email" name="email" type="email" pInputText [(ngModel)]="email" required
+              placeholder="name@company.com" />
+            <button pButton type="submit" label="Confirm" icon="pi pi-check" [disabled]="pending"></button>
+          </div>
+        </form>
+      </div>
+      } @else if (turn?.control === 'purpose') {
+      <div class="chat-step-card">
+        <form (ngSubmit)="submitPurpose()" class="step-form">
+          <label for="step-purpose" class="step-label">Purpose of Query</label>
+          <textarea id="step-purpose" name="purpose" pTextarea [(ngModel)]="purpose" required rows="2"
+            placeholder="State reason for access..."></textarea>
+          <label for="step-project" class="step-label mt-2">Project Code (optional)</label>
+          <input id="step-project" name="projectCode" pInputText [(ngModel)]="projectCode"
+            placeholder="e.g. PRJ-2026" />
+          <button pButton type="submit" label="Confirm Purpose" icon="pi pi-check" class="mt-2"
+            [disabled]="pending"></button>
+        </form>
+      </div>
+      } @else if (turn?.control === 'businessimpact') {
+      <div class="chat-step-card">
+        <form (ngSubmit)="submitBusinessImpact()" class="step-form">
+          <label for="step-impact" class="step-label">Business Impact</label>
+          <textarea id="step-impact" name="businessImpact" pTextarea [(ngModel)]="businessImpact" required rows="2"
+            placeholder="Describe business impact..."></textarea>
+          <button pButton type="submit" label="Confirm Impact" icon="pi pi-check" class="mt-2"
+            [disabled]="pending"></button>
+        </form>
+      </div>
+      } @else if (turn?.control === 'columns') {
+      <div class="chat-step-card">
+        <fieldset class="step-fieldset">
+          <legend>Select Columns to Include</legend>
+          <div class="columns-grid">
+            @for (column of turn?.columns ?? []; track column.name) {
+            <label class="column-item">
+              <input type="checkbox" [checked]="selectedColumns.has(column.name)"
+                (change)="toggleColumn(column.name, $any($event.target).checked)" />
+              <span>{{ column.name }}</span>
+            </label>
+            }
+          </div>
+          <button pButton type="button" label="Confirm Columns" icon="pi pi-check" class="mt-2" [disabled]="pending"
+            (click)="submitColumns()"></button>
+        </fieldset>
+      </div>
+      } @else if (turn?.control === 'delivery') {
+      <div class="chat-step-card">
+        <fieldset class="step-fieldset">
+          <legend>Select Delivery Method</legend>
+          <div class="delivery-options">
+            <label class="radio-option">
+              <input type="radio" name="delivery" value="EMAIL" [(ngModel)]="delivery" />
+              <span>Email report</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="delivery" value="CSV" [(ngModel)]="delivery" />
+              <span>Download CSV</span>
+            </label>
+          </div>
+          <button pButton type="button" label="Confirm Delivery" icon="pi pi-check" class="mt-2" [disabled]="pending"
+            (click)="submitDelivery()"></button>
+        </fieldset>
+      </div>
+      } @else if (turn?.step === 'ManagerEmail') {
+      <div class="chat-step-card">
+        <form (ngSubmit)="submitManagerEmail()" class="step-form">
+          <label for="step-manager" class="step-label">Manager Email for Approval</label>
+          <input id="step-manager" name="managerEmail" type="email" pInputText [(ngModel)]="managerEmail" required
+            placeholder="manager@company.com" />
+          <button pButton type="submit" label="Confirm Manager" icon="pi pi-check" class="mt-2"
+            [disabled]="pending"></button>
+        </form>
+      </div>
+      }
+
+      @if (turn?.downloadable) {
+      <div class="download-banner mt-2">
+        <button pButton type="button" label="Download CSV Report" icon="pi pi-download" class="p-button-success"
+          (click)="download()"></button>
+      </div>
+      }
+
+      <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
+      }
+    </div>
+
+    <!-- Composer Footer -->
+    <form class="chat-composer" (ngSubmit)="send()">
+      <div class="composer-group">
+        <textarea id="utterance" name="utterance" pTextarea [(ngModel)]="text" (keydown)="onKeydown($event)" rows="3"
+          [placeholder]="!isAvailable ? 'Agent is not available...' : 'Type a message (Shift+Enter for newline)...'"
+          [disabled]="!isAvailable || pending || (turn !== null && turn.step !== 'Complete')"></textarea>
+        <button pButton type="submit" label="Send" icon="pi pi-send" aria-label="Send message"
+          [disabled]="!isAvailable || pending || !text.trim() || isWordLimitExceeded || (turn !== null && turn.step !== 'Complete')"></button>
+      </div>
+      <div class="composer-footer-meta">
+        <small class="word-counter" [class.exceeded]="isWordLimitExceeded">
+          {{ wordCount }}/1000 words
+        </small>
+        @if (isWordLimitExceeded) {
+        <small class="word-limit-error">Word limit of 1000 words exceeded.</small>
+        }
+      </div>
     </form>
-  }
-
-  @if (turn?.downloadable) {
-    <button type="button" class="download" (click)="download()">Download CSV</button>
-  }
-
-  <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
-
-  @if (!turn || turn.step === 'Complete') {
-    <form class="composer" (ngSubmit)="send()">
-      <label class="sr-only" for="utterance">Ask about listings</label>
-      <input id="utterance" name="utterance" [(ngModel)]="text" placeholder="Ask about listings" />
-      <button type="submit" aria-label="Send message" [disabled]="pending">Send</button>
-    </form>
-  }
-</section>
+  </section>
+</div>

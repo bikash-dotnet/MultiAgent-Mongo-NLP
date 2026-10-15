@@ -163,4 +163,30 @@ describe('ChatThreadComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('row-1');
   });
+
+  it('auto-populates assistant greeting message when greeting is provided', () => {
+    const fixture = TestBed.createComponent(ChatThreadComponent);
+    const component = fixture.componentInstance;
+    component.greeting = { displayName: 'Bikash', period: 'morning', message: 'Hi Bikash, Good morning', chips: ['Pools'] };
+    component.ngOnChanges({
+      greeting: { currentValue: component.greeting, previousValue: null, firstChange: true, isFirstChange: () => true }
+    });
+    fixture.detectChanges();
+
+    expect(component.messages.length).toBe(1);
+    expect(component.messages[0].role).toBe('assistant');
+    expect(component.messages[0].text).toBe('Hi Bikash, Good morning');
+  });
+
+  it('updates active event text on receiving SSE agent event', () => {
+    const fixture = TestBed.createComponent(ChatThreadComponent);
+    const component = fixture.componentInstance;
+    component.latestEvent = { event: 'agent.executing', data: '{"status":"executing"}' };
+    component.ngOnChanges({
+      latestEvent: { currentValue: component.latestEvent, previousValue: null, firstChange: true, isFirstChange: () => true }
+    });
+    fixture.detectChanges();
+
+    expect(component.activeEventText).toBe('Executing Query across Data Sources...');
+  });
 });
