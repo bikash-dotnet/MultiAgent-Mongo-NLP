@@ -28,7 +28,7 @@ export class ConversationService {
   }
 
   downloadPdfReport(conversationId: string): Observable<Blob> {
-    return this.http.get(`/api/conversations/${conversationId}/briefing`, { responseType: 'blob' });
+    return this.http.get(`/api/conversations/${conversationId}/report.pdf`, { responseType: 'blob' });
   }
 
   getApproval(): Observable<ApprovalFlag> {

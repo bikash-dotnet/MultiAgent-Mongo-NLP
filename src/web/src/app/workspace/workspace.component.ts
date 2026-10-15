@@ -84,14 +84,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.conversations
       .downloadReport(this.activeConversation.conversationId)
       .pipe(take(1))
-      .subscribe((blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = 'report.csv';
-        anchor.click();
-        URL.revokeObjectURL(url);
-      });
+      .subscribe((blob: Blob) => this.saveBlob(blob, 'report.csv'));
   }
 
   downloadXlsx(): void {
@@ -101,14 +94,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.conversations
       .downloadXlsxReport(this.activeConversation.conversationId)
       .pipe(take(1))
-      .subscribe((blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = 'report.xlsx';
-        anchor.click();
-        URL.revokeObjectURL(url);
-      });
+      .subscribe((blob: Blob) => this.saveBlob(blob, 'report.xlsx'));
   }
 
   downloadPdf(): void {
@@ -118,14 +104,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.conversations
       .downloadPdfReport(this.activeConversation.conversationId)
       .pipe(take(1))
-      .subscribe((blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = 'briefing.pdf';
-        anchor.click();
-        URL.revokeObjectURL(url);
-      });
+      .subscribe((blob: Blob) => this.saveBlob(blob, 'briefing.pdf'));
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url));
   }
 
   private listen(): void {
