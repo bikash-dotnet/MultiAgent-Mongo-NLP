@@ -56,6 +56,18 @@ public sealed class FileDocumentStore : IDocumentStore
         await File.WriteAllTextAsync(PathFor(collection, id), json, cancellationToken);
     }
 
+    public Task<bool> DeleteAsync(string collection, string id, CancellationToken cancellationToken = default)
+    {
+        var path = PathFor(collection, id);
+        if (!File.Exists(path))
+        {
+            return Task.FromResult(false);
+        }
+
+        File.Delete(path);
+        return Task.FromResult(true);
+    }
+
     private string CollectionDirectory(string collection)
     {
         return Path.Combine(_directory, collection);
