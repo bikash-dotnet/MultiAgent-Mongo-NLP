@@ -5,7 +5,7 @@ for in-memory steps; real ONNX embed recorded separately (split-budget decision)
 
 | Step | Measured | Budget |
 | --- | --- | --- |
-| cache hit (full route incl. embed) | 25.94 ms | < 10 ms (lookup) / embed measured |
-| real ONNX embed | 20.97 ms | measured ≈ 25 ms |
-| slot extraction | 0.043 ms | < 5 ms |
-| simple MQL render | 0.945 ms | < 2 ms |
+| cache hit (full route incl. embed) | 26.09 ms | < 10 ms (lookup) / embed measured |
+| real ONNX embed | 25.70 ms | measured ≈ 25 ms |
+| slot extraction | 0.053 ms | < 5 ms |
+| simple MQL render | 0.832 ms | < 2 ms |
