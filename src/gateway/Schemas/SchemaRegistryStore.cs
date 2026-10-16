@@ -38,13 +38,41 @@ public sealed class SchemaRegistryStore : ISchemaRegistry
 
     public async Task<SchemaDefinition> SaveAsync(SchemaDefinition schema, CancellationToken cancellationToken = default)
     {
-        await _store.UpsertAsync(Collection, schema.Id, schema, cancellationToken);
-        return schema;
+        var current = await _store.GetAsync<SchemaDefinition>(Collection, schema.Id, cancellationToken);
+        var stored = current is null
+            ? schema with { Version = 1 }
+            : schema with { Version = current.Version + 1 };
+
+        await _store.UpsertAsync(Collection, stored.Id, stored, cancellationToken);
+        return stored;
     }
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
         return _store.DeleteAsync(Collection, id, cancellationToken);
+    }
+
+    public async Task ActivateAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var all = await ListAsync(cancellationToken);
+        var target = all.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
+        if (target is null)
+        {
+            throw new KeyNotFoundException($"Schema '{id}' was not found.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var schema in all)
+        {
+            var next = string.Equals(schema.Id, id, StringComparison.Ordinal)
+                ? schema with { IsActiveSource = true, UpdatedAt = now }
+                : schema with { IsActiveSource = false, UpdatedAt = now };
+
+            if (next.IsActiveSource != schema.IsActiveSource || next.UpdatedAt != schema.UpdatedAt)
+            {
+                await _store.UpsertAsync(Collection, next.Id, next, cancellationToken);
+            }
+        }
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
