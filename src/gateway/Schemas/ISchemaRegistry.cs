@@ -15,4 +15,6 @@ public interface ISchemaRegistry
     Task<SchemaDefinition> SaveAsync(SchemaDefinition schema, CancellationToken cancellationToken = default);
 
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
+
+    Task SeedAsync(CancellationToken cancellationToken = default);
 }

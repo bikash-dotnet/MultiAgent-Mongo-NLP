@@ -13,6 +13,7 @@ using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
 using Gateway.Persistence;
 using Gateway.Reports;
+using Gateway.Schemas;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp;
@@ -67,6 +68,9 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IEmailSender, MailKitEmailSender>();
         services.AddSingleton<ExportDeliveryService>();
         services.AddSingleton<IColumnCatalog, ColumnCatalog>();
+        services.AddSingleton<ISchemaRegistry, SchemaRegistryStore>();
+        services.AddSingleton<ActiveSchemaProvider>();
+        services.AddHostedService<SchemaRegistrySeedHostedService>();
         services.AddSingleton<ConversationOrchestrator>();
         services.AddSingleton<IConversationResumeHandler>(sp => sp.GetRequiredService<ConversationOrchestrator>());
         services.AddSingleton<IGovernanceService, GovernanceService>();
