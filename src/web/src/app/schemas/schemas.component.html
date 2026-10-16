@@ -1,0 +1,195 @@
+<section class="schemas">
+  <header class="toolbar">
+    <h1>Schema Registry</h1>
+    <p class="subtitle">Define and manage data-source schemas that drive guardrails, validation, and result columns.</p>
+    @if (canManage) {
+      <button type="button" class="btn btn-primary" (click)="startCreate()">Create schema</button>
+    }
+  </header>
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (loading) {
+    <p>Loading schemas...</p>
+  } @else if (schemas.length === 0) {
+    <p>No schemas defined.</p>
+  } @else {
+    <div class="schema-list">
+      @for (schema of schemas; track schema.id) {
+        <article class="schema-card" [class.active]="schema.isActiveSource">
+          <header>
+            <h3>{{ schema.name }}</h3>
+            @if (schema.isActiveSource) {
+              <span class="badge active">Active</span>
+            } @else {
+              <span class="badge inactive">Inactive</span>
+            }
+          </header>
+          <dl class="meta">
+            <dt>Data source</dt>
+            <dd>{{ schema.dataSource }}</dd>
+            <dt>Database / collection</dt>
+            <dd>{{ 'sample_airbnb.listingsAndReviews' }}</dd>
+            <dt>Fields</dt>
+            <dd>{{ schema.fieldCount }}</dd>
+            <dt>Version</dt>
+            <dd>{{ schema.version }}</dd>
+          </dl>
+          <div class="actions">
+            <button type="button" class="btn btn-outline" (click)="startEdit(schema)">Edit</button>
+            @if (!schema.isActiveSource && canManage) {
+              <button type="button" class="btn btn-secondary" (click)="activate(schema.id)">Activate</button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (creating || editing) {
+    <div class="editor">
+      <h2>{{ creating ? 'Create schema' : 'Edit schema' }}</h2>
+      @if (error) {
+        <p class="error" role="alert">{{ error }}</p>
+      }
+      <form (ngSubmit)="creating ? saveCreate() : saveEdit()">
+        @if (creating) {
+          <div class="form-row">
+            <label>Name</label>
+            <input name="createName" type="text" [(ngModel)]="newName" required />
+          </div>
+          <div class="form-row">
+            <label>Database</label>
+            <input name="createDatabase" type="text" [(ngModel)]="newDatabase" required />
+          </div>
+          <div class="form-row">
+            <label>Collection</label>
+            <input name="createCollection" type="text" [(ngModel)]="newCollection" required />
+          </div>
+          <div class="form-row">
+            <label>Description</label>
+            <input name="createDescription" type="text" [(ngModel)]="newDescription" />
+          </div>
+        } @else {
+          <div class="form-row">
+            <label>Name</label>
+            <input name="editName" type="text" [(ngModel)]="editName" required />
+          </div>
+          <div class="form-row">
+            <label>Database</label>
+            <input name="editDatabase" type="text" [(ngModel)]="editDatabase" required />
+          </div>
+          <div class="form-row">
+            <label>Collection</label>
+            <input name="editCollection" type="text" [(ngModel)]="editCollection" required />
+          </div>
+          <div class="form-row">
+            <label>Data source</label>
+            <select name="editDataSource" [(ngModel)]="editDataSource">
+              @for (option of dataSourceOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Active source</label>
+            <input name="editIsActive" type="checkbox" [(ngModel)]="editIsActive" />
+          </div>
+          <div class="form-row">
+            <label>Description</label>
+            <input name="editDescription" type="text" [(ngModel)]="editDescription" />
+          </div>
+        }
+
+        <h3>Fields</h3>
+        <div class="fields-list">
+          @for (field of (creating ? [] : selected?.fields ?? []); track field.path; let i = $index) {
+            <div class="field-row">
+              <div class="field-cell path">{{ field.path }}</div>
+              <div class="field-cell type">{{ field.dataType }}</div>
+              <div class="field-cell flags">
+                @if (field.isSensitive) { <span class="tag sensitive">sensitive</span> }
+                @if (field.requiresApproval) { <span class="tag approval">approval</span> }
+              </div>
+              <div class="field-cell actions">
+                @if (editingFieldIndex === i) {
+                  <button type="button" class="btn btn-small btn-outline" (click)="saveEditField()">Save</button>
+                  <button type="button" class="btn btn-small btn-outline" (click)="resetEditField()">Cancel</button>
+                } @else {
+                  <button type="button" class="btn btn-small btn-outline" (click)="startEditField(i)">Edit</button>
+                  <button type="button" class="btn btn-small btn-danger" (click)="deleteField(field.path)">Delete</button>
+                }
+              </div>
+            </div>
+            @if (editingFieldIndex === i) {
+              <div class="field-editor">
+                <div class="form-row compact">
+                  <label>Path</label>
+                  <input name="editFieldPath" type="text" [(ngModel)]="editFieldPath" required />
+                </div>
+                <div class="form-row compact">
+                  <label>Type</label>
+                  <select name="editFieldType" [(ngModel)]="editFieldType">
+                    @for (type of fieldTypeOptions; track type) {
+                      <option [value]="type">{{ type }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-row compact">
+                  <label>Roles (comma-separated)</label>
+                  <input name="editFieldRoles" type="text" [(ngModel)]="editFieldRoles" placeholder="Data Owner / Admin" />
+                </div>
+                <div class="form-row compact">
+                  <label>Description</label>
+                  <input name="editFieldDescription" type="text" [(ngModel)]="editFieldDescription" />
+                </div>
+                <div class="form-row compact flags">
+                  <label><input type="checkbox" [(ngModel)]="editFieldSensitive" /> Sensitive</label>
+                  <label><input type="checkbox" [(ngModel)]="editFieldRequiresApproval" /> Requires approval</label>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        @if (creating) {
+          <div class="field-editor">
+            <h4>Add field</h4>
+            <div class="form-row compact">
+              <label>Path</label>
+              <input name="newFieldPath" type="text" [(ngModel)]="newFieldPath" required />
+            </div>
+            <div class="form-row compact">
+              <label>Type</label>
+              <select name="newFieldType" [(ngModel)]="newFieldType">
+                @for (type of fieldTypeOptions; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-row compact">
+              <label>Roles (comma-separated)</label>
+              <input name="newFieldRoles" type="text" [(ngModel)]="newFieldRoles" placeholder="Data Owner / Admin" />
+            </div>
+            <div class="form-row compact flags">
+              <label><input type="checkbox" [(ngModel)]="newFieldSensitive" /> Sensitive</label>
+              <label><input type="checkbox" [(ngModel)]="newFieldRequiresApproval" /> Requires approval</label>
+            </div>
+            <div class="form-row compact">
+              <label>Description</label>
+              <input name="newFieldDescription" type="text" [(ngModel)]="newFieldDescription" />
+            </div>
+            <button type="button" class="btn btn-secondary" (click)="addField()">Add field</button>
+          </div>
+        }
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Saving...' : (creating ? 'Create schema' : 'Save changes') }}</button>
+        </div>
+      </form>
+    </div>
+  }
+</section>
