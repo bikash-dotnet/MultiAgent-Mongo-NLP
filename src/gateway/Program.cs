@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Gateway.Analytics;
 using Gateway.Audit;
 using Gateway.Auth;
@@ -840,7 +841,12 @@ app.MapPost("/api/schemas/import", async (
     {
         try
         {
-            fields = System.Text.Json.JsonSerializer.Deserialize<List<SchemaFieldRequest>>(request.FieldsJson) ?? [];
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter<SchemaFieldType>() }
+            };
+            fields = System.Text.Json.JsonSerializer.Deserialize<List<SchemaFieldRequest>>(request.FieldsJson, options) ?? [];
         }
         catch
         {
