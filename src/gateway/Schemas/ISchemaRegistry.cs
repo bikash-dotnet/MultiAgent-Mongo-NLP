@@ -17,4 +17,6 @@ public interface ISchemaRegistry
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 
     Task SeedAsync(CancellationToken cancellationToken = default);
+
+    Task ActivateAsync(string id, CancellationToken cancellationToken = default);
 }
