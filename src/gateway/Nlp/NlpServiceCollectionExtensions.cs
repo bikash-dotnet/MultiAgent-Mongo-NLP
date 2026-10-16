@@ -54,11 +54,9 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IPipelineValidator, PipelineValidator>();
         services.AddSingleton<ILlmQueryGenerator, SemanticKernelLlmQueryGenerator>();
         services.AddSingleton<SelfCorrectingLlmQueryGenerator>();
-        services.AddSingleton(SchemaWhitelist.LoadFromSchemaFile(
-            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts", "schema.txt")));
-        services.AddSingleton<ISensitiveFieldRegistry>(_ => InMemorySensitiveFieldRegistry.LoadFromDirectory(
-            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Schema")));
-        services.AddSingleton<GuardrailEvaluator>();
+        services.AddSingleton<GuardrailEvaluator>(sp => new GuardrailEvaluator(
+            sp.GetRequiredService<ActiveSchemaProvider>(),
+            sp.GetRequiredService<IApprovalFlagStore>()));
         services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
         services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();
 
@@ -67,7 +65,8 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<INotificationSender, SimulatedNotificationSender>();
         services.AddSingleton<IEmailSender, MailKitEmailSender>();
         services.AddSingleton<ExportDeliveryService>();
-        services.AddSingleton<IColumnCatalog, ColumnCatalog>();
+        services.AddSingleton<IColumnCatalog>(sp => new ColumnCatalog(
+            sp.GetRequiredService<ActiveSchemaProvider>()));
         services.AddSingleton<ISchemaRegistry, SchemaRegistryStore>();
         services.AddSingleton<ActiveSchemaProvider>();
         services.AddHostedService<SchemaRegistrySeedHostedService>();
