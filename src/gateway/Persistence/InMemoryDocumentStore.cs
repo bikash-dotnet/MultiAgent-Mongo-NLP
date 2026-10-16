@@ -37,4 +37,10 @@ public sealed class InMemoryDocumentStore : IDocumentStore
         documents[id] = JsonSerializer.Serialize(document);
         return Task.CompletedTask;
     }
+
+    public Task<bool> DeleteAsync(string collection, string id, CancellationToken cancellationToken = default)
+    {
+        var removed = _collections.TryGetValue(collection, out var documents) && documents.TryRemove(id, out _);
+        return Task.FromResult(removed);
+    }
 }

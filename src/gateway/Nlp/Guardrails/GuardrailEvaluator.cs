@@ -4,14 +4,12 @@ namespace Gateway.Nlp.Guardrails;
 
 public sealed class GuardrailEvaluator
 {
-    private readonly SchemaWhitelist _whitelist;
-    private readonly ISensitiveFieldRegistry _registry;
+    private readonly ActiveSchemaProvider _provider;
     private readonly IApprovalFlagStore _flags;
 
-    public GuardrailEvaluator(SchemaWhitelist whitelist, ISensitiveFieldRegistry registry, IApprovalFlagStore flags)
+    public GuardrailEvaluator(ActiveSchemaProvider provider, IApprovalFlagStore flags)
     {
-        _whitelist = whitelist;
-        _registry = registry;
+        _provider = provider;
         _flags = flags;
     }
 
@@ -32,9 +30,15 @@ public sealed class GuardrailEvaluator
                 violations);
         }
 
-        var unknownFields = _whitelist
+        // Fail open when no schema data has been loaded yet (registry not seeded).
+        if (_provider.WhitelistFields.Count == 0 && _provider.SensitiveFlags.Count == 0)
+        {
+            return new GuardrailResult(GuardrailOutcome.Allowed, null, [], [], []);
+        }
+
+        var unknownFields = _provider
             .FindUnknown(analysis.FieldPaths)
-            .Where(path => _registry.Match([path]).Count == 0)
+            .Where(path => _provider.MatchSensitive([path]).Count == 0)
             .ToList();
 
         if (unknownFields.Count > 0)
@@ -47,8 +51,8 @@ public sealed class GuardrailEvaluator
                 []);
         }
 
-        var matched = _registry
-            .Match(analysis.FieldPaths)
+        var matched = _provider
+            .MatchSensitive(analysis.FieldPaths)
             .Where(flag => flag.IsSensitive)
             .ToList();
 

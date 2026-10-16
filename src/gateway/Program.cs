@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Gateway.Analytics;
 using Gateway.Audit;
 using Gateway.Auth;
@@ -17,6 +18,7 @@ using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Observability;
 using Gateway.Reports;
+using Gateway.Schemas;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -497,7 +499,441 @@ app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink eve
 
 app.MapHub<AgentHub>("/hubs/agent-stream").RequireAuthorization();
 
+#region Schema Registry API
+
+static bool IsDataOwnerOrAdmin(ClaimsPrincipal user)
+{
+    var role = user.FindFirst(SessionClaims.Role)?.Value;
+    return role == "Data Owner / Admin";
+}
+
+static AuditLogDocument BuildSchemaAuditDoc(ClaimsPrincipal user, SchemaDataSource dataSource, string action, string? schemaId, int version, string? notes = null)
+{
+    var viewer = SessionClaims.ToRequesterContext(user);
+    return new AuditLogDocument(
+        Guid.NewGuid().ToString("N"),
+        DateTimeOffset.UtcNow,
+        "schema-management",
+        dataSource.ToString(),
+        new AuditLogUser(viewer.UserId, viewer.Name, viewer.Email, viewer.Role),
+        new AuditLogNlpPerformance(false, false, 0, 0),
+        new AuditLogRequestDetails("", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty),
+        new AuditLogExecutionDetails("", "schemas", 0, null, null),
+        new AuditLogGovernance(false, [], null, false, $"{viewer.Name}: {action} {(schemaId ?? string.Empty)} v{version}" + (notes is not null ? $" ({notes})" : string.Empty)));
+}
+
+app.MapGet("/api/schemas", async (
+    ISchemaRegistry registry,
+    CancellationToken cancellationToken) =>
+{
+    var schemas = await registry.ListAsync(cancellationToken);
+    var summaries = schemas.Select(s => new SchemaSummary(
+        s.Id, s.Name, s.DataSource, s.Fields.Count, s.IsActiveSource, s.Version, s.UpdatedAt, s.UpdatedBy));
+    return Results.Ok(new SchemaListResponse(summaries.ToList()));
+}).RequireAuthorization();
+
+app.MapGet("/api/schemas/{id}", async (
+    string id,
+    ISchemaRegistry registry,
+    CancellationToken cancellationToken) =>
+{
+    var schema = await registry.GetAsync(id, cancellationToken);
+    return schema is null ? Results.NotFound() : Results.Ok(new SchemaResponse(schema));
+}).RequireAuthorization();
+
+app.MapPost("/api/schemas", async (
+    CreateSchemaRequest request,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Name))
+    {
+        return Results.BadRequest(new { error = "Schema name is required." });
+    }
+
+    if (request.Fields is null || request.Fields.Count == 0)
+    {
+        return Results.BadRequest(new { error = "At least one field is required." });
+    }
+
+    var fieldPaths = request.Fields.Select(f => f.Path).ToList();
+    if (fieldPaths.Any(string.IsNullOrWhiteSpace))
+    {
+        return Results.BadRequest(new { error = "Field path is required for all fields." });
+    }
+
+    if (fieldPaths.Distinct(StringComparer.Ordinal).Count() != fieldPaths.Count)
+    {
+        return Results.BadRequest(new { error = "Duplicate field paths are not allowed." });
+    }
+
+    var fields = request.Fields.Select(f => new SchemaField(
+        f.Path, f.DataType, f.IsSensitive, f.RequiresApproval, f.DataOwnerRoles ?? [], f.Description)).ToList();
+
+    var schema = new SchemaDefinition(
+        SchemaDefinition.NewId(),
+        request.Name.Trim(),
+        request.DataSource,
+        request.Database.Trim(),
+        request.Collection.Trim(),
+        fields,
+        false,
+        1,
+        request.Description,
+        DateTimeOffset.UtcNow,
+        DateTimeOffset.UtcNow,
+        SessionClaims.ToRequesterContext(user).UserId);
+
+    var created = await registry.CreateAsync(schema, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, request.DataSource, "create", created.Id, created.Version), cancellationToken);
+    return Results.Ok(new SchemaResponse(created));
+}).RequireAuthorization();
+
+app.MapPut("/api/schemas/{id}", async (
+    string id,
+    UpdateSchemaRequest request,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (current.Version != request.Version)
+    {
+        return Results.Conflict(new { error = $"Schema version is stale. Current version is {current.Version}." });
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Name))
+    {
+        return Results.BadRequest(new { error = "Schema name is required." });
+    }
+
+    if (request.Fields is null || request.Fields.Count == 0)
+    {
+        return Results.BadRequest(new { error = "At least one field is required." });
+    }
+
+    var fieldPaths = request.Fields.Select(f => f.Path).ToList();
+    if (fieldPaths.Any(string.IsNullOrWhiteSpace))
+    {
+        return Results.BadRequest(new { error = "Field path is required for all fields." });
+    }
+
+    if (fieldPaths.Distinct(StringComparer.Ordinal).Count() != fieldPaths.Count)
+    {
+        return Results.BadRequest(new { error = "Duplicate field paths are not allowed." });
+    }
+
+    if (!request.IsActiveSource && current.IsActiveSource)
+    {
+        var all = await registry.ListAsync(cancellationToken);
+        var otherActive = all.Any(s => !string.Equals(s.Id, id, StringComparison.Ordinal) && s.IsActiveSource);
+        if (!otherActive)
+        {
+            return Results.BadRequest(new { error = "At least one schema must remain the active source." });
+        }
+    }
+
+    var fields = request.Fields.Select(f => new SchemaField(
+        f.Path, f.DataType, f.IsSensitive, f.RequiresApproval, f.DataOwnerRoles ?? [], f.Description)).ToList();
+
+    var updated = current with
+    {
+        Name = request.Name.Trim(),
+        DataSource = request.DataSource,
+        Database = request.Database.Trim(),
+        Collection = request.Collection.Trim(),
+        Fields = fields,
+        IsActiveSource = request.IsActiveSource,
+        Description = request.Description,
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = SessionClaims.ToRequesterContext(user).UserId
+    };
+
+    var saved = await registry.SaveAsync(updated, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, request.DataSource, "update", saved.Id, saved.Version), cancellationToken);
+    return Results.Ok(new SchemaResponse(saved));
+}).RequireAuthorization();
+
+app.MapPost("/api/schemas/{id}/fields", async (
+    string id,
+    SchemaFieldRequest request,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Path))
+    {
+        return Results.BadRequest(new { error = "Field path is required." });
+    }
+
+    if (current.Fields.Any(f => string.Equals(f.Path, request.Path, StringComparison.Ordinal)))
+    {
+        return Results.Conflict(new { error = $"Field '{request.Path}' already exists." });
+    }
+
+    var newField = new SchemaField(
+        request.Path, request.DataType, request.IsSensitive, request.RequiresApproval,
+        request.DataOwnerRoles ?? [], request.Description);
+
+    var updated = current with
+    {
+        Fields = current.Fields.Append(newField).ToList(),
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = SessionClaims.ToRequesterContext(user).UserId
+    };
+
+    var saved = await registry.SaveAsync(updated, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "add-field", saved.Id, saved.Version, request.Path), cancellationToken);
+    return Results.Ok(new SchemaResponse(saved));
+}).RequireAuthorization();
+
+app.MapPut("/api/schemas/{id}/fields/{path}", async (
+    string id,
+    string path,
+    SchemaFieldRequest request,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    var fieldsList = current.Fields.ToList();
+    var existingIndex = fieldsList.FindIndex(f => string.Equals(f.Path, path, StringComparison.Ordinal));
+    if (existingIndex < 0)
+    {
+        return Results.NotFound(new { error = $"Field '{path}' not found." });
+    }
+
+    var updatedField = new SchemaField(
+        request.Path, request.DataType, request.IsSensitive, request.RequiresApproval,
+        request.DataOwnerRoles ?? [], request.Description);
+
+    fieldsList[existingIndex] = updatedField;
+
+    var updated = current with
+    {
+        Fields = fieldsList,
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = SessionClaims.ToRequesterContext(user).UserId
+    };
+
+    var saved = await registry.SaveAsync(updated, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "update-field", saved.Id, saved.Version, path), cancellationToken);
+    return Results.Ok(new SchemaResponse(saved));
+}).RequireAuthorization();
+
+app.MapDelete("/api/schemas/{id}/fields/{path}", async (
+    string id,
+    string path,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!current.Fields.Any(f => string.Equals(f.Path, path, StringComparison.Ordinal)))
+    {
+        return Results.NotFound(new { error = $"Field '{path}' not found." });
+    }
+
+    var updated = current with
+    {
+        Fields = current.Fields.Where(f => !string.Equals(f.Path, path, StringComparison.Ordinal)).ToList(),
+        UpdatedAt = DateTimeOffset.UtcNow,
+        UpdatedBy = SessionClaims.ToRequesterContext(user).UserId
+    };
+
+    var saved = await registry.SaveAsync(updated, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "delete-field", saved.Id, saved.Version, path), cancellationToken);
+    return Results.Ok(new SchemaResponse(saved));
+}).RequireAuthorization();
+
+app.MapPost("/api/schemas/{id}/activate", async (
+    string id,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    await registry.ActivateAsync(id, cancellationToken);
+    var activated = await registry.GetAsync(id, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, activated?.DataSource ?? current.DataSource, "activate", id, activated?.Version ?? current.Version), cancellationToken);
+    return Results.Ok(new { id, isActiveSource = true });
+}).RequireAuthorization();
+
+app.MapPost("/api/schemas/import", async (
+    ImportSchemaRequest request,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    IReadOnlyList<SchemaFieldRequest> fields;
+    SchemaDataSource dataSource = SchemaDataSource.Mongo;
+
+    if (!string.IsNullOrWhiteSpace(request.FieldsJson))
+    {
+        try
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter<SchemaFieldType>() }
+            };
+            fields = System.Text.Json.JsonSerializer.Deserialize<List<SchemaFieldRequest>>(request.FieldsJson, options) ?? [];
+        }
+        catch
+        {
+            return Results.BadRequest(new { error = "Invalid FieldsJson payload." });
+        }
+    }
+    else if (!string.IsNullOrWhiteSpace(request.SchemaTxt))
+    {
+        fields = ParseSchemaTxt(request.SchemaTxt);
+    }
+    else
+    {
+        return Results.BadRequest(new { error = "Either FieldsJson or SchemaTxt is required." });
+    }
+
+    if (fields.Count == 0)
+    {
+        return Results.BadRequest(new { error = "No fields to import." });
+    }
+
+    var schema = new SchemaDefinition(
+        SchemaDefinition.NewId(),
+        "Imported Schema",
+        dataSource,
+        "sample_airbnb",
+        "listingsAndReviews",
+        fields.Select(f => new SchemaField(
+            f.Path, f.DataType, f.IsSensitive, f.RequiresApproval, f.DataOwnerRoles ?? [], f.Description)).ToList(),
+        false,
+        1,
+        "Imported via /api/schemas/import",
+        DateTimeOffset.UtcNow,
+        DateTimeOffset.UtcNow,
+        SessionClaims.ToRequesterContext(user).UserId);
+
+    var created = await registry.CreateAsync(schema, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, dataSource, "import", created.Id, created.Version), cancellationToken);
+    return Results.Ok(new SchemaResponse(created));
+}).RequireAuthorization();
+
+#endregion
+
 app.Run();
+
+static IReadOnlyList<SchemaFieldRequest> ParseSchemaTxt(string schemaTxt)
+{
+    var fields = new List<SchemaFieldRequest>();
+    foreach (var rawLine in schemaTxt.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var line = rawLine.Trim();
+        if (!line.StartsWith("- ", StringComparison.Ordinal))
+        {
+            continue;
+        }
+
+        var entry = line[2..];
+        var colon = entry.IndexOf(':');
+        if (colon <= 0)
+        {
+            continue;
+        }
+
+        var path = entry[..colon].Trim();
+        var rest = entry[(colon + 1)..].Trim();
+        var paren = rest.IndexOf('(');
+        if (paren >= 0)
+        {
+            rest = rest[..paren].Trim();
+        }
+
+        var dataType = rest.ToLowerInvariant() switch
+        {
+            "string" => SchemaFieldType.String,
+            "number" => SchemaFieldType.Number,
+            "boolean" => SchemaFieldType.Boolean,
+            "date" => SchemaFieldType.Date,
+            "object" => SchemaFieldType.Object,
+            _ => rest.StartsWith("array", StringComparison.OrdinalIgnoreCase) ? SchemaFieldType.Array : SchemaFieldType.String
+        };
+
+        if (path.Length > 0)
+        {
+            fields.Add(new SchemaFieldRequest(path, dataType, false, false, [], string.Empty));
+        }
+    }
+    return fields;
+}
 
 static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, CancellationToken cancellationToken)
 {
