@@ -6,7 +6,8 @@ namespace Gateway.Schemas;
 public enum SchemaDataSource
 {
     Mongo,
-    EnterpriseCoreREST
+    EnterpriseCoreREST,
+    Elasticsearch
 }
 
 public sealed record SchemaDefinition(
