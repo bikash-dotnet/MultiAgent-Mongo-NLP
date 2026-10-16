@@ -46,4 +46,16 @@ public sealed class SchemaRegistryStore : ISchemaRegistry
     {
         return _store.DeleteAsync(Collection, id, cancellationToken);
     }
+
+    public async Task SeedAsync(CancellationToken cancellationToken = default)
+    {
+        var existing = await ListAsync(cancellationToken);
+        if (existing.Count > 0)
+        {
+            return;
+        }
+
+        var schema = SchemaSeeder.BuildDefault();
+        await _store.UpsertAsync(Collection, schema.Id, schema, cancellationToken);
+    }
 }
