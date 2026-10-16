@@ -34,6 +34,8 @@ public sealed class ActiveSchemaProvider
 
         var fieldPaths = new List<string>();
         var pathSet = new HashSet<string>(StringComparer.Ordinal);
+        var flags = new List<SensitiveFieldFlag>();
+
         foreach (var schema in schemas)
         {
             foreach (var field in schema.Fields)
@@ -42,9 +44,71 @@ public sealed class ActiveSchemaProvider
                 {
                     fieldPaths.Add(field.Path);
                 }
+
+                if (field.IsSensitive || field.RequiresApproval)
+                {
+                    flags.Add(new SensitiveFieldFlag(
+                        field.Path, field.IsSensitive, field.RequiresApproval, field.Roles));
+                }
             }
         }
         fieldPaths.Add("_id");
-        _whitelistFields = fieldPaths.AsReadOnly();
+
+        lock (_lock)
+        {
+            _whitelistFields = fieldPaths.AsReadOnly();
+            _sensitiveFlags = flags.AsReadOnly();
+        }
+    }
+
+    public bool IsKnown(string fieldPath)
+    {
+        if (string.IsNullOrWhiteSpace(fieldPath))
+        {
+            return false;
+        }
+
+        return _whitelistFields.Any(known =>
+            string.Equals(known, fieldPath, StringComparison.Ordinal) ||
+            fieldPath.StartsWith(known + ".", StringComparison.Ordinal) ||
+            known.StartsWith(fieldPath + ".", StringComparison.Ordinal));
+    }
+
+    public IReadOnlyList<string> FindUnknown(IEnumerable<string> fieldPaths)
+    {
+        return fieldPaths
+            .Where(path => !IsKnown(path))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    public IReadOnlyList<SensitiveFieldFlag> MatchSensitive(IEnumerable<string> fieldPaths)
+    {
+        var matched = new List<SensitiveFieldFlag>();
+
+        foreach (var fieldPath in fieldPaths)
+        {
+            foreach (var flag in _sensitiveFlags)
+            {
+                if (IsRelated(flag.Path, fieldPath) && !matched.Contains(flag))
+                {
+                    matched.Add(flag);
+                }
+            }
+        }
+
+        return matched;
+    }
+
+    private static bool IsRelated(string flaggedPath, string referencedPath)
+    {
+        if (string.IsNullOrWhiteSpace(referencedPath))
+        {
+            return false;
+        }
+
+        return string.Equals(flaggedPath, referencedPath, StringComparison.Ordinal) ||
+               referencedPath.StartsWith(flaggedPath + ".", StringComparison.Ordinal) ||
+               flaggedPath.StartsWith(referencedPath + ".", StringComparison.Ordinal);
     }
 }
