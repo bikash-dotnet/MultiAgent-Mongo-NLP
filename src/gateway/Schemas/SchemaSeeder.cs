@@ -28,7 +28,7 @@ public static class SchemaSeeder
         {
             if (seen.Add(path))
             {
-                fields.Add(new SchemaField(path, dataType));
+                fields.Add(new SchemaField(path, dataType, Description: string.Empty));
             }
         }
 
@@ -41,7 +41,8 @@ public static class SchemaSeeder
                     SchemaFieldType.String,
                     flag.IsSensitive,
                     flag.RequiresApproval,
-                    flag.DataOwnerRoles));
+                    flag.DataOwnerRoles,
+                    string.Empty));
             }
         }
 

@@ -15,11 +15,11 @@ public enum SchemaFieldType
 
 public sealed record SchemaField(
     string Path,
-    SchemaFieldType DataType = SchemaFieldType.String,
+    SchemaFieldType DataType,
     bool IsSensitive = false,
     bool RequiresApproval = false,
     IReadOnlyList<string>? DataOwnerRoles = null,
-    string? Description = null)
+    string Description = "")
 {
     public IReadOnlyList<string> Roles => DataOwnerRoles ?? [];
 }
