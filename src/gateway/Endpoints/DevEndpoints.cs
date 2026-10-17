@@ -4,7 +4,6 @@ using Gateway.Governance;
 using Gateway.Hubs;
 using Gateway.Nlp.Orchestrator;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,7 +21,9 @@ public static class DevEndpoints
             return app;
         }
 
-        app.MapGet("/dev/token", (IConfiguration config) =>
+        var dev = app.MapGroup("/dev");
+
+        dev.MapGet("/token", (IConfiguration config) =>
         {
             var key = config["Jwt:SigningKey"] ?? signingKey;
             var tokenIssuer = config["Jwt:Issuer"] ?? issuer;
@@ -47,7 +48,7 @@ public static class DevEndpoints
             return Microsoft.AspNetCore.Http.Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(jwt) });
         });
 
-        app.MapPost("/dev/enterprise-core/query", (EnterpriseCoreQueryRequest body) =>
+        dev.MapPost("/enterprise-core/query", (EnterpriseCoreQueryRequest body) =>
         {
             var columns = body.Columns is { Count: > 0 } list
                 ? list

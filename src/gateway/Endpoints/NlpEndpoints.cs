@@ -9,7 +9,10 @@ public static class NlpEndpoints
 {
     public static IEndpointRouteBuilder MapNlpEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/nlp/query", async (
+        var nlp = app.MapGroup("/api/nlp")
+            .RequireAuthorization();
+
+        nlp.MapPost("/query", async (
             NlpQueryRequest request,
             ClaimsPrincipal user,
             INlpOrchestrator orchestrator,
@@ -29,7 +32,7 @@ public static class NlpEndpoints
             var sessionId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
             var result = await orchestrator.OrchestrateAsync(utterance, sessionId, cancellationToken, SessionClaims.ToRequesterContext(user));
             return Microsoft.AspNetCore.Http.Results.Ok(NlpQueryResponse.From(result));
-        }).RequireAuthorization();
+        });
 
         return app;
     }

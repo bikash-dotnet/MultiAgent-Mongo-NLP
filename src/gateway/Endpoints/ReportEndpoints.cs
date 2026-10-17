@@ -9,7 +9,10 @@ public static class ReportEndpoints
 {
     public static IEndpointRouteBuilder MapReportEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/conversations/{id}/report.csv", async (
+        var conversations = app.MapGroup("/api/conversations/{id}")
+            .RequireAuthorization();
+
+        conversations.MapGet("report.csv", async (
             string id,
             ConversationOrchestrator conversations,
             CancellationToken cancellationToken) =>
@@ -35,9 +38,9 @@ public static class ReportEndpoints
             }
 
             return Microsoft.AspNetCore.Http.Results.Text(build.Csv, "text/csv");
-        }).RequireAuthorization();
+        });
 
-        app.MapGet("/api/conversations/{id}/report.xlsx", async (
+        conversations.MapGet("report.xlsx", async (
             string id,
             ConversationOrchestrator conversations,
             ExportDeliveryService exports,
@@ -62,9 +65,9 @@ public static class ReportEndpoints
 
             var result = exports.Xlsx(columns, turn.Execution.Rows);
             return Microsoft.AspNetCore.Http.Results.File(result.Content, result.ContentType, result.FileName);
-        }).RequireAuthorization();
+        });
 
-        app.MapGet("/api/conversations/{id}/report.pdf", async (
+        conversations.MapGet("report.pdf", async (
             string id,
             ConversationOrchestrator conversations,
             ExportDeliveryService exports,
@@ -86,9 +89,9 @@ public static class ReportEndpoints
             var briefing = NarrativeInsights.Standard(columns, rows);
             var result = exports.Pdf("Report briefing", briefing);
             return Microsoft.AspNetCore.Http.Results.File(result.Content, result.ContentType, result.FileName);
-        }).RequireAuthorization();
+        });
 
-        app.MapPost("/api/conversations/{id}/report/briefing", async (
+        conversations.MapPost("report/briefing", async (
             string id,
             ConversationOrchestrator conversations,
             CancellationToken cancellationToken) =>
@@ -102,9 +105,9 @@ public static class ReportEndpoints
             var columns = turn.Columns?.Where(column => column.Selected).Select(column => column.Name).ToList() ?? [];
             IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = turn.Execution?.Rows ?? [];
             return Microsoft.AspNetCore.Http.Results.Ok(NarrativeInsights.Standard(columns, rows));
-        }).RequireAuthorization();
+        });
 
-        app.MapPost("/api/conversations/{id}/report/email", async (
+        conversations.MapPost("report/email", async (
             string id,
             EmailBriefingRequest? body,
             ConversationOrchestrator conversations,
@@ -128,7 +131,7 @@ public static class ReportEndpoints
             var briefing = NarrativeInsights.Standard(columns, rows);
             var sent = await exports.EmailBriefingAsync(recipient, "Report briefing", briefing, cancellationToken);
             return Microsoft.AspNetCore.Http.Results.Ok(new { sent, recipient, format = "PDF" });
-        }).RequireAuthorization();
+        });
 
         return app;
     }
