@@ -42,7 +42,7 @@ public class RoutingQueryExecutorTests
 
     private static IOptions<ExecutionOptions> Ops()
     {
-        return Microsoft.Extensions.Options.Options.Create(new ExecutionOptions());
+        return Options.Create(new ExecutionOptions());
     }
 
     private static ExecutionRequest Request(ExecutionDataSource source)

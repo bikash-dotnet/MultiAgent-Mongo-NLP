@@ -16,6 +16,6 @@ public static class SessionHandler
             "Pools under $200",
             "Just run it"
         };
-        return Microsoft.AspNetCore.Http.Results.Ok(new GreetingResponse(name, period, GreetingClock.FormatMessage(name, period), chips));
+        return Results.Ok(new GreetingResponse(name, period, GreetingClock.FormatMessage(name, period), chips));
     }
 }

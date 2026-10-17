@@ -1,5 +1,4 @@
 using Gateway.Auth;
-using Microsoft.AspNetCore.Http;
 
 namespace Gateway.Infrastructure.Filters;
 

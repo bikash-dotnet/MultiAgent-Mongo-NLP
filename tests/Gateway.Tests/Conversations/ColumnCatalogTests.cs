@@ -27,7 +27,7 @@ public class ColumnCatalogTests
         var names = _catalog.Available(mql).Select(column => column.Name).ToList();
 
         Assert.Contains("security_deposit", names);
-        Assert.Single(names.Where(name => name == "address.market"));
+        Assert.Single(names,name => name == "address.market");
         Assert.Equal("name", names[0]);
     }
 

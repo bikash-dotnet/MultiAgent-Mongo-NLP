@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Gateway.Infrastructure.Filters;
 
 public sealed class ValidationFilter : IEndpointFilter

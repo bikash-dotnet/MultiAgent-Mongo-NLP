@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Gateway.Auth;
 using Gateway.Execution;
-using Gateway.Governance;
 
 namespace Gateway.Tests.Execution;
 

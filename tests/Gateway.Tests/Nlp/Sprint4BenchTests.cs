@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Gateway.Nlp.Guardrails;
 
 namespace Gateway.Tests.Nlp;
 

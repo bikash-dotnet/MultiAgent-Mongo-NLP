@@ -1,7 +1,4 @@
-using Gateway.Auth;
 using Gateway.Infrastructure.Filters;
-using Gateway.Schemas;
-using Gateway.Services;
 using Gateway.Handlers;
 
 namespace Gateway.Endpoints;

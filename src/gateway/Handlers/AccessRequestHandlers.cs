@@ -15,7 +15,7 @@ public static class AccessRequestHandlers
     {
         var viewer = SessionClaims.ToRequesterContext(user);
         var requestsList = await governance.ListAsync(viewer, status, cancellationToken);
-        return Microsoft.AspNetCore.Http.Results.Ok(requestsList);
+        return Results.Ok(requestsList);
     }
 
     public static async Task<IResult> Get(
@@ -27,15 +27,15 @@ public static class AccessRequestHandlers
         var viewer = SessionClaims.ToRequesterContext(user);
         try
         {
-            return Microsoft.AspNetCore.Http.Results.Ok(await governance.GetForViewerAsync(id, viewer, cancellationToken));
+            return Results.Ok(await governance.GetForViewerAsync(id, viewer, cancellationToken));
         }
         catch (GovernanceNotFoundException)
         {
-            return Microsoft.AspNetCore.Http.Results.NotFound();
+            return Results.NotFound();
         }
         catch (GovernanceForbiddenException)
         {
-            return Microsoft.AspNetCore.Http.Results.Forbid();
+            return Results.Forbid();
         }
     }
 
@@ -49,19 +49,19 @@ public static class AccessRequestHandlers
         var actor = SessionClaims.ToRequesterContext(user);
         try
         {
-            return Microsoft.AspNetCore.Http.Results.Ok(await governance.ApproveAsync(id, actor, body?.Notes, cancellationToken));
+            return Results.Ok(await governance.ApproveAsync(id, actor, body?.Notes, cancellationToken));
         }
         catch (GovernanceNotFoundException)
         {
-            return Microsoft.AspNetCore.Http.Results.NotFound();
+            return Results.NotFound();
         }
         catch (GovernanceForbiddenException)
         {
-            return Microsoft.AspNetCore.Http.Results.Forbid();
+            return Results.Forbid();
         }
         catch (GovernanceConflictException error)
         {
-            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = error.Message });
+            return Results.Conflict(new { error = error.Message });
         }
     }
 
@@ -75,19 +75,19 @@ public static class AccessRequestHandlers
         var actor = SessionClaims.ToRequesterContext(user);
         try
         {
-            return Microsoft.AspNetCore.Http.Results.Ok(await governance.RejectAsync(id, actor, body?.Notes, cancellationToken));
+            return Results.Ok(await governance.RejectAsync(id, actor, body?.Notes, cancellationToken));
         }
         catch (GovernanceNotFoundException)
         {
-            return Microsoft.AspNetCore.Http.Results.NotFound();
+            return Results.NotFound();
         }
         catch (GovernanceForbiddenException)
         {
-            return Microsoft.AspNetCore.Http.Results.Forbid();
+            return Results.Forbid();
         }
         catch (GovernanceConflictException error)
         {
-            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = error.Message });
+            return Results.Conflict(new { error = error.Message });
         }
     }
 
@@ -101,23 +101,23 @@ public static class AccessRequestHandlers
         var actor = SessionClaims.ToRequesterContext(user);
         try
         {
-            return Microsoft.AspNetCore.Http.Results.Ok(await governance.OverrideAsync(id, actor, body?.Notes ?? string.Empty, cancellationToken));
+            return Results.Ok(await governance.OverrideAsync(id, actor, body?.Notes ?? string.Empty, cancellationToken));
         }
         catch (GovernanceNotFoundException)
         {
-            return Microsoft.AspNetCore.Http.Results.NotFound();
+            return Results.NotFound();
         }
         catch (GovernanceForbiddenException)
         {
-            return Microsoft.AspNetCore.Http.Results.Forbid();
+            return Results.Forbid();
         }
         catch (GovernanceValidationException error)
         {
-            return Microsoft.AspNetCore.Http.Results.BadRequest(new { error = error.Message });
+            return Results.BadRequest(new { error = error.Message });
         }
         catch (GovernanceConflictException error)
         {
-            return Microsoft.AspNetCore.Http.Results.Conflict(new { error = error.Message });
+            return Results.Conflict(new { error = error.Message });
         }
     }
 }

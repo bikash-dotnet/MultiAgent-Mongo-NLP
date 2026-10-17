@@ -15,7 +15,7 @@ public class MongoQueryTransportTests
             return;
         }
 
-        var options = Microsoft.Extensions.Options.Options.Create(new ExecutionOptions
+        var options = Options.Create(new ExecutionOptions
         {
             Database = Environment.GetEnvironmentVariable("MONGODB_TEST_DATABASE") ?? "sample_airbnb",
             Collection = "listingsAndReviews"
@@ -44,7 +44,7 @@ public class MongoQueryTransportTests
     [Fact]
     public async Task Invalid_pipeline_json_produces_an_error_result()
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new ExecutionOptions());
+        var options = Options.Create(new ExecutionOptions());
         var transport = new MongoQueryTransport("mongodb://localhost:27017", options);
         var request = new ExecutionRequest(
             "not-json",

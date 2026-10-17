@@ -5,7 +5,6 @@ using Gateway.Nlp.Intent;
 using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
-using Gateway.Nlp.Http;
 using Gateway.Reports;
 using Microsoft.Extensions.Options;
 
