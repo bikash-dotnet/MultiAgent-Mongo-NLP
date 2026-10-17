@@ -8,10 +8,13 @@ public static class GovernanceEndpoints
 {
     public static IEndpointRouteBuilder MapGovernanceEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/governance/approval", (IApprovalFlagStore flags) =>
-            Microsoft.AspNetCore.Http.Results.Ok(new { enabled = flags.Enabled })).RequireAuthorization();
+        var governance = app.MapGroup("/api/governance")
+            .RequireAuthorization();
 
-        app.MapPut("/api/governance/approval", async (
+        governance.MapGet("/approval", (IApprovalFlagStore flags) =>
+            Microsoft.AspNetCore.Http.Results.Ok(new { enabled = flags.Enabled }));
+
+        governance.MapPut("/approval", async (
             ApprovalFlagRequest request,
             ClaimsPrincipal user,
             IApprovalFlagStore flags,
@@ -25,7 +28,7 @@ public static class GovernanceEndpoints
 
             await flags.SetAsync(request.Enabled, cancellationToken);
             return Microsoft.AspNetCore.Http.Results.Ok(new { enabled = flags.Enabled });
-        }).RequireAuthorization();
+        });
 
         return app;
     }

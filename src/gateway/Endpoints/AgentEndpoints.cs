@@ -8,7 +8,10 @@ public static class AgentEndpoints
 {
     public static IEndpointRouteBuilder MapAgentEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
+        var agents = app.MapGroup("/api/agents")
+            .RequireAuthorization();
+
+        agents.MapGet("/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
         {
             context.Response.Headers.ContentType = "text/event-stream";
             context.Response.Headers.CacheControl = "no-cache, no-transform";
@@ -28,7 +31,7 @@ public static class AgentEndpoints
             catch (OperationCanceledException)
             {
             }
-        }).RequireAuthorization();
+        });
 
         app.MapHub<AgentHub>("/hubs/agent-stream").RequireAuthorization();
 
