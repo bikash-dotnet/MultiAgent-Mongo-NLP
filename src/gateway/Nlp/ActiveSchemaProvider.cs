@@ -1,63 +1,108 @@
 using Gateway.Nlp.Guardrails;
-using Gateway.Persistence;
 using Gateway.Schemas;
+using Microsoft.Extensions.Logging;
 
 namespace Gateway.Nlp;
 
 public sealed class ActiveSchemaProvider
 {
     private readonly ISchemaRegistry _registry;
-    private readonly object _lock = new();
+    private readonly ILogger<ActiveSchemaProvider>? _logger;
+    private readonly object _gate = new();
     private IReadOnlyList<string> _whitelistFields = [];
     private IReadOnlyList<SensitiveFieldFlag> _sensitiveFlags = [];
+    private IReadOnlyList<SchemaField> _fields = [];
+    private SchemaDefinition? _active;
 
-    public ActiveSchemaProvider(ISchemaRegistry registry)
+    public ActiveSchemaProvider(ISchemaRegistry registry, ILogger<ActiveSchemaProvider>? logger = null)
     {
         _registry = registry;
-        _ = RefreshAsync();
+        _logger = logger;
     }
 
-    public IReadOnlyList<string> WhitelistFields => _whitelistFields;
-
-    public IReadOnlyList<SensitiveFieldFlag> SensitiveFlags => _sensitiveFlags;
-
-    public async Task RefreshAsync()
+    public SchemaDefinition? ActiveSchema
     {
-        await RefreshInternalAsync();
-    }
-
-    public bool IsDirty => false;
-
-    private async Task RefreshInternalAsync()
-    {
-        var schemas = await _registry.ListAsync();
-
-        var fieldPaths = new List<string>();
-        var pathSet = new HashSet<string>(StringComparer.Ordinal);
-        var flags = new List<SensitiveFieldFlag>();
-
-        foreach (var schema in schemas)
+        get
         {
-            foreach (var field in schema.Fields)
+            lock (_gate)
             {
-                if (pathSet.Add(field.Path))
-                {
-                    fieldPaths.Add(field.Path);
-                }
-
-                if (field.IsSensitive || field.RequiresApproval)
-                {
-                    flags.Add(new SensitiveFieldFlag(
-                        field.Path, field.IsSensitive, field.RequiresApproval, field.Roles));
-                }
+                return _active;
             }
         }
-        fieldPaths.Add("_id");
+    }
 
-        lock (_lock)
+    public IReadOnlyList<string> WhitelistFields
+    {
+        get
         {
-            _whitelistFields = fieldPaths.AsReadOnly();
-            _sensitiveFlags = flags.AsReadOnly();
+            lock (_gate)
+            {
+                return _whitelistFields;
+            }
+        }
+    }
+
+    public IReadOnlyList<SensitiveFieldFlag> SensitiveFlags
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _sensitiveFlags;
+            }
+        }
+    }
+
+    public IReadOnlyList<SchemaField> Fields
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _fields;
+            }
+        }
+    }
+
+    public async Task RefreshAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var schema = await _registry.GetActiveAsync(cancellationToken);
+            var fields = schema?.Fields ?? [];
+
+            var paths = new List<string>();
+            var pathSet = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var field in fields)
+            {
+                if (!string.IsNullOrWhiteSpace(field.Path) && pathSet.Add(field.Path))
+                {
+                    paths.Add(field.Path);
+                }
+            }
+
+            if (pathSet.Add("_id"))
+            {
+                paths.Add("_id");
+            }
+
+            var flags = fields
+                .Where(field => field.IsSensitive || field.RequiresApproval)
+                .Select(field => new SensitiveFieldFlag(
+                    field.Path, field.IsSensitive, field.RequiresApproval, field.Roles))
+                .ToList();
+
+            lock (_gate)
+            {
+                _active = schema;
+                _fields = fields.ToList().AsReadOnly();
+                _whitelistFields = paths.AsReadOnly();
+                _sensitiveFlags = flags.AsReadOnly();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to refresh the active schema; continuing with the previous snapshot.");
         }
     }
 
@@ -68,7 +113,7 @@ public sealed class ActiveSchemaProvider
             return false;
         }
 
-        return _whitelistFields.Any(known =>
+        return WhitelistFields.Any(known =>
             string.Equals(known, fieldPath, StringComparison.Ordinal) ||
             fieldPath.StartsWith(known + ".", StringComparison.Ordinal) ||
             known.StartsWith(fieldPath + ".", StringComparison.Ordinal));
@@ -85,10 +130,11 @@ public sealed class ActiveSchemaProvider
     public IReadOnlyList<SensitiveFieldFlag> MatchSensitive(IEnumerable<string> fieldPaths)
     {
         var matched = new List<SensitiveFieldFlag>();
+        var flags = SensitiveFlags;
 
         foreach (var fieldPath in fieldPaths)
         {
-            foreach (var flag in _sensitiveFlags)
+            foreach (var flag in flags)
             {
                 if (IsRelated(flag.Path, fieldPath) && !matched.Contains(flag))
                 {

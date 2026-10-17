@@ -1,9 +1,14 @@
 <section class="schemas">
   <header class="toolbar">
-    <h1>Schema Registry</h1>
-    <p class="subtitle">Define and manage data-source schemas that drive guardrails, validation, and result columns.</p>
+    <div>
+      <h1>Schema Registry</h1>
+      <p class="subtitle">Define and manage data-source schemas that drive guardrails, validation, and result columns.</p>
+    </div>
     @if (canManage) {
-      <button type="button" class="btn btn-primary" (click)="startCreate()">Create schema</button>
+      <div class="toolbar-actions">
+        <p-button label="Import" icon="pi pi-upload" severity="secondary" (onClick)="openImport()" />
+        <p-button label="Create schema" icon="pi pi-plus" (onClick)="startCreate()" />
+      </div>
     }
   </header>
 
@@ -11,185 +16,312 @@
     <p class="error" role="alert">{{ error }}</p>
   }
 
-  @if (loading) {
-    <p>Loading schemas...</p>
-  } @else if (schemas.length === 0) {
-    <p>No schemas defined.</p>
-  } @else {
-    <div class="schema-list">
-      @for (schema of schemas; track schema.id) {
-        <article class="schema-card" [class.active]="schema.isActiveSource">
-          <header>
-            <h3>{{ schema.name }}</h3>
-            @if (schema.isActiveSource) {
-              <span class="badge active">Active</span>
-            } @else {
-              <span class="badge inactive">Inactive</span>
-            }
-          </header>
-          <dl class="meta">
-            <dt>Data source</dt>
-            <dd>{{ schema.dataSource }}</dd>
-            <dt>Database / collection</dt>
-            <dd>{{ 'sample_airbnb.listingsAndReviews' }}</dd>
-            <dt>Fields</dt>
-            <dd>{{ schema.fieldCount }}</dd>
-            <dt>Version</dt>
-            <dd>{{ schema.version }}</dd>
-          </dl>
-          <div class="actions">
-            <button type="button" class="btn btn-outline" (click)="startEdit(schema)">Edit</button>
-            @if (!schema.isActiveSource && canManage) {
-              <button type="button" class="btn btn-secondary" (click)="activate(schema.id)">Activate</button>
-            }
-          </div>
-        </article>
-      }
-    </div>
-  }
-
-  @if (creating || editing) {
-    <div class="editor">
-      <h2>{{ creating ? 'Create schema' : 'Edit schema' }}</h2>
-      @if (error) {
-        <p class="error" role="alert">{{ error }}</p>
-      }
-      <form (ngSubmit)="creating ? saveCreate() : saveEdit()">
-        @if (creating) {
-          <div class="form-row">
-            <label>Name</label>
-            <input name="createName" type="text" [(ngModel)]="newName" required />
-          </div>
-          <div class="form-row">
-            <label>Database</label>
-            <input name="createDatabase" type="text" [(ngModel)]="newDatabase" required />
-          </div>
-          <div class="form-row">
-            <label>Collection</label>
-            <input name="createCollection" type="text" [(ngModel)]="newCollection" required />
-          </div>
-          <div class="form-row">
-            <label>Description</label>
-            <input name="createDescription" type="text" [(ngModel)]="newDescription" />
-          </div>
-        } @else {
-          <div class="form-row">
-            <label>Name</label>
-            <input name="editName" type="text" [(ngModel)]="editName" required />
-          </div>
-          <div class="form-row">
-            <label>Database</label>
-            <input name="editDatabase" type="text" [(ngModel)]="editDatabase" required />
-          </div>
-          <div class="form-row">
-            <label>Collection</label>
-            <input name="editCollection" type="text" [(ngModel)]="editCollection" required />
-          </div>
-          <div class="form-row">
-            <label>Data source</label>
-            <select name="editDataSource" [(ngModel)]="editDataSource">
-              @for (option of dataSourceOptions; track option.value) {
-                <option [value]="option.value">{{ option.label }}</option>
-              }
-            </select>
-          </div>
-          <div class="form-row">
-            <label>Active source</label>
-            <input name="editIsActive" type="checkbox" [(ngModel)]="editIsActive" />
-          </div>
-          <div class="form-row">
-            <label>Description</label>
-            <input name="editDescription" type="text" [(ngModel)]="editDescription" />
-          </div>
-        }
-
-        <h3>Fields</h3>
-        <div class="fields-list">
-          @for (field of (creating ? [] : selected?.fields ?? []); track field.path; let i = $index) {
-            <div class="field-row">
-              <div class="field-cell path">{{ field.path }}</div>
-              <div class="field-cell type">{{ field.dataType }}</div>
-              <div class="field-cell flags">
-                @if (field.isSensitive) { <span class="tag sensitive">sensitive</span> }
-                @if (field.requiresApproval) { <span class="tag approval">approval</span> }
-              </div>
-              <div class="field-cell actions">
-                @if (editingFieldIndex === i) {
-                  <button type="button" class="btn btn-small btn-outline" (click)="saveEditField()">Save</button>
-                  <button type="button" class="btn btn-small btn-outline" (click)="resetEditField()">Cancel</button>
-                } @else {
-                  <button type="button" class="btn btn-small btn-outline" (click)="startEditField(i)">Edit</button>
-                  <button type="button" class="btn btn-small btn-danger" (click)="deleteField(field.path)">Delete</button>
-                }
-              </div>
-            </div>
-            @if (editingFieldIndex === i) {
-              <div class="field-editor">
-                <div class="form-row compact">
-                  <label>Path</label>
-                  <input name="editFieldPath" type="text" [(ngModel)]="editFieldPath" required />
-                </div>
-                <div class="form-row compact">
-                  <label>Type</label>
-                  <select name="editFieldType" [(ngModel)]="editFieldType">
-                    @for (type of fieldTypeOptions; track type) {
-                      <option [value]="type">{{ type }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="form-row compact">
-                  <label>Roles (comma-separated)</label>
-                  <input name="editFieldRoles" type="text" [(ngModel)]="editFieldRoles" placeholder="Data Owner / Admin" />
-                </div>
-                <div class="form-row compact">
-                  <label>Description</label>
-                  <input name="editFieldDescription" type="text" [(ngModel)]="editFieldDescription" />
-                </div>
-                <div class="form-row compact flags">
-                  <label><input type="checkbox" [(ngModel)]="editFieldSensitive" /> Sensitive</label>
-                  <label><input type="checkbox" [(ngModel)]="editFieldRequiresApproval" /> Requires approval</label>
-                </div>
-              </div>
-            }
+  <p-table
+    [value]="schemas"
+    [loading]="loading"
+    [paginator]="schemas.length > 10"
+    [rows]="10"
+    styleClass="p-datatable-striped p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Name</th>
+        <th>Data source</th>
+        <th>Fields</th>
+        <th>Version</th>
+        <th>Status</th>
+        <th>Updated</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-schema>
+      <tr>
+        <td>{{ schema.name }}</td>
+        <td>{{ schema.dataSource }}</td>
+        <td>{{ schema.fieldCount }}</td>
+        <td>{{ schema.version }}</td>
+        <td>
+          @if (schema.isActiveSource) {
+            <p-tag value="Active" severity="success" />
+          } @else {
+            <p-tag value="Inactive" severity="secondary" />
           }
-        </div>
-
-        @if (creating) {
-          <div class="field-editor">
-            <h4>Add field</h4>
-            <div class="form-row compact">
-              <label>Path</label>
-              <input name="newFieldPath" type="text" [(ngModel)]="newFieldPath" required />
-            </div>
-            <div class="form-row compact">
-              <label>Type</label>
-              <select name="newFieldType" [(ngModel)]="newFieldType">
-                @for (type of fieldTypeOptions; track type) {
-                  <option [value]="type">{{ type }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-row compact">
-              <label>Roles (comma-separated)</label>
-              <input name="newFieldRoles" type="text" [(ngModel)]="newFieldRoles" placeholder="Data Owner / Admin" />
-            </div>
-            <div class="form-row compact flags">
-              <label><input type="checkbox" [(ngModel)]="newFieldSensitive" /> Sensitive</label>
-              <label><input type="checkbox" [(ngModel)]="newFieldRequiresApproval" /> Requires approval</label>
-            </div>
-            <div class="form-row compact">
-              <label>Description</label>
-              <input name="newFieldDescription" type="text" [(ngModel)]="newFieldDescription" />
-            </div>
-            <button type="button" class="btn btn-secondary" (click)="addField()">Add field</button>
-          </div>
-        }
-
-        <div class="form-actions">
-          <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Saving...' : (creating ? 'Create schema' : 'Save changes') }}</button>
-        </div>
-      </form>
-    </div>
-  }
+        </td>
+        <td>{{ schema.updatedAt ? (schema.updatedAt | date: 'short') : '-' }}</td>
+        <td class="row-actions">
+          <p-button
+            icon="pi pi-pencil"
+            [text]="true"
+            severity="secondary"
+            ariaLabel="Edit schema"
+            (onClick)="startEdit(schema)"
+          />
+          @if (!schema.isActiveSource && canManage) {
+            <p-button
+              icon="pi pi-check-circle"
+              [text]="true"
+              severity="success"
+              ariaLabel="Activate schema"
+              (onClick)="activate(schema)"
+            />
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              ariaLabel="Delete schema"
+              (onClick)="deleteSchema(schema)"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7">No schemas defined.</td>
+      </tr>
+    </ng-template>
+  </p-table>
 </section>
+
+<p-dialog
+  [(visible)]="editorVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '64rem', maxWidth: '95vw' }"
+  [header]="editorTitle"
+  (onHide)="closeEditor()"
+>
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  <div class="form-grid">
+    <label for="schemaName">Name</label>
+    <input id="schemaName" pInputText [(ngModel)]="schemaForm.name" />
+
+    <label for="schemaDatabase">Database</label>
+    <input id="schemaDatabase" pInputText [(ngModel)]="schemaForm.database" />
+
+    <label for="schemaCollection">Collection</label>
+    <input id="schemaCollection" pInputText [(ngModel)]="schemaForm.collection" />
+
+    <label for="schemaDataSource">Data source</label>
+    <p-select
+      inputId="schemaDataSource"
+      [options]="dataSourceOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="schemaForm.dataSource"
+      appendTo="body"
+    />
+
+    <label for="schemaDescription">Description</label>
+    <input id="schemaDescription" pInputText [(ngModel)]="schemaForm.description" />
+
+    <label>Active source</label>
+    <div class="checkbox-row">
+      <p-checkbox inputId="schemaActive" [(ngModel)]="schemaForm.isActiveSource" [binary]="true" />
+      <label for="schemaActive">Make this the active source</label>
+    </div>
+  </div>
+
+  <div class="fields-header">
+    <h3>Fields</h3>
+    <p-button label="Add field" icon="pi pi-plus" severity="secondary" size="small" (onClick)="openAddField()" />
+  </div>
+
+  <p-table [value]="fields" styleClass="p-datatable-sm p-datatable-striped">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Path</th>
+        <th>Type</th>
+        <th>Flags</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-field let-index="rowIndex">
+      <tr>
+        <td>{{ field.path }}</td>
+        <td>{{ field.dataType }}</td>
+        <td>
+          <div class="flag-row">
+            @if (field.isSensitive) {
+              <p-tag value="sensitive" severity="danger" />
+            }
+            @if (field.requiresApproval) {
+              <p-tag value="approval" severity="warn" />
+            }
+            @if (!field.isSensitive && !field.requiresApproval) {
+              <span class="muted">-</span>
+            }
+          </div>
+        </td>
+        <td class="row-actions">
+          <p-button
+            icon="pi pi-pencil"
+            [text]="true"
+            severity="secondary"
+            ariaLabel="Edit field"
+            (onClick)="openEditField(index)"
+          />
+          <p-button
+            icon="pi pi-trash"
+            [text]="true"
+            severity="danger"
+            ariaLabel="Delete field"
+            (onClick)="removeField(index)"
+          />
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="4">No fields yet. Add at least one field to save the schema.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="closeEditor()" />
+    <p-button
+      [label]="saving ? 'Saving...' : 'Save schema'"
+      icon="pi pi-check"
+      [loading]="saving"
+      (onClick)="saveSchema()"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="fieldDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '36rem', maxWidth: '95vw' }"
+  header="Field"
+  appendTo="body"
+>
+  @if (fieldError) {
+    <p class="error" role="alert">{{ fieldError }}</p>
+  }
+
+  <div class="form-grid">
+    <label for="fieldPath">Path</label>
+    <input id="fieldPath" pInputText [(ngModel)]="fieldDraft.path" placeholder="address.market" />
+
+    <label for="fieldType">Type</label>
+    <p-select
+      inputId="fieldType"
+      [options]="fieldTypeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="fieldDraft.dataType"
+      appendTo="body"
+    />
+
+    <label for="fieldRoles">Data owner roles</label>
+    <p-multiselect
+      inputId="fieldRoles"
+      [options]="roleOptions"
+      [(ngModel)]="fieldDraft.dataOwnerRoles"
+      appendTo="body"
+      display="chip"
+      [showClear]="true"
+      placeholder="Select roles"
+    />
+
+    <label for="fieldDescription">Description</label>
+    <input id="fieldDescription" pInputText [(ngModel)]="fieldDraft.description" />
+
+    <label>Flags</label>
+    <div class="checkbox-row">
+      <p-checkbox inputId="fieldSensitive" [(ngModel)]="fieldDraft.isSensitive" [binary]="true" />
+      <label for="fieldSensitive">Sensitive</label>
+      <p-checkbox inputId="fieldApproval" [(ngModel)]="fieldDraft.requiresApproval" [binary]="true" />
+      <label for="fieldApproval">Requires approval</label>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="fieldDialogVisible = false" />
+    <p-button label="Apply" icon="pi pi-check" (onClick)="saveField()" />
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="importVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '52rem', maxWidth: '95vw' }"
+  header="Import schema"
+  appendTo="body"
+>
+  <p class="hint">Paste schema.txt lines (one field per line). Required paths are unique.</p>
+  <textarea
+    pTextarea
+    [(ngModel)]="importText"
+    rows="7"
+    class="import-text"
+    placeholder="- price: number&#10;- address.market: string"
+  ></textarea>
+
+  <p class="hint">Or paste a JSON array of fields. JSON takes precedence when both are provided.</p>
+  <textarea
+    pTextarea
+    [(ngModel)]="importJson"
+    rows="5"
+    class="import-text"
+    placeholder='[{"path":"price","dataType":"Number"}]'
+  ></textarea>
+
+  @if (importError) {
+    <p class="error" role="alert">{{ importError }}</p>
+  }
+
+  <div class="preview-actions">
+    <p-button label="Preview fields" icon="pi pi-eye" severity="secondary" (onClick)="previewImport()" />
+  </div>
+
+  @if (importPreview.length > 0) {
+    <p-table [value]="importPreview" styleClass="p-datatable-sm p-datatable-striped">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Path</th>
+          <th>Type</th>
+          <th>Flags</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-field>
+        <tr>
+          <td>{{ field.path }}</td>
+          <td>{{ field.dataType }}</td>
+          <td>
+            <div class="flag-row">
+              @if (field.isSensitive) {
+                <p-tag value="sensitive" severity="danger" />
+              }
+              @if (field.requiresApproval) {
+                <p-tag value="approval" severity="warn" />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="importVisible = false" />
+    <p-button
+      [label]="importing ? 'Importing...' : 'Import schema'"
+      icon="pi pi-upload"
+      [loading]="importing"
+      [disabled]="importPreview.length === 0"
+      (onClick)="commitImport()"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />

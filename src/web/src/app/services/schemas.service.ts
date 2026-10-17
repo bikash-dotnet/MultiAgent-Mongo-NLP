@@ -43,6 +43,10 @@ export class SchemasService {
     return this.http.delete<SchemaResponse>(`/api/schemas/${id}/fields/${encodeURIComponent(path)}`);
   }
 
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/schemas/${id}`);
+  }
+
   activate(id: string): Observable<{ id: string; isActiveSource: boolean }> {
     return this.http.post<{ id: string; isActiveSource: boolean }>(`/api/schemas/${id}/activate`, {});
   }

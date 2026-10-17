@@ -24,16 +24,29 @@ public sealed class ColumnCatalog : IColumnCatalog
 
     public IReadOnlyList<ColumnOption> Available(string? mql)
     {
-        var names = new List<string>(Standard);
-        var seen = new HashSet<string>(Standard, StringComparer.Ordinal);
+        var names = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
 
-        if (_provider is not null)
+        var schemaFields = _provider?.Fields ?? [];
+        if (schemaFields.Count > 0)
         {
-            foreach (var path in _provider.WhitelistFields)
+            foreach (var field in schemaFields)
             {
-                if (seen.Add(path))
+                if (!string.IsNullOrWhiteSpace(field.Path) &&
+                    !string.Equals(field.Path, "_id", StringComparison.Ordinal) &&
+                    seen.Add(field.Path))
                 {
-                    names.Add(path);
+                    names.Add(field.Path);
+                }
+            }
+        }
+        else
+        {
+            foreach (var name in Standard)
+            {
+                if (seen.Add(name))
+                {
+                    names.Add(name);
                 }
             }
         }

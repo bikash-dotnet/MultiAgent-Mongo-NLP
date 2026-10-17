@@ -1,6 +1,9 @@
 collection: sample_airbnb.listingsAndReviews
 fields:
+- name: string
 - price: number (daily price in USD)
+- room_type: string
+- accommodates: number
 - amenities: array<string>
 - beds: number
 - bedrooms: number

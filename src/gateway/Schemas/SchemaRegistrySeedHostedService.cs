@@ -1,3 +1,4 @@
+using Gateway.Nlp;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -6,11 +7,16 @@ namespace Gateway.Schemas;
 public sealed class SchemaRegistrySeedHostedService : IHostedService
 {
     private readonly ISchemaRegistry _registry;
+    private readonly ActiveSchemaProvider _provider;
     private readonly ILogger<SchemaRegistrySeedHostedService> _logger;
 
-    public SchemaRegistrySeedHostedService(ISchemaRegistry registry, ILogger<SchemaRegistrySeedHostedService> logger)
+    public SchemaRegistrySeedHostedService(
+        ISchemaRegistry registry,
+        ActiveSchemaProvider provider,
+        ILogger<SchemaRegistrySeedHostedService> logger)
     {
         _registry = registry;
+        _provider = provider;
         _logger = logger;
     }
 
@@ -23,6 +29,15 @@ public sealed class SchemaRegistrySeedHostedService : IHostedService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Schema registry seed on startup failed; continuing without a seeded schema.");
+        }
+
+        try
+        {
+            await _provider.RefreshAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Active schema refresh on startup failed; guardrails will fail open until it succeeds.");
         }
     }
 
