@@ -26,7 +26,7 @@ public sealed class SchemaRegistryStore : ISchemaRegistry
     public async Task<SchemaDefinition?> GetActiveAsync(CancellationToken cancellationToken = default)
     {
         var all = await ListAsync(cancellationToken);
-        return all.FirstOrDefault(schema => schema.IsActiveSource) ?? all.FirstOrDefault();
+        return all.FirstOrDefault(schema => schema.IsActiveSource);
     }
 
     public async Task<SchemaDefinition> CreateAsync(SchemaDefinition schema, CancellationToken cancellationToken = default)

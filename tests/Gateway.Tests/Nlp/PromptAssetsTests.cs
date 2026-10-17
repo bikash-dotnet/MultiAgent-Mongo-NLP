@@ -1,4 +1,7 @@
+using Gateway.Nlp;
 using Gateway.Nlp.Llm;
+using Gateway.Persistence;
+using Gateway.Schemas;
 
 namespace Gateway.Tests.Nlp;
 
@@ -26,6 +29,36 @@ public class PromptAssetsTests
         var prompt = Load().BuildPrompt("top listings", "{}", null);
 
         Assert.DoesNotContain("previous attempt", prompt, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BuildPrompt_renders_fields_from_the_active_schema()
+    {
+        var registry = new SchemaRegistryStore(new InMemoryDocumentStore());
+        await registry.CreateAsync(new SchemaDefinition(
+            "sch_prompt",
+            "prompt",
+            SchemaDataSource.Mongo,
+            "sample_airbnb",
+            "listingsAndReviews",
+            [
+                new SchemaField("custom.field", SchemaFieldType.Number, true, true, ["Data Owner / Admin"], "a hint"),
+                new SchemaField("price", SchemaFieldType.Number)
+            ],
+            true));
+
+        var provider = new ActiveSchemaProvider(registry);
+        await provider.RefreshAsync();
+
+        var assets = PromptAssets.LoadFromDirectory(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts"),
+            provider);
+
+        var prompt = assets.BuildPrompt("top listings", "{}", null);
+
+        Assert.Contains("collection: sample_airbnb.listingsAndReviews", prompt);
+        Assert.Contains("custom.field: number [sensitive, requires approval] (a hint)", prompt);
+        Assert.Contains("price: number", prompt);
     }
 
     [Fact]

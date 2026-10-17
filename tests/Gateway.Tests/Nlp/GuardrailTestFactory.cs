@@ -64,7 +64,8 @@ internal static class GuardrailTestFactory
 
         public Task<SchemaDefinition?> GetActiveAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<SchemaDefinition?>(null);
+            return Task.FromResult<SchemaDefinition?>(
+                _schemas.FirstOrDefault(schema => schema.IsActiveSource) ?? _schemas.FirstOrDefault());
         }
 
         public Task<SchemaDefinition> CreateAsync(SchemaDefinition schema, CancellationToken cancellationToken = default)

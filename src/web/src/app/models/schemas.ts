@@ -63,6 +63,7 @@ export interface CreateSchemaRequest {
   collection: string;
   fields: SchemaFieldRequest[];
   description?: string | null;
+  isActiveSource?: boolean;
 }
 
 export interface UpdateSchemaRequest {

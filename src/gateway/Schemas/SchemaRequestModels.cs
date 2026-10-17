@@ -8,7 +8,8 @@ public sealed record CreateSchemaRequest(
     string Database,
     string Collection,
     IReadOnlyList<SchemaFieldRequest> Fields,
-    string? Description = null);
+    string? Description = null,
+    bool IsActiveSource = false);
 
 public sealed record UpdateSchemaRequest(
     string Name,

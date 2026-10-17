@@ -42,8 +42,9 @@ public static class NlpServiceCollectionExtensions
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates")));
         services.AddSingleton(Gazetteer.LoadFromDirectory(
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Gazetteers")));
-        services.AddSingleton(PromptAssets.LoadFromDirectory(
-            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts")));
+        services.AddSingleton(sp => PromptAssets.LoadFromDirectory(
+            Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts"),
+            sp.GetRequiredService<ActiveSchemaProvider>()));
 
         services.AddSingleton<INlpRouter>(sp => new NlpRouter(
             sp.GetRequiredService<ITextEmbedder>(),

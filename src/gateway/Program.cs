@@ -546,6 +546,7 @@ app.MapPost("/api/schemas", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -577,6 +578,9 @@ app.MapPost("/api/schemas", async (
     var fields = request.Fields.Select(f => new SchemaField(
         f.Path, f.DataType, f.IsSensitive, f.RequiresApproval, f.DataOwnerRoles ?? [], f.Description)).ToList();
 
+    var existing = await registry.ListAsync(cancellationToken);
+    var makeActive = request.IsActiveSource || existing.All(s => !s.IsActiveSource);
+
     var schema = new SchemaDefinition(
         SchemaDefinition.NewId(),
         request.Name.Trim(),
@@ -584,7 +588,7 @@ app.MapPost("/api/schemas", async (
         request.Database.Trim(),
         request.Collection.Trim(),
         fields,
-        false,
+        makeActive,
         1,
         request.Description,
         DateTimeOffset.UtcNow,
@@ -592,7 +596,14 @@ app.MapPost("/api/schemas", async (
         SessionClaims.ToRequesterContext(user).UserId);
 
     var created = await registry.CreateAsync(schema, cancellationToken);
+    if (makeActive)
+    {
+        await registry.ActivateAsync(created.Id, cancellationToken);
+        created = await registry.GetAsync(created.Id, cancellationToken) ?? created;
+    }
+
     await audit.AppendAsync(BuildSchemaAuditDoc(user, request.DataSource, "create", created.Id, created.Version), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(created));
 }).RequireAuthorization();
 
@@ -602,6 +613,7 @@ app.MapPut("/api/schemas/{id}", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -668,7 +680,14 @@ app.MapPut("/api/schemas/{id}", async (
     };
 
     var saved = await registry.SaveAsync(updated, cancellationToken);
+    if (request.IsActiveSource)
+    {
+        await registry.ActivateAsync(saved.Id, cancellationToken);
+        saved = await registry.GetAsync(saved.Id, cancellationToken) ?? saved;
+    }
+
     await audit.AppendAsync(BuildSchemaAuditDoc(user, request.DataSource, "update", saved.Id, saved.Version), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(saved));
 }).RequireAuthorization();
 
@@ -678,6 +697,7 @@ app.MapPost("/api/schemas/{id}/fields", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -714,6 +734,7 @@ app.MapPost("/api/schemas/{id}/fields", async (
 
     var saved = await registry.SaveAsync(updated, cancellationToken);
     await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "add-field", saved.Id, saved.Version, request.Path), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(saved));
 }).RequireAuthorization();
 
@@ -724,6 +745,7 @@ app.MapPut("/api/schemas/{id}/fields/{path}", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -759,6 +781,7 @@ app.MapPut("/api/schemas/{id}/fields/{path}", async (
 
     var saved = await registry.SaveAsync(updated, cancellationToken);
     await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "update-field", saved.Id, saved.Version, path), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(saved));
 }).RequireAuthorization();
 
@@ -768,6 +791,7 @@ app.MapDelete("/api/schemas/{id}/fields/{path}", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -795,6 +819,7 @@ app.MapDelete("/api/schemas/{id}/fields/{path}", async (
 
     var saved = await registry.SaveAsync(updated, cancellationToken);
     await audit.AppendAsync(BuildSchemaAuditDoc(user, saved.DataSource, "delete-field", saved.Id, saved.Version, path), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(saved));
 }).RequireAuthorization();
 
@@ -803,6 +828,7 @@ app.MapPost("/api/schemas/{id}/activate", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -819,6 +845,7 @@ app.MapPost("/api/schemas/{id}/activate", async (
     await registry.ActivateAsync(id, cancellationToken);
     var activated = await registry.GetAsync(id, cancellationToken);
     await audit.AppendAsync(BuildSchemaAuditDoc(user, activated?.DataSource ?? current.DataSource, "activate", id, activated?.Version ?? current.Version), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new { id, isActiveSource = true });
 }).RequireAuthorization();
 
@@ -827,6 +854,7 @@ app.MapPost("/api/schemas/import", async (
     ClaimsPrincipal user,
     ISchemaRegistry registry,
     IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
     CancellationToken cancellationToken) =>
 {
     if (!IsDataOwnerOrAdmin(user))
@@ -867,6 +895,8 @@ app.MapPost("/api/schemas/import", async (
         return Results.BadRequest(new { error = "No fields to import." });
     }
 
+    var makeActive = (await registry.ListAsync(cancellationToken)).All(s => !s.IsActiveSource);
+
     var schema = new SchemaDefinition(
         SchemaDefinition.NewId(),
         "Imported Schema",
@@ -875,7 +905,7 @@ app.MapPost("/api/schemas/import", async (
         "listingsAndReviews",
         fields.Select(f => new SchemaField(
             f.Path, f.DataType, f.IsSensitive, f.RequiresApproval, f.DataOwnerRoles ?? [], f.Description)).ToList(),
-        false,
+        makeActive,
         1,
         "Imported via /api/schemas/import",
         DateTimeOffset.UtcNow,
@@ -883,8 +913,48 @@ app.MapPost("/api/schemas/import", async (
         SessionClaims.ToRequesterContext(user).UserId);
 
     var created = await registry.CreateAsync(schema, cancellationToken);
+    if (makeActive)
+    {
+        await registry.ActivateAsync(created.Id, cancellationToken);
+        created = await registry.GetAsync(created.Id, cancellationToken) ?? created;
+    }
+
     await audit.AppendAsync(BuildSchemaAuditDoc(user, dataSource, "import", created.Id, created.Version), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
     return Results.Ok(new SchemaResponse(created));
+}).RequireAuthorization();
+
+app.MapDelete("/api/schemas/{id}", async (
+    string id,
+    ClaimsPrincipal user,
+    ISchemaRegistry registry,
+    IAuditLogStore audit,
+    ActiveSchemaProvider activeSchema,
+    CancellationToken cancellationToken) =>
+{
+    if (!IsDataOwnerOrAdmin(user))
+    {
+        return Results.Forbid();
+    }
+
+    var current = await registry.GetAsync(id, cancellationToken);
+    if (current is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (current.IsActiveSource)
+    {
+        return Results.Conflict(new
+        {
+            error = "The active schema cannot be deleted. Activate another schema first."
+        });
+    }
+
+    await registry.DeleteAsync(id, cancellationToken);
+    await audit.AppendAsync(BuildSchemaAuditDoc(user, current.DataSource, "delete", id, current.Version), cancellationToken);
+    await activeSchema.RefreshAsync(cancellationToken);
+    return Results.NoContent();
 }).RequireAuthorization();
 
 #endregion
