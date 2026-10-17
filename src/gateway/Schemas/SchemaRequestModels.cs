@@ -1,5 +1,3 @@
-using Gateway.Schemas;
-
 namespace Gateway.Schemas;
 
 public sealed record CreateSchemaRequest(

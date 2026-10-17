@@ -1,6 +1,5 @@
 using Gateway.Nlp.Guardrails;
 using Gateway.Schemas;
-using Microsoft.Extensions.Logging;
 
 namespace Gateway.Nlp;
 

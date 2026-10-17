@@ -56,7 +56,8 @@ public class ConversationBusinessImpactTests
             TimeProvider.System);
         var turn = await sut.StartAsync("average coordinates near me", "sess_1", "analyst@enterprise.com");
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Email: "analyst@enterprise.com"));
-        return (sut, turn);
+        Assert.NotNull(turn);
+        return (sut, turn!);
     }
 
     [Fact]
@@ -87,7 +88,7 @@ public class ConversationBusinessImpactTests
         var (sut, turn) = await StartAsync();
         turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Purpose: "Geo analysis", ProjectCode: "PROJ-1"));
 
-        var invalid = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(BusinessImpact: "short"));
+        var invalid = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(BusinessImpact: "short"));
         Assert.Equal("BusinessImpact", invalid!.Step);
         Assert.NotNull(invalid.ValidationError);
 

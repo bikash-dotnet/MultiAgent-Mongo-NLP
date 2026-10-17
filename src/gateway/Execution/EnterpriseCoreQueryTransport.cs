@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http.Json;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Execution;

@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Gateway.Infrastructure.Results;
 
 public abstract class ApiResult

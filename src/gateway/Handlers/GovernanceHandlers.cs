@@ -8,7 +8,7 @@ namespace Gateway.Handlers;
 public static class GovernanceHandlers
 {
     public static IResult GetApproval(IApprovalFlagStore flags) =>
-        Microsoft.AspNetCore.Http.Results.Ok(new { enabled = flags.Enabled });
+        Results.Ok(new { enabled = flags.Enabled });
 
     public static async Task<IResult> PutApproval(
         ApprovalFlagRequest request,
@@ -19,10 +19,10 @@ public static class GovernanceHandlers
         var role = user.FindFirst(SessionClaims.Role)?.Value;
         if (role != "Data Owner / Admin")
         {
-            return Microsoft.AspNetCore.Http.Results.Forbid();
+            return Results.Forbid();
         }
 
         await flags.SetAsync(request.Enabled, cancellationToken);
-        return Microsoft.AspNetCore.Http.Results.Ok(new { enabled = flags.Enabled });
+        return Results.Ok(new { enabled = flags.Enabled });
     }
 }

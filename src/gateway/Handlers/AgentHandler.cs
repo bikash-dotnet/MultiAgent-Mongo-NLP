@@ -1,6 +1,4 @@
-using Gateway.Hubs;
 using Gateway.Nlp.Orchestrator;
-using Microsoft.AspNetCore.SignalR;
 
 namespace Gateway.Handlers;
 

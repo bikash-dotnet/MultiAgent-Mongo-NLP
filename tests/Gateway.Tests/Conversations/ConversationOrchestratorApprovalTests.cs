@@ -3,7 +3,6 @@ using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
-using Gateway.Nlp.Http;
 using Gateway.Reports;
 using Microsoft.Extensions.Options;
 
@@ -62,12 +61,12 @@ public class ConversationOrchestratorApprovalTests
             TimeProvider.System);
 
         var turn = await sut.StartAsync("average coordinates near me", "sess_1", "analyst@enterprise.com");
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Email: "analyst@enterprise.com"));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Purpose: "Geo analysis", ProjectCode: "PROJ-1"));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(BusinessImpact: "Target market expansion planning"));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(ManagerEmail: "manager@enterprise.com"));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Columns: ["name"]));
-        turn = await sut.AnswerAsync(turn.ConversationId, new ConversationAnswer(Delivery: delivery));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(Email: "analyst@enterprise.com"));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(Purpose: "Geo analysis", ProjectCode: "PROJ-1"));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(BusinessImpact: "Target market expansion planning"));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(ManagerEmail: "manager@enterprise.com"));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(Columns: ["name"]));
+        turn = await sut.AnswerAsync(turn!.ConversationId, new ConversationAnswer(Delivery: delivery));
         return (turn!, sender, requests);
     }
 

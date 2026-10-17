@@ -1,7 +1,6 @@
 using Gateway.Conversations;
 using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
-using Gateway.Nlp.Http;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Reports;

@@ -2,8 +2,6 @@ using Gateway.Auth;
 using Gateway.Endpoints;
 using Gateway.Execution;
 using Gateway.Governance;
-using Gateway.Nlp.Orchestrator;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -35,7 +33,7 @@ public static class DevHandlers
             claims,
             expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: creds);
-        return Microsoft.AspNetCore.Http.Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(jwt) });
+        return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(jwt) });
     }
 
     public static IResult PostEnterpriseCoreQuery(EnterpriseCoreQueryRequest body)
@@ -57,6 +55,6 @@ public static class DevHandlers
             new RequesterContext("dev", "dev", "Business Analyst", null),
             GovernanceDecision.None);
         var result = DemoTabularSource.Build(request);
-        return Microsoft.AspNetCore.Http.Results.Ok(new { columns = result.Columns, rows = result.Rows });
+        return Results.Ok(new { columns = result.Columns, rows = result.Rows });
     }
 }

@@ -81,7 +81,7 @@ public static class SchemaHandlers
             return result.ToResult();
         }
         var schema = result.Value as SchemaResponse ?? throw new InvalidOperationException("Unexpected activate result");
-        return Microsoft.AspNetCore.Http.Results.Ok(new { id, isActiveSource = schema.Schema.IsActiveSource });
+        return Results.Ok(new { id, isActiveSource = schema.Schema.IsActiveSource });
     }
 
     public static async Task<IResult> ImportSchema(

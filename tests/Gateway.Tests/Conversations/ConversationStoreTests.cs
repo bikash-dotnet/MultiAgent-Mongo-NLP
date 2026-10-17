@@ -1,5 +1,4 @@
 using Gateway.Conversations;
-using Gateway.Nlp.Http;
 using Gateway.Nlp.Router;
 
 namespace Gateway.Tests.Conversations;

@@ -18,7 +18,7 @@ public class EnterpriseCoreQueryTransportTests
         };
         var transport = new EnterpriseCoreQueryTransport(
             http,
-            Microsoft.Extensions.Options.Options.Create(new EnterpriseCoreOptions { QueryPath = "/api/query" }));
+            Options.Create(new EnterpriseCoreOptions { QueryPath = "/api/query" }));
 
         var result = await transport.ExecuteAsync(Request(), CancellationToken.None);
 
@@ -36,7 +36,7 @@ public class EnterpriseCoreQueryTransportTests
         };
         var transport = new EnterpriseCoreQueryTransport(
             http,
-            Microsoft.Extensions.Options.Options.Create(new EnterpriseCoreOptions()));
+            Options.Create(new EnterpriseCoreOptions()));
 
         var result = await transport.ExecuteAsync(Request(), CancellationToken.None);
 

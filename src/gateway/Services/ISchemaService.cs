@@ -1,6 +1,4 @@
-using Gateway.Audit;
 using Gateway.Infrastructure.Results;
-using Gateway.Nlp;
 using Gateway.Schemas;
 
 namespace Gateway.Services;

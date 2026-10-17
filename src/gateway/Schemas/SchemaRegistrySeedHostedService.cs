@@ -1,6 +1,4 @@
 using Gateway.Nlp;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Gateway.Schemas;
 
