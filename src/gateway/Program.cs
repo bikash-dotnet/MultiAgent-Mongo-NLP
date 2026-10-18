@@ -70,6 +70,7 @@ builder.Services.AddScoped<ISchemaService, SchemaService>();
 
 builder.Services.AddSingleton<ISettingsStore, SettingsStore>();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
+builder.Services.AddHostedService<SettingsHydrationHostedService>();
 builder.Services.AddScoped<ConfigService>();
 
 var app = builder.Build();

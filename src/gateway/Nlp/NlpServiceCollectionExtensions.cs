@@ -51,11 +51,15 @@ public static class NlpServiceCollectionExtensions
             sp.GetRequiredService<ITextEmbedder>(),
             sp.GetRequiredService<ISemanticCache>(),
             sp.GetRequiredService<IMqlBuilder>(),
-            sp.GetRequiredService<Gazetteer>()));
+            sp.GetRequiredService<Gazetteer>(),
+            sp.GetRequiredService<ISettingsProvider>()));
 
         services.AddSingleton<IPipelineValidator, PipelineValidator>();
         services.AddSingleton<ILlmQueryGenerator, SemanticKernelLlmQueryGenerator>();
-        services.AddSingleton<SelfCorrectingLlmQueryGenerator>();
+        services.AddSingleton<SelfCorrectingLlmQueryGenerator>(sp => new SelfCorrectingLlmQueryGenerator(
+            sp.GetRequiredService<ILlmQueryGenerator>(),
+            sp.GetRequiredService<IPipelineValidator>(),
+            sp.GetRequiredService<ISettingsProvider>()));
         services.AddSingleton<GuardrailEvaluator>(sp => new GuardrailEvaluator(
             sp.GetRequiredService<ActiveSchemaProvider>(),
             sp.GetRequiredService<IApprovalFlagStore>()));
@@ -128,7 +132,7 @@ public static class NlpServiceCollectionExtensions
 
         services.AddSingleton<EnterpriseCoreQueryTransport>(sp => new EnterpriseCoreQueryTransport(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient("enterprise-core"),
-            sp.GetRequiredService<IOptions<EnterpriseCoreOptions>>()));
+            sp.GetRequiredService<ISettingsProvider>()));
 
         services.AddSingleton<IQueryTransport>(sp => new RoutingQueryExecutor(
             sp.GetRequiredService<MongoQueryTransport>(),

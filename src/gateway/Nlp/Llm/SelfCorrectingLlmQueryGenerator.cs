@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Gateway.Configuration;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp.Llm;
@@ -6,16 +8,16 @@ public sealed class SelfCorrectingLlmQueryGenerator
 {
     private readonly ILlmQueryGenerator _generator;
     private readonly IPipelineValidator _validator;
-    private readonly int _maxAttempts;
+    private readonly ISettingsProvider _settings;
 
     public SelfCorrectingLlmQueryGenerator(
         ILlmQueryGenerator generator,
         IPipelineValidator validator,
-        IOptions<NvidiaNimOptions> options)
+        ISettingsProvider settings)
     {
         _generator = generator;
         _validator = validator;
-        _maxAttempts = Math.Max(1, options.Value.MaxAttempts);
+        _settings = settings;
     }
 
     public async Task<SelfCorrectionResult> GenerateAsync(
@@ -23,10 +25,11 @@ public sealed class SelfCorrectingLlmQueryGenerator
         string slotsJson,
         CancellationToken cancellationToken)
     {
+        var maxAttempts = GetMaxAttempts();
         var tokens = 0;
         string? previousError = null;
 
-        for (var attempt = 1; attempt <= _maxAttempts; attempt++)
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             var generated = await _generator.GenerateAsync(utterance, slotsJson, previousError, cancellationToken);
             tokens += generated.TokensConsumed;
@@ -40,6 +43,16 @@ public sealed class SelfCorrectingLlmQueryGenerator
             previousError = validation.Error;
         }
 
-        return new SelfCorrectionResult(null, _maxAttempts, tokens, previousError ?? "pipeline validation failed");
+        return new SelfCorrectionResult(null, maxAttempts, tokens, previousError ?? "pipeline validation failed");
+    }
+
+    private int GetMaxAttempts()
+    {
+        if (_settings.TryGetValue("NvidiaNim", "MaxAttempts", out var value) &&
+            value.ValueKind == JsonValueKind.Number)
+        {
+            return Math.Max(1, value.GetInt32());
+        }
+        return 3;
     }
 }

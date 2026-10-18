@@ -29,6 +29,7 @@ export interface ConfigSectionResponse {
   sectionName: string;
   label: string;
   adminOnly: boolean;
+  version: number;
   values: SettingValueResponse[];
 }
 

@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
+using Gateway.Configuration;
 using Gateway.Execution;
 using Gateway.Governance;
 using Microsoft.Extensions.Options;
@@ -16,9 +18,9 @@ public class EnterpriseCoreQueryTransportTests
         {
             BaseAddress = new Uri("http://enterprise.test")
         };
-        var transport = new EnterpriseCoreQueryTransport(
-            http,
-            Options.Create(new EnterpriseCoreOptions { QueryPath = "/api/query" }));
+        var provider = new SettingsProvider();
+        provider.UpdateSection("EnterpriseCore", JsonSerializer.SerializeToElement(new { QueryPath = "/api/query" }), 1);
+        var transport = new EnterpriseCoreQueryTransport(http, provider);
 
         var result = await transport.ExecuteAsync(Request(), CancellationToken.None);
 
@@ -34,9 +36,9 @@ public class EnterpriseCoreQueryTransportTests
         {
             BaseAddress = new Uri("http://enterprise.test")
         };
-        var transport = new EnterpriseCoreQueryTransport(
-            http,
-            Options.Create(new EnterpriseCoreOptions()));
+        var provider = new SettingsProvider();
+        provider.UpdateSection("EnterpriseCore", JsonSerializer.SerializeToElement(new { QueryPath = "/api/query" }), 1);
+        var transport = new EnterpriseCoreQueryTransport(http, provider);
 
         var result = await transport.ExecuteAsync(Request(), CancellationToken.None);
 

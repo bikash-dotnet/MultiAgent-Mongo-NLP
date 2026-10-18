@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 
 namespace Gateway.Configuration;
@@ -13,6 +14,8 @@ public sealed class SettingsProvider : ISettingsProvider
     {
         return _sections.TryGetValue(sectionName, out var element) ? element : null;
     }
+
+    public IReadOnlyList<string> GetSectionNames() => _sections.Keys.ToList();
 
     public bool TryGetValue(string sectionName, string key, out JsonElement value)
     {

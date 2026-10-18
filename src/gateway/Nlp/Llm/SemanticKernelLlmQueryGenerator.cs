@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Gateway.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -16,20 +18,36 @@ public sealed class LlmNotConfiguredException : InvalidOperationException
 public sealed class SemanticKernelLlmQueryGenerator : ILlmQueryGenerator
 {
     private readonly NvidiaNimOptions _options;
+    private readonly ISettingsProvider _settings;
     private readonly PromptAssets _assets;
     private readonly ILogger<SemanticKernelLlmQueryGenerator> _logger;
-    private readonly Lazy<IChatCompletionService> _chat;
+    private Lazy<IChatCompletionService> _chat;
 
     public SemanticKernelLlmQueryGenerator(
         IOptions<NvidiaNimOptions> options,
+        ISettingsProvider settings,
         PromptAssets assets,
         ILogger<SemanticKernelLlmQueryGenerator> logger)
     {
         _options = options.Value;
+        _settings = settings;
         _assets = assets;
         _logger = logger;
-        _chat = new Lazy<IChatCompletionService>(CreateChatService);
+        _chat = CreateChatLazy();
+
+        settings.Changed += OnSettingsChanged;
     }
+
+    private void OnSettingsChanged(string sectionName)
+    {
+        if (string.Equals(sectionName, "NvidiaNim", StringComparison.Ordinal) ||
+            string.Equals(sectionName, "*", StringComparison.Ordinal))
+        {
+            _chat = CreateChatLazy();
+        }
+    }
+
+    private Lazy<IChatCompletionService> CreateChatLazy() => new(CreateChatService);
 
     public async Task<LlmQueryResult> GenerateAsync(
         string utterance,
@@ -60,11 +78,29 @@ public sealed class SemanticKernelLlmQueryGenerator : ILlmQueryGenerator
 
     private IChatCompletionService CreateChatService()
     {
+        var model = _options.Model;
+        var baseUrl = _options.BaseUrl;
+        var apiKey = _options.ApiKey;
+
+        if (_settings.TryGetValue("NvidiaNim", "Model", out var modelValue) &&
+            modelValue.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(modelValue.GetString()))
+        {
+            model = modelValue.GetString()!;
+        }
+
+        if (_settings.TryGetValue("NvidiaNim", "BaseUrl", out var baseUrlValue) &&
+            baseUrlValue.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(baseUrlValue.GetString()))
+        {
+            baseUrl = baseUrlValue.GetString()!;
+        }
+
         var builder = Kernel.CreateBuilder();
         builder.AddOpenAIChatCompletion(
-            modelId: _options.Model,
-            endpoint: new Uri(_options.BaseUrl),
-            apiKey: _options.ApiKey);
+            modelId: model,
+            endpoint: new Uri(baseUrl),
+            apiKey: apiKey);
         return builder.Build().GetRequiredService<IChatCompletionService>();
     }
 

@@ -97,6 +97,25 @@ public static class SettingsCatalog
             Description: "Fallback to demo data when live sources are unavailable.")
     };
 
+    private static readonly IReadOnlyList<SettingSpec> ReportsSmtpSettings = new List<SettingSpec>
+    {
+        new("Reports.Smtp.Host", "SMTP host", SettingType.String, true, false,
+            Json("\"localhost\""),
+            Description: "SMTP server host for report delivery."),
+        new("Reports.Smtp.Port", "SMTP port", SettingType.Port, true, false,
+            Json("25"), Min: 1, Max: 65535,
+            Description: "SMTP server port."),
+        new("Reports.Smtp.User", "SMTP user", SettingType.String, true, false,
+            Json("\"\""),
+            Description: "SMTP authentication user name."),
+        new("Reports.Smtp.From", "SMTP from address", SettingType.String, true, false,
+            Json("\"\""),
+            Description: "From address used for report e-mail."),
+        new("Reports.Smtp.Password", "SMTP password", SettingType.Password, false, true,
+            Json("\"\""),
+            Description: "SMTP authentication password. Managed by environment; never stored or returned.")
+    };
+
     private static readonly IReadOnlyList<SettingSpec> EnterpriseCoreSettings = new List<SettingSpec>
     {
         new("EnterpriseCore.BaseUrl", "EnterpriseCore base URL", SettingType.Url, true, false,
@@ -120,7 +139,43 @@ public static class SettingsCatalog
             Description: "Maximum retry attempts for NVIDIA NIM calls."),
         new("NvidiaNim.TimeoutSeconds", "NVIDIA NIM timeout (s)", SettingType.Number, true, false,
             Json("30"), Min: 5, Max: 300,
-            Description: "Timeout in seconds for NVIDIA NIM calls.")
+            Description: "Timeout in seconds for NVIDIA NIM calls."),
+        new("NvidiaNim.ApiKey", "NVIDIA NIM API key", SettingType.Password, false, true,
+            Json("\"\""),
+            Description: "NVIDIA NIM API key. Managed by environment; never stored or returned.")
+    };
+
+    private static readonly IReadOnlyList<SettingSpec> MongoDbSettings = new List<SettingSpec>
+    {
+        new("MongoDb.ConnectionString", "Connection string", SettingType.String, false, true,
+            Json("\"\""),
+            Description: "MongoDB connection string. Managed by environment; not editable."),
+        new("MongoDb.Database", "Database", SettingType.String, false, false,
+            Json("\"sample_airbnb\""),
+            Description: "Target database. Read-only; set via environment.")
+    };
+
+    private static readonly IReadOnlyList<SettingSpec> JwtSettings = new List<SettingSpec>
+    {
+        new("Jwt.Issuer", "Issuer", SettingType.String, false, false,
+            Json("\"MultiAgentMongoNlp\""),
+            Description: "JWT issuer. Managed by environment; not editable."),
+        new("Jwt.Audience", "Audience", SettingType.String, false, false,
+            Json("\"MultiAgentMongoNlp.Spa\""),
+            Description: "JWT audience. Managed by environment; not editable."),
+        new("Jwt.SigningKey", "Signing key", SettingType.Password, false, true,
+            Json("\"\""),
+            Description: "JWT signing key. Managed by environment; never stored or returned.")
+    };
+
+    private static readonly IReadOnlyList<SettingSpec> PersistenceSettings = new List<SettingSpec>
+    {
+        new("Persistence.Mode", "Mode", SettingType.String, false, false,
+            Json("\"Mongo\""),
+            Description: "Persistence mode. Startup-bound; not editable."),
+        new("Persistence.DataDirectory", "Data directory", SettingType.String, false, false,
+            Json("\"data\""),
+            Description: "Local data directory. Startup-bound; not editable.")
     };
 
     public static readonly IReadOnlyList<SettingsSectionSpec> Sections = new List<SettingsSectionSpec>
@@ -131,8 +186,12 @@ public static class SettingsCatalog
         new("Nlp.Embeddings", "Embeddings", NlpEmbeddingsSettings),
         new("Governance", "Governance", GovernanceSettings),
         new("Reports", "Reports", ReportsSettings),
+        new("Reports.Smtp", "SMTP", ReportsSmtpSettings),
         new("EnterpriseCore", "EnterpriseCore", EnterpriseCoreSettings, AdminOnly: true),
-        new("NvidiaNim", "NVIDIA NIM", NvidiaNimSettings)
+        new("NvidiaNim", "NVIDIA NIM", NvidiaNimSettings),
+        new("MongoDb", "MongoDB", MongoDbSettings, AdminOnly: true),
+        new("Jwt", "JWT", JwtSettings, AdminOnly: true),
+        new("Persistence", "Persistence", PersistenceSettings, AdminOnly: true)
     };
 
     public static SettingSpec? GetSpec(string sectionName, string key)

@@ -1,5 +1,6 @@
+using System.Text.Json;
 using System.Diagnostics;
-using Microsoft.Extensions.Options;
+using Gateway.Configuration;
 
 namespace Gateway.Execution;
 
@@ -8,12 +9,12 @@ public sealed record EnterpriseCoreResponse(IReadOnlyList<string> Columns, IRead
 public sealed class EnterpriseCoreQueryTransport : IQueryTransport
 {
     private readonly HttpClient _http;
-    private readonly EnterpriseCoreOptions _options;
+    private readonly ISettingsProvider _settings;
 
-    public EnterpriseCoreQueryTransport(HttpClient http, IOptions<EnterpriseCoreOptions> options)
+    public EnterpriseCoreQueryTransport(HttpClient http, ISettingsProvider settings)
     {
         _http = http;
-        _options = options.Value;
+        _settings = settings;
     }
 
     public async Task<TabularResult> ExecuteAsync(ExecutionRequest request, CancellationToken cancellationToken = default)
@@ -21,8 +22,12 @@ public sealed class EnterpriseCoreQueryTransport : IQueryTransport
         var stopwatch = Stopwatch.StartNew();
         try
         {
+            var baseUrl = ResolveBaseUrl();
+            var queryPath = ResolveQueryPath();
+            var url = string.IsNullOrWhiteSpace(queryPath) ? baseUrl : baseUrl.TrimEnd('/') + "/" + queryPath.TrimStart('/');
+
             using var response = await _http.PostAsJsonAsync(
-                _options.QueryPath,
+                url,
                 new { query = request.Mql, collection = request.TargetCollection, columns = request.Columns },
                 cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -47,5 +52,33 @@ public sealed class EnterpriseCoreQueryTransport : IQueryTransport
         {
             return new TabularResult([], [], ExecutionDataSource.EnterpriseCoreREST.ToString(), stopwatch.ElapsedMilliseconds, Error: error.Message);
         }
+    }
+
+    private string ResolveBaseUrl()
+    {
+        if (_settings.TryGetValue("EnterpriseCore", "BaseUrl", out var value) &&
+            value.ValueKind == JsonValueKind.String)
+        {
+            var url = value.GetString();
+            if (!string.IsNullOrWhiteSpace(url))
+            {
+                return url;
+            }
+        }
+        return string.Empty;
+    }
+
+    private string ResolveQueryPath()
+    {
+        if (_settings.TryGetValue("EnterpriseCore", "QueryPath", out var value) &&
+            value.ValueKind == JsonValueKind.String)
+        {
+            var path = value.GetString();
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                return path;
+            }
+        }
+        return "/api/query";
     }
 }

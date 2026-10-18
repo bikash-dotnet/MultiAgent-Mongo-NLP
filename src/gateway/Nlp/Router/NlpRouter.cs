@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
+using Gateway.Configuration;
 using Gateway.Nlp.Intent;
 using Gateway.Nlp.Mql;
 using Gateway.Nlp.Slots;
@@ -12,6 +14,7 @@ public sealed class NlpRouter : INlpRouter
     private readonly ISemanticCache _cache;
     private readonly IMqlBuilder _mqlBuilder;
     private readonly Gazetteer _gazetteer;
+    private readonly ISettingsProvider _settings;
     private readonly IntentClassifier _intentClassifier = new();
 
     public NlpRouter(ITextEmbedder embedder, ISemanticCache cache, IMqlBuilder mqlBuilder)
@@ -21,11 +24,17 @@ public sealed class NlpRouter : INlpRouter
     }
 
     public NlpRouter(ITextEmbedder embedder, ISemanticCache cache, IMqlBuilder mqlBuilder, Gazetteer gazetteer)
+        : this(embedder, cache, mqlBuilder, gazetteer, new SettingsProvider())
+    {
+    }
+
+    public NlpRouter(ITextEmbedder embedder, ISemanticCache cache, IMqlBuilder mqlBuilder, Gazetteer gazetteer, ISettingsProvider settings)
     {
         _embedder = embedder;
         _cache = cache;
         _mqlBuilder = mqlBuilder;
         _gazetteer = gazetteer;
+        _settings = settings;
     }
 
     public NlpRouteResult Route(string utterance)
@@ -40,7 +49,7 @@ public sealed class NlpRouter : INlpRouter
                 NlpRouteKind.CacheHit, cached.Mql, null,
                 SemanticCacheHit: true, SlotExtractionUsed: false,
                 Intent: IntentKind.Search, JustRunIt: false,
-                ClarificationsApplied: MqlDefaults.Standard, LlmTokensConsumed: 0);
+                ClarificationsApplied: GetDefaults(), LlmTokensConsumed: 0);
         }
 
         var intent = _intentClassifier.Classify(normalized);
@@ -50,11 +59,11 @@ public sealed class NlpRouter : INlpRouter
                 NlpRouteKind.ClarifyRequired, null, intent.ClarificationQuestion,
                 SemanticCacheHit: false, SlotExtractionUsed: false,
                 Intent: intent.Kind, JustRunIt: false,
-                ClarificationsApplied: MqlDefaults.Standard, LlmTokensConsumed: 0);
+                ClarificationsApplied: GetDefaults(), LlmTokensConsumed: 0);
         }
 
         var slots = SlotExtractor.Extract(normalized, _gazetteer);
-        var defaults = MqlDefaults.Standard;
+        var defaults = GetDefaults();
 
         if (intent.IsComplex)
         {
@@ -73,5 +82,32 @@ public sealed class NlpRouter : INlpRouter
             SemanticCacheHit: false, SlotExtractionUsed: slots.HasAnyConstraints,
             Intent: intent.Kind, JustRunIt: slots.JustRunIt,
             ClarificationsApplied: defaults, LlmTokensConsumed: 0);
+    }
+
+    private MqlDefaults GetDefaults()
+    {
+        int limit = MqlDefaults.Standard.Limit;
+        string sort = MqlDefaults.Standard.Sort;
+        string market = MqlDefaults.Standard.Market;
+
+        if (_settings.TryGetValue("Nlp.Defaults", "Limit", out var limitValue) &&
+            limitValue.ValueKind == JsonValueKind.Number)
+        {
+            limit = limitValue.GetInt32();
+        }
+
+        if (_settings.TryGetValue("Nlp.Defaults", "Sort", out var sortValue) &&
+            sortValue.ValueKind == JsonValueKind.String)
+        {
+            sort = sortValue.GetString() ?? MqlDefaults.Standard.Sort;
+        }
+
+        if (_settings.TryGetValue("Nlp.Defaults", "Market", out var marketValue) &&
+            marketValue.ValueKind == JsonValueKind.String)
+        {
+            market = marketValue.GetString() ?? MqlDefaults.Standard.Market;
+        }
+
+        return new MqlDefaults(limit, sort, market);
     }
 }

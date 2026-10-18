@@ -8,6 +8,7 @@ using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Gateway.Tests.Nlp;
 
@@ -39,8 +40,9 @@ public class NlpOrchestratorTests
         var router = new NlpRouter(new VectorEmbedder(), new SemanticCache(new SettingsProvider()), builder, gazetteer);
         var generator = new StubGenerator(pipeline);
         var events = new InMemoryAgentEventSink();
-        var corrector = new SelfCorrectingLlmQueryGenerator(generator, new PipelineValidator(),
-            Options.Create(new NvidiaNimOptions { MaxAttempts = 3 }));
+        var provider = new SettingsProvider();
+        provider.UpdateSection("NvidiaNim", JsonSerializer.SerializeToElement(new { MaxAttempts = 3 }), 1);
+        var corrector = new SelfCorrectingLlmQueryGenerator(generator, new PipelineValidator(), provider);
         var sut = new NlpOrchestrator(router, gazetteer, corrector, events, new InMemoryAgentStateStore(),
             GuardrailTestFactory.FromAssets(), new InMemoryAccessRequestStore(), TimeProvider.System);
         return (sut, generator, events);

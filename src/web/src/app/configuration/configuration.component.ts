@@ -91,7 +91,7 @@ export class ConfigurationComponent implements OnInit {
         for (const section of sections) {
           this.drafts.set(section.sectionName, {
             values: { ...this.initialValues(section) },
-            version: 0,
+            version: section.version ?? 0,
             errors: {},
             saving: false
           });
@@ -135,10 +135,75 @@ export class ConfigurationComponent implements OnInit {
     return this.drafts.get(sectionName)!;
   }
 
+  private validateField(sectionName: string, key: string, value: any): string | null {
+    const schema = this.getFieldSchema(sectionName, key);
+    if (!schema) return null;
+
+    if (schema.type === SettingType.Url || schema.type === SettingType.String || schema.type === SettingType.Select) {
+      if (typeof value === 'string') {
+        if (schema.type === SettingType.Url && value.length > 0) {
+          try {
+            new URL(value);
+          } catch {
+            return 'Enter a valid URL.';
+          }
+        }
+      }
+    }
+
+    if (this.isNumberTypeString(schema.type)) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) {
+        return 'Enter a valid number.';
+      }
+      if (schema.min != null && num < schema.min) {
+        return `Must be at least ${schema.min}.`;
+      }
+      if (schema.max != null && num > schema.max) {
+        return `Must be at most ${schema.max}.`;
+      }
+      if (schema.minD != null && num < schema.minD) {
+        return `Must be at least ${schema.minD}.`;
+      }
+      if (schema.maxD != null && num > schema.maxD) {
+        return `Must be at most ${schema.maxD}.`;
+      }
+    }
+
+    return null;
+  }
+
+  private isNumberTypeString(type: string): boolean {
+    return type === SettingType.Number || type === SettingType.Double || type === SettingType.Port;
+  }
+
+  private validateDraft(sectionName: string): boolean {
+    const draft = this.drafts.get(sectionName);
+    const section = this.sections.find((s) => s.sectionName === sectionName);
+    if (!draft || !section) return false;
+
+    const errors: { [key: string]: string } = {};
+    let hasError = false;
+
+    for (const setting of section.values) {
+      if (!setting.editable) continue;
+      const err = this.validateField(sectionName, setting.key, draft.values[setting.key]);
+      if (err) {
+        errors[setting.key] = err;
+        hasError = true;
+      }
+    }
+
+    draft.errors = errors;
+    return !hasError;
+  }
+
   save(sectionName: string): void {
     const draft = this.drafts.get(sectionName);
     const section = this.sections.find((s) => s.sectionName === sectionName);
     if (!draft || !section) return;
+
+    if (!this.validateDraft(sectionName)) return;
 
     draft.errors = {};
     draft.saving = true;
@@ -153,12 +218,13 @@ export class ConfigurationComponent implements OnInit {
         this.sections = this.sections.map((s) =>
           s.sectionName === sectionName ? updated : s
         );
+        const updatedSection = this.sections.find((s) => s.sectionName === sectionName);
         const updatedValues: { [key: string]: any } = {};
-        for (const v of updated.values) {
+        for (const v of updatedSection?.values ?? []) {
           updatedValues[v.key] = v.value;
         }
         draft.values = updatedValues;
-        draft.version = (draft.version ?? 0) + 1;
+        draft.version = updated.version ?? (draft.version ?? 0) + 1;
         draft.saving = false;
         this.message.add({
           severity: 'success',
@@ -184,14 +250,20 @@ export class ConfigurationComponent implements OnInit {
     const section = this.sections.find((s) => s.sectionName === sectionName);
     if (!section) return;
 
-    const draft = this.drafts.get(sectionName)!;
-    draft.values = { ...this.initialValues(section) };
-    draft.errors = {};
-    this.error = null;
-    this.message.add({
-      severity: 'info',
-      summary: 'Reset',
-      detail: `${section.label} reverted to local defaults.`
+    this.configurationService.remove(sectionName).subscribe({
+      next: () => {
+        this.load();
+        this.message.add({
+          severity: 'info',
+          summary: 'Reset',
+          detail: `${section.label} reverted to bootstrap defaults.`
+        });
+      },
+      error: (err) => {
+        const serverError = err.error?.error ?? 'Unable to reset section.';
+        this.error = serverError;
+        this.message.add({ severity: 'error', summary: 'Reset failed', detail: serverError });
+      }
     });
   }
 
