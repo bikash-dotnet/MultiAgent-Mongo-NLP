@@ -1,6 +1,7 @@
 using Gateway.Audit;
 using Gateway.Conversations;
 using Gateway.Execution;
+using Gateway.Configuration;
 using Gateway.Governance;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
@@ -61,8 +62,17 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
         services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();
 
-        services.AddSingleton<IApprovalFlagStore>(sp => new InMemoryApprovalFlagStore(
-            sp.GetRequiredService<IOptions<GovernanceOptions>>().Value.ApprovalEnabled));
+        services.AddSingleton<IApprovalFlagStore>(sp =>
+        {
+            var store = sp.GetService<ISettingsStore>();
+            var provider = sp.GetService<ISettingsProvider>();
+            if (store is not null && provider is not null)
+            {
+                return new DbApprovalFlagStore(store, provider);
+            }
+            return new InMemoryApprovalFlagStore(
+                sp.GetRequiredService<IOptions<GovernanceOptions>>().Value.ApprovalEnabled);
+        });
         services.AddSingleton<INotificationSender, SimulatedNotificationSender>();
         services.AddSingleton<IEmailSender, MailKitEmailSender>();
         services.AddSingleton<ExportDeliveryService>();
@@ -90,6 +100,11 @@ public static class NlpServiceCollectionExtensions
                 config["MongoDb:ConnectionString"],
                 config["MongoDb:Database"] ?? "sample_airbnb");
         });
+
+        services.AddSingleton<ISettingsStore>(sp => new SettingsStore(
+            sp.GetRequiredService<IDocumentStore>()));
+        services.AddSingleton<ISettingsProvider, SettingsProvider>();
+        services.AddSingleton<SettingsService>();
 
         services.AddSingleton<IAccessRequestStore, DurableAccessRequestStore>();
         services.AddSingleton<IAgentStateStore, DurableAgentStateStore>();

@@ -3,7 +3,6 @@ using System.Text.Json;
 using Gateway.Persistence;
 
 namespace Gateway.Configuration;
-
 public sealed class SettingsStore : ISettingsStore
 {
     private const string Collection = "app_settings";
@@ -27,7 +26,7 @@ public sealed class SettingsStore : ISettingsStore
         var current = await _store.GetAsync<SettingsDocument>(Collection, sectionKey, cancellationToken);
         var version = current is null ? 1 : current.Version + 1;
 
-        var doc = new SettingsDocument(sectionKey, values, version, SettingsSource.Database, now, updatedBy);
+        var doc = new SettingsDocument(sectionKey, JsonSerializer.Serialize(values), version, SettingsSource.Database, now, updatedBy);
         await _store.UpsertAsync(Collection, sectionKey, doc, cancellationToken);
         return doc;
     }

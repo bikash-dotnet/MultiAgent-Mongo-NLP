@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using Gateway.Nlp.Cache;
 
 namespace Gateway.Tests.Nlp;
@@ -14,14 +15,14 @@ public class SemanticCacheTests
     [Fact]
     public void Miss_on_empty_cache()
     {
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         Assert.Null(cache.TryFind(Unit(1, 0, 0)));
     }
 
     [Fact]
     public void Exact_repeat_is_a_hit()
     {
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         cache.Store(Unit(1, 0, 0), "q", "[{\"$limit\":10}]");
 
         var hit = cache.TryFind(Unit(1, 0, 0));
@@ -34,7 +35,7 @@ public class SemanticCacheTests
     [Fact]
     public void Below_threshold_is_a_miss()
     {
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         cache.Store(Unit(1, 0, 0), "q", "[{\"$limit\":10}]");
 
         Assert.Null(cache.TryFind(Unit(0.8, 0.6, 0)));
@@ -43,7 +44,7 @@ public class SemanticCacheTests
     [Fact]
     public void Above_threshold_is_a_hit()
     {
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         cache.Store(Unit(1, 0, 0), "q", "[{\"$limit\":10}]");
 
         var hit = cache.TryFind(Unit(0.96, 0.28, 0));
@@ -54,7 +55,7 @@ public class SemanticCacheTests
     [Fact]
     public async Task Concurrent_stores_and_finds_do_not_throw()
     {
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         var tasks = Enumerable.Range(0, 32)
             .Select(i => Task.Run(() =>
             {

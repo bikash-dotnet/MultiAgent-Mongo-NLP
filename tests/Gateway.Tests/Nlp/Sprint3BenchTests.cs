@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using System.Diagnostics;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
@@ -33,7 +34,7 @@ public class Sprint3BenchTests
     {
         var gazetteer = Gazetteer.LoadFromDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Gazetteers"));
         var builder = ScribanSimpleMqlBuilder.FromAssetsDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates"));
-        var router = new NlpRouter(new ConstEmbedder(), new SemanticCache(), builder, gazetteer);
+        var router = new NlpRouter(new ConstEmbedder(), new SemanticCache(new SettingsProvider()), builder, gazetteer);
         var corrector = new SelfCorrectingLlmQueryGenerator(new FixedGenerator(), new PipelineValidator(),
             Options.Create(new NvidiaNimOptions { MaxAttempts = 3 }));
         var orchestrator = new NlpOrchestrator(router, gazetteer, corrector, new InMemoryAgentEventSink(),

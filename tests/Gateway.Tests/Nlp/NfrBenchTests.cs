@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using System.Diagnostics;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Embeddings;
@@ -27,7 +28,7 @@ public class NfrBenchTests
         var builder = ScribanSimpleMqlBuilder.FromAssetsDirectory(
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates"));
         var embedder = new OnnxBgeSmallEmbedder(TestPaths.ModelPath(), TestPaths.VocabPath());
-        var cache = new SemanticCache();
+        var cache = new SemanticCache(new SettingsProvider());
         var router = new NlpRouter(embedder, cache, builder);
 
         // warm model + router

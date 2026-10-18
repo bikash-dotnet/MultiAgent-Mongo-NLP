@@ -1,9 +1,9 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Gateway.Configuration;
 
+[JsonConverter(typeof(JsonStringEnumConverter<SettingType>))]
 public enum SettingType
 {
     String,
@@ -22,7 +22,7 @@ public sealed record SettingSpec(
     SettingType Type,
     bool Editable,
     bool Secret,
-    JsonNode Default,
+    JsonElement Default,
     int? Min = null,
     int? Max = null,
     double? MinD = null,
@@ -38,7 +38,7 @@ public sealed record SettingsSectionSpec(
 
 public static class SettingsCatalog
 {
-    private static JsonNode Json(string json) => JsonNode.Parse(json)!;
+    private static JsonElement Json(string json) => JsonElement.Parse(json).Clone();
 
     private static readonly IReadOnlyList<SettingSpec> ExecutionSettings = new List<SettingSpec>
     {
@@ -149,14 +149,14 @@ public static class SettingsCatalog
         return null;
     }
 
+    public static JsonElement? DefaultValue(string sectionName, string key) =>
+        GetSpec(sectionName, key)?.Default;
+
     public static bool IsEditable(string sectionName, string key) =>
         GetSpec(sectionName, key) is { Editable: true };
 
     public static bool IsSecret(string sectionName, string key) =>
         GetSpec(sectionName, key) is { Secret: true };
-
-    public static JsonNode? DefaultValue(string sectionName, string key) =>
-        GetSpec(sectionName, key)?.Default;
 
     public static bool IsSectionAdminOnly(string sectionName) =>
         Sections.FirstOrDefault(s => string.Equals(s.SectionName, sectionName, StringComparison.Ordinal))?.AdminOnly == true;

@@ -1,0 +1,136 @@
+<section class="configuration">
+  <header class="toolbar">
+    <div>
+      <h1>Configuration Console</h1>
+      <p class="subtitle">
+        Edit governed runtime settings without a restart. Database overrides take precedence over
+        bootstrap defaults. Secrets and environment-bound values are read-only.
+      </p>
+    </div>
+    @if (canManage) {
+      <div class="toolbar-actions">
+        <p-button
+          label="Reset all overrides"
+          icon="pi pi-refresh"
+          severity="secondary"
+          (onClick)="resetAll()"
+        />
+      </div>
+    }
+  </header>
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (sections.length) {
+    @for (section of sections; track section.sectionName) {
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="section-header">
+            <span class="section-title">{{ section.label }}</span>
+            @if (section.adminOnly && canManage) {
+              <p-badge value="Admin only" severity="info" />
+            }
+          </div>
+        </ng-template>
+
+        <div class="settings-grid">
+          @for (setting of section.values; track setting.key) {
+            <div class="setting-row">
+              <label class="setting-label">{{ setting.label }}</label>
+              <div class="setting-control">
+                @if (setting.secret) {
+                  <div class="secret-field">
+                    <span class="secret-badge">
+                      @if (setting.value) {
+                        <span class="badge-configured">Configured</span>
+                      } @else {
+                        <span class="badge-not-configured">Not configured</span>
+                      }
+                    </span>
+                    <span class="secret-note">Managed by environment</span>
+                  </div>
+                } @else {
+                  @if (isNumberType(setting.type)) {
+                    <p-inputNumber
+                      [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+                      [name]="setting.key"
+                      [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
+                      [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
+                      [disabled]="!setting.editable"
+                      class="control-sm"
+                    />
+                  } @else if (setting.type === SettingType.Double) {
+                    <p-inputNumber
+                      [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+                      [name]="setting.key"
+                      [min]="getFieldSchema(section.sectionName, setting.key)?.minD ?? null"
+                      [max]="getFieldSchema(section.sectionName, setting.key)?.maxD ?? null"
+                      [disabled]="!setting.editable"
+                      class="control-sm"
+                    />
+                  } @else if (isBooleanType(setting.type)) {
+                    <p-checkbox
+                      [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+                      [name]="setting.key"
+                      [disabled]="!setting.editable"
+                      binary="true"
+                    />
+                  } @else if (isSelectType(setting.type)) {
+                    <p-select
+                      [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+                      [name]="setting.key"
+                      [options]="(getFieldSchema(section.sectionName, setting.key)?.allowedValues ?? []).map((v) => ({ label: v, value: v }))"
+                      [disabled]="!setting.editable"
+                      class="control-sm"
+                      optionLabel="label"
+                      optionValue="value"
+                      showClear="false"
+                    />
+                  } @else {
+                    <p-inputText
+                      [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+                      [name]="setting.key"
+                      [disabled]="!setting.editable || setting.secret"
+                      class="control-sm"
+                    />
+                  }
+                }
+              </div>
+              <span class="source-badge" [class.db]="setting.source === SettingsSource.Database">
+                {{ setting.source === SettingsSource.Database ? 'DB override' : 'Default' }}
+              </span>
+              @if (isInvalid(section.sectionName, setting.key)) {
+                <span class="field-error">{{ errorMessage(section.sectionName, setting.key) }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <ng-template pTemplate="footer">
+          <div class="section-actions">
+            @if (canManage) {
+              <p-button
+                label="Reset section"
+                icon="pi pi-undo"
+                severity="secondary"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="resetSection(section.sectionName)"
+              />
+              <p-button
+                label="Save"
+                icon="pi pi-save"
+                severity="success"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="save(section.sectionName)"
+              />
+            }
+          </div>
+        </ng-template>
+      </p-card>
+    }
+  }
+
+  <p-toast />
+</section>

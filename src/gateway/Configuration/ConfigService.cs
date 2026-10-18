@@ -56,8 +56,7 @@ public sealed class ConfigService
         var current = await _store.GetAsync(sectionName, cancellationToken);
         if (current is not null && current.Version != request.Version)
         {
-            throw new InvalidOperationException(
-                $"Configuration section '{sectionName}' has been modified (current version {current.Version}).");
+            throw new OptimisticConcurrencyException(sectionName);
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -108,21 +107,25 @@ public sealed class ConfigService
                 section.SectionName,
                 section.Label,
                 section.AdminOnly,
-                section.Settings.Select(spec => new SettingsFieldSchema(
-                    spec.Key,
-                    spec.Label,
-                    spec.Type.ToString(),
-                    spec.Editable,
-                    spec.Secret,
-                    spec.Default.ValueKind == JsonValueKind.Null || spec.Default.ValueKind == JsonValueKind.Undefined
-                        ? null
-                        : spec.Default,
-                    spec.Min,
-                    spec.Max,
-                    spec.MinD,
-                    spec.MaxD,
-                    spec.AllowedValues,
-                    spec.Description)).ToList())).ToList());
+                section.Settings.Select(spec =>
+                {
+                    var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
+                    return new SettingsFieldSchema(
+                        shortKey,
+                        spec.Label,
+                        spec.Type.ToString(),
+                        spec.Editable,
+                        spec.Secret,
+                        spec.Default.ValueKind == JsonValueKind.Null || spec.Default.ValueKind == JsonValueKind.Undefined
+                            ? null
+                            : spec.Default,
+                        spec.Min,
+                        spec.Max,
+                        spec.MinD,
+                        spec.MaxD,
+                        spec.AllowedValues,
+                        spec.Description);
+                }).ToList())).ToList());
     }
 
     private void ValidateSection(
@@ -133,6 +136,8 @@ public sealed class ConfigService
         var section = SettingsCatalog.Sections.First(s =>
             string.Equals(s.SectionName, sectionName, StringComparison.Ordinal));
         var dict = new Dictionary<string, JsonElement>();
+
+        var inputByKey = input.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
 
         foreach (var spec in section.Settings)
         {
@@ -148,7 +153,7 @@ public sealed class ConfigService
                 continue;
             }
 
-            if (!input.TryGetValue(shortKey, out var raw))
+            if (!inputByKey.TryGetValue(shortKey, out var raw))
             {
                 raw = spec.Default.ValueKind == JsonValueKind.Null || spec.Default.ValueKind == JsonValueKind.Undefined
                     ? JsonSerializer.SerializeToElement((string?)null)
@@ -160,7 +165,7 @@ public sealed class ConfigService
 
         // Cross-field rule: EnterpriseCore.BaseUrl required when Execution.DataSource = EnterpriseCoreREST
         if (string.Equals(sectionName, "Execution", StringComparison.Ordinal) &&
-            input.TryGetValue("DataSource", out var ds) &&
+            inputByKey.TryGetValue("DataSource", out var ds) &&
             ds.ValueKind == JsonValueKind.String &&
             ds.GetString() == "EnterpriseCoreREST")
         {
@@ -170,6 +175,35 @@ public sealed class ConfigService
             {
                 throw new InvalidOperationException(
                     "EnterpriseCore.BaseUrl is required when Execution.DataSource is EnterpriseCoreREST.");
+            }
+        }
+
+        // Range validation for Number/Port/Double settings.
+        foreach (var spec in section.Settings)
+        {
+            var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
+            if (!dict.TryGetValue(shortKey, out var value) || value.ValueKind != JsonValueKind.Number)
+            {
+                continue;
+            }
+
+            if ((spec.Type is SettingType.Number or SettingType.Port) && spec.Min is int min && spec.Max is int max)
+            {
+                var ivalue = value.GetInt32();
+                if (ivalue < min || ivalue > max)
+                {
+                    throw new InvalidOperationException(
+                        $"Setting '{shortKey}' must be between {min} and {max}.");
+                }
+            }
+            else if (spec.Type == SettingType.Double && spec.MinD is double dmin && spec.MaxD is double dmax)
+            {
+                var dvalue = value.GetDouble();
+                if (dvalue < dmin || dvalue > dmax)
+                {
+                    throw new InvalidOperationException(
+                        $"Setting '{shortKey}' must be between {dmin} and {dmax}.");
+                }
             }
         }
 

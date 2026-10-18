@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using Gateway.Audit;
 using Gateway.Execution;
 using Gateway.Governance;
@@ -15,7 +16,7 @@ public class ExecutionRunnerTests
         var events = new RecordingSink();
         var transport = new StubTransport(request => new TabularResult(
             ["name"], [new Dictionary<string, string?> { ["name"] = "a" }], "Mongo", 7));
-        var runner = new ExecutionRunner(transport, audit, events, Options(), TimeProvider.System);
+        var runner = new ExecutionRunner(transport, audit, events, Options(), new SettingsProvider(), TimeProvider.System);
 
         var result = await runner.ExecuteAsync(Request(), CancellationToken.None);
 
@@ -29,7 +30,7 @@ public class ExecutionRunnerTests
     {
         var audit = new InMemoryAuditLogStore();
         var events = new RecordingSink();
-        var runner = new ExecutionRunner(new HangingTransport(), audit, events, Options(30), TimeProvider.System);
+        var runner = new ExecutionRunner(new HangingTransport(), audit, events, Options(30), new SettingsProvider(), TimeProvider.System);
 
         var result = await runner.ExecuteAsync(Request(), CancellationToken.None);
 
@@ -45,7 +46,7 @@ public class ExecutionRunnerTests
     {
         var audit = new InMemoryAuditLogStore();
         var events = new RecordingSink();
-        var runner = new ExecutionRunner(new ThrowingTransport(), audit, events, Options(), TimeProvider.System);
+        var runner = new ExecutionRunner(new ThrowingTransport(), audit, events, Options(), new SettingsProvider(), TimeProvider.System);
 
         var result = await runner.ExecuteAsync(Request(), CancellationToken.None);
 

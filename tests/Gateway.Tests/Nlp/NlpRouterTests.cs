@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
 using Gateway.Nlp.Intent;
@@ -38,7 +39,7 @@ public class NlpRouterTests
 
     public NlpRouterTests()
     {
-        _cache = new SemanticCache();
+        _cache = new SemanticCache(new SettingsProvider());
         _builder = ScribanSimpleMqlBuilder.FromAssetsDirectory(
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates"));
         _router = new NlpRouter(_embedder, _cache, _builder);

@@ -1,17 +1,25 @@
+using Gateway.Configuration;
+using System.Text.Json;
+
 namespace Gateway.Nlp.Cache;
 
 public sealed class SemanticCache : ISemanticCache
 {
     private readonly object _gate = new();
     private readonly List<CacheEntry> _entries = new();
-    private readonly double _threshold = CacheDefaults.Threshold;
+    private readonly ISettingsProvider _provider;
+
+    public SemanticCache(ISettingsProvider provider)
+    {
+        _provider = provider;
+    }
 
     public CacheEntry? TryFind(float[] queryVector)
     {
         lock (_gate)
         {
             CacheEntry? best = null;
-            var bestScore = _threshold;
+            var bestScore = GetThreshold();
             foreach (var entry in _entries)
             {
                 var score = CosineSimilarity.Cosine(queryVector, entry.Vector);
@@ -31,7 +39,7 @@ public sealed class SemanticCache : ISemanticCache
         lock (_gate)
         {
             CacheEntry? best = null;
-            var bestScore = _threshold;
+            var bestScore = GetThreshold();
             foreach (var entry in _entries)
             {
                 var score = CosineSimilarity.Cosine(queryVector, entry.Vector);
@@ -49,5 +57,15 @@ public sealed class SemanticCache : ISemanticCache
 
             _entries.Add(new CacheEntry(queryVector, mql, canonicalQuery));
         }
+    }
+
+    private double GetThreshold()
+    {
+        if (_provider.TryGetValue("Nlp.Cache", "Threshold", out var value) &&
+            value.ValueKind == JsonValueKind.Number)
+        {
+            return value.GetDouble();
+        }
+        return CacheDefaults.Threshold;
     }
 }
