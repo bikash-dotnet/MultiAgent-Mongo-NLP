@@ -82,6 +82,23 @@ public class SchemaRegistryStoreTests
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _registry.ActivateAsync("missing"));
     }
 
+    [Fact]
+    public async Task Concurrent_activations_leave_exactly_one_active_schema()
+    {
+        for (var index = 0; index < 8; index++)
+        {
+            await _registry.CreateAsync(NewSchema($"sch_{index}"));
+        }
+
+        var activations = Enumerable.Range(0, 40)
+            .Select(index => _registry.ActivateAsync($"sch_{index % 8}"));
+
+        await Task.WhenAll(activations);
+
+        var schemas = await _registry.ListAsync();
+        Assert.Single(schemas, schema => schema.IsActiveSource);
+    }
+
     private static SchemaDefinition NewSchema(string id, bool active = false)
     {
         return new SchemaDefinition(
