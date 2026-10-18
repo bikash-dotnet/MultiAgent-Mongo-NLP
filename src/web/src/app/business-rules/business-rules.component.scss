@@ -1,0 +1,279 @@
+.business-rules {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.toolbar h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab-content {
+  margin-top: 1rem;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.tester-card {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--p-border-color, #dee2e6);
+  border-radius: var(--p-border-radius, 0.4rem);
+  background: var(--p-surface-section, #f8f9fa);
+}
+
+.tester-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.tester-card p {
+  margin: 0 0 1rem;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.tester-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.tester-form label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tester-form input {
+  min-width: 200px;
+}
+
+.tester-result {
+  padding: 1rem;
+  border: 1px solid var(--p-border-color, #dee2e6);
+  border-radius: var(--p-border-radius, 0.4rem);
+  background: #fff;
+}
+
+.tester-result h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.tester-result h4 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.tester-result ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.tester-result li {
+  margin-bottom: 0.25rem;
+}
+
+.params {
+  font-size: 0.85rem;
+  color: #666;
+  font-family: monospace;
+}
+
+.effect-row {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.effect-row.muted {
+  color: #666;
+  font-style: italic;
+}
+
+.column-toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rule-name {
+  font-weight: 600;
+}
+
+.rule-description {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.scope-value {
+  font-size: 0.85rem;
+  color: #666;
+  margin-left: 0.5rem;
+}
+
+.tag-default,
+.tag-cap,
+.tag-mask,
+.tag-exclude,
+.tag-approve,
+.tag-exempt,
+.tag-deny {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0.1rem;
+}
+
+.tag-default { background: #e3f2fd; color: #1565c0; }
+.tag-cap { background: #e8f5e9; color: #2e7d32; }
+.tag-mask { background: #fff3e0; color: #ef6c00; }
+.tag-exclude { background: #fce4ec; color: #c2185b; }
+.tag-approve { background: #e8faf6; color: #1b6f78; }
+.tag-exempt { background: #f3e5f5; color: #7b1fa2; }
+.tag-deny { background: #ffebee; color: #c62828; }
+
+.reorder-controls {
+  margin-top: 2rem;
+}
+
+.reorder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.reorder-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--p-border-color, #dee2e6);
+  border-radius: var(--p-border-radius, 0.4rem);
+  background: #fff;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  background: var(--p-primary-color, #3f51b5);
+  color: #fff;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.col-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.col-field {
+  font-weight: 600;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.condition-builder {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cond-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.action-picker p-select {
+  width: 100%;
+}
+
+.action-params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.rule-version {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.applied-to {
+  font-size: 0.85rem;
+}
