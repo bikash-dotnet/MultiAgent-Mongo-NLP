@@ -1,0 +1,463 @@
+<section class="business-rules">
+  <header class="toolbar">
+    <div>
+      <h1>Business Rules &amp; Column Definitions</h1>
+      <p class="subtitle">
+        Define ordered, scoped business rules and column definitions that shape defaults, row caps, masking,
+        approvals, and exports. Both are stored durably and edited from this UI.
+      </p>
+    </div>
+    @if (canManage) {
+      <div class="toolbar-actions">
+        <p-button label="Add rule" icon="pi pi-plus" (onClick)="addRule()" />
+      </div>
+    }
+  </header>
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  <p-tabs [(activeIndex)]="selectedTab">
+    <p-tabpanel header="Business Rules">
+      <div class="tab-content">
+        @if (rules.length) {
+          <p-table
+            [value]="rules"
+            [paginator]="true"
+            [rows]="10"
+            [responsive]="true"
+            dataKey="id">
+            <ng-template pTemplate="header">
+              <tr>
+                <th pSortableColumn="enabled">Enabled</th>
+                <th pSortableColumn="name">Name</th>
+                <th pSortableColumn="priority">Priority</th>
+                <th pSortableColumn="scope">Scope</th>
+                <th>Applied to</th>
+                <th>Action</th>
+                <th style="width: 120px">Controls</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rule>
+              <tr>
+                <td>
+                  <p-toggleSwitch
+                    [(ngModel)]="rule.enabled"
+                    (onChange)="toggleRule(rule)"
+                    [inputId]="'rule-enabled-' + rule.id"
+                  />
+                </td>
+                <td>
+                  <div class="rule-name">{{ rule.name }}</div>
+                  <div class="rule-description" *ngIf="rule.description">{{ rule.description }}</div>
+                </td>
+                <td>{{ rule.priority }}</td>
+                <td>
+                  <p-badge [value]="rule.scope" [severity]="scopeBadge(rule.scope)" />
+                  @if (rule.scopeValue) {
+                    <span class="scope-value">{{ rule.scopeValue }}</span>
+                  }
+                </td>
+                <td class="applied-to">
+                  @if (rule.action.type === 'setDefault') {
+                    <span class="tag-default">{{ rule.action.parameters['key'] }} = {{ rule.action.parameters['value'] }}</span>
+                  } @else if (rule.action.type === 'capRows') {
+                    <span class="tag-cap">Cap rows: {{ rule.action.parameters['max'] }}</span>
+                  } @else if (rule.action.type === 'maskColumn') {
+                    <span class="tag-mask">Mask: {{ rule.action.parameters['field'] }}</span>
+                  } @else if (rule.action.type === 'excludeColumn') {
+                    <span class="tag-exclude">Exclude: {{ rule.action.parameters['field'] }}</span>
+                  } @else if (rule.action.type === 'requireApproval') {
+                    <span class="tag-approve">Approval: {{ rule.action.parameters['field'] }}</span>
+                  } @else if (rule.action.type === 'exemptRole') {
+                    <span class="tag-exempt">Exempt: {{ rule.action.parameters['role'] }}</span>
+                  } @else if (rule.action.type === 'denyOperator') {
+                    <span class="tag-deny">Deny: {{ rule.action.parameters['operator'] }}</span>
+                  }
+                </td>
+                <td class="rule-version">v{{ rule.version }}</td>
+                <td class="actions">
+                  <p-button
+                    icon="pi pi-pencil"
+                    class="p-button-sm p-button-text"
+                    (onClick)="editRule(rule)"
+                    [disabled]="!canManage"
+                  />
+                  <p-button
+                    icon="pi pi-copy"
+                    class="p-button-sm p-button-text"
+                    (onClick)="duplicateRule(rule)"
+                    [disabled]="!canManage"
+                  />
+                  <p-button
+                    icon="pi pi-trash"
+                    class="p-button-sm p-button-text danger"
+                    (onClick)="deleteRule(rule)"
+                    [disabled]="!canManage"
+                  />
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        } @else {
+          <div class="empty">No business rules defined. Click "Add rule" to create one.</div>
+        }
+
+        <div class="tester-card" *ngIf="canManage">
+          <h2>Rule tester</h2>
+          <p>Enter a requester role and comma-separated field set to preview which rules would fire.</p>
+          <div class="tester-form">
+            <label>Requester role</label>
+            <input pInputText [(ngModel)]="testerRole" placeholder="e.g. Data Owner / Admin" />
+            <label>Fields (comma-separated)</label>
+            <input pInputText [(ngModel)]="testerFields" placeholder="e.g. price, address.market" />
+            <p-button label="Test" icon="pi pi-search" (onClick)="testRules()" [loading]="testing" [disabled]="!testerRole.trim()" />
+          </div>
+
+          @if (testerResult) {
+            <div class="tester-result">
+              <h3>Results for role "{{ testerResult.requesterRole }}"</h3>
+              <p>Applied rules: {{ testerResult.appliedRuleIds.length }}</p>
+
+              @if (testerResult.effects.length) {
+                <h4>Effects</h4>
+                <ul>
+                  @for (effect of testerResult.effects; track effect.ruleId) {
+                    <li>
+                      <strong>{{ effect.ruleId }}</strong> &rarr; {{ effect.actionType }}
+                      <span class="params">({{ formatParams(effect.parameters) }})</span>
+                    </li>
+                  }
+                </ul>
+              }
+
+              @if (testerResult.capRows != null) {
+                <p class="effect-row"><strong>Cap rows:</strong> {{ testerResult.capRows }}</p>
+              }
+              @if (testerResult.setDefaults && Object.keys(testerResult.setDefaults).length) {
+                <p class="effect-row"><strong>Set defaults:</strong> {{ formatParams(testerResult.setDefaults) }}</p>
+              }
+              @if (testerResult.requireApprovalFields.length) {
+                <p class="effect-row"><strong>Require approval:</strong> {{ testerResult.requireApprovalFields.join(', ') }}</p>
+              }
+              @if (testerResult.exemptRoles.length) {
+                <p class="effect-row"><strong>Exempt roles:</strong> {{ testerResult.exemptRoles.join(', ') }}</p>
+              }
+              @if (testerResult.deniedOperators.length) {
+                <p class="effect-row"><strong>Denied operators:</strong> {{ testerResult.deniedOperators.join(', ') }}</p>
+              }
+              @if (testerResult.maskedColumns.length) {
+                <p class="effect-row"><strong>Masked columns:</strong> {{ testerResult.maskedColumns.join(', ') }}</p>
+              }
+              @if (testerResult.excludedColumns.length) {
+                <p class="effect-row"><strong>Excluded columns:</strong> {{ testerResult.excludedColumns.join(', ') }}</p>
+              }
+              @if (!testerResult.effects.length && !testerResult.capRows) {
+                <p class="effect-row muted">No rules match this role/field combination.</p>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </p-tabpanel>
+
+    <p-tabpanel header="Column Definitions">
+      <div class="tab-content">
+        @if (columns.length) {
+          <div class="column-toolbar">
+            @if (canManage) {
+              <p-button label="Add column" icon="pi pi-plus" (onClick)="addColumn()" />
+            }
+          </div>
+          <p-table
+            [value]="columns"
+            [responsive]="true"
+            dataKey="id">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Field</th>
+                <th>Label</th>
+                <th pSortableColumn="dataType">Type</th>
+                <th>Format</th>
+                <th pSortableColumn="order">Order</th>
+                <th>Visible</th>
+                <th>Exportable</th>
+                @if (canManage) {
+                  <th>Sensitive</th>
+                  <th>Width</th>
+                  <th style="width: 110px">Controls</th>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-column let-i="rowIndex">
+              <tr>
+                <td>
+                  <div class="col-field">{{ column.field }}</div>
+                </td>
+                <td>
+                  @if (canManage) {
+                    <input pInputText [(ngModel)]="column.label" />
+                  } @else {
+                    {{ column.label }}
+                  }
+                </td>
+                <td>
+                  @if (canManage) {
+                    <p-select
+                      [(ngModel)]="column.dataType"
+                      [options]="DataTypeOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [showClear]="false"
+                    />
+                  } @else {
+                    <p-badge [value]="column.dataType" [severity]="dataTypeBadge(column.dataType)" />
+                  }
+                </td>
+                <td>
+                  @if (canManage) {
+                    <input pInputText [(ngModel)]="column.format" placeholder="optional" />
+                  } @else {
+                    {{ column.format || '\u2014' }}
+                  }
+                </td>
+                <td>
+                  @if (canManage) {
+                    <input pInputNumber [(ngModel)]="column.order" [min]="0" />
+                  } @else {
+                    {{ column.order }}
+                  }
+                </td>
+                <td>
+                  <p-toggleSwitch [(ngModel)]="column.visibleByDefault" [inputId]="'col-visible-' + column.id" />
+                </td>
+                <td>
+                  <p-toggleSwitch [(ngModel)]="column.exportable" [inputId]="'col-export-' + column.id" />
+                </td>
+                @if (canManage) {
+                  <td>
+                    <p-badge [value]="column.sensitive ? 'Yes' : 'No'" [severity]="column.sensitive ? 'warn' : 'secondary'" />
+                  </td>
+                  <td>{{ column.width || '\u2014' }}</td>
+                  <td class="actions">
+                    <p-button
+                      icon="pi pi-pencil"
+                      class="p-button-sm p-button-text"
+                      (onClick)="editColumn(column)"
+                    />
+                    <p-button
+                      icon="pi pi-trash"
+                      class="p-button-sm p-button-text danger"
+                      (onClick)="deleteColumn(column)"
+                    />
+                  </td>
+                }
+              </tr>
+            </ng-template>
+          </p-table>
+
+          <div class="reorder-controls" *ngIf="canManage">
+            <h4>Reorder columns</h4>
+            <p>Use the arrows to adjust display order. Order affects grid and export column sequence.</p>
+            <div class="reorder-list">
+              @for (column of columns; track column.id; let i = $index) {
+                <div class="reorder-item">
+                  <span class="order-badge">{{ i + 1 }}</span>
+                  <span class="col-name">{{ column.field }}</span>
+                  <div class="reorder-buttons">
+                    <p-button
+                      icon="pi pi-arrow-up"
+                      class="p-button-sm p-button-text"
+                      (onClick)="reorderColumns(true, i)"
+                      [disabled]="i === 0"
+                    />
+                    <p-button
+                      icon="pi pi-arrow-down"
+                      class="p-button-sm p-button-text"
+                      (onClick)="reorderColumns(false, i)"
+                      [disabled]="i === columns.length - 1"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="empty">No column definitions defined. Click "Add column" to create one.</div>
+        }
+      </div>
+    </p-tabpanel>
+  </p-tabs>
+
+  <!-- Rule editor dialog -->
+  <p-dialog
+      header="{{ editingRule ? 'Edit rule' : 'Add rule' }}"
+      [(visible)]="ruleDialog"
+      [modal]="true"
+      [style]="{ width: '600px' }">
+      <ng-template pTemplate="content">
+        <div class="dialog-form">
+          <div class="form-group">
+            <label>Name</label>
+            <input pInputText [(ngModel)]="ruleDraft.name" placeholder="e.g. Default result limit" />
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea pInputTextarea [(ngModel)]="ruleDraft.description" placeholder="Optional description" rows="2"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Scope</label>
+              <p-select
+                [(ngModel)]="ruleDraft.scope"
+                [options]="ScopeOptions"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="false"
+              />
+            </div>
+            <div class="form-group">
+              <label>Scope value</label>
+              <input pInputText [(ngModel)]="ruleDraft.scopeValue" placeholder="Schema ID or role" />
+              <small class="hint">Only for Schema or Role scope.</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <input pInputNumber [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
+            <small class="hint">Rules with the same priority run in ID order.</small>
+          </div>
+          <div class="form-group">
+            <label>Enabled</label>
+            <p-toggleSwitch [(ngModel)]="ruleDraft.enabled" />
+          </div>
+          <div class="form-group">
+            <label>Condition</label>
+            <div class="condition-builder">
+              <div class="cond-field">
+                <label>Field</label>
+                <input pInputText [(ngModel)]="ruleDraft.condition.field" placeholder="e.g. price" />
+              </div>
+              <div class="cond-field">
+                <label>Operator</label>
+                <input pInputText [(ngModel)]="ruleDraft.condition.operator" placeholder="e.g. equals" />
+              </div>
+              <div class="cond-field">
+                <label>Values</label>
+                <input pInputText [(ngModel)]="ruleDraft.conditionValuesText" placeholder="e.g. eq, ne" />
+                <small class="hint">Comma-separated values.</small>
+              </div>
+              <div class="cond-field">
+                <label>Combine</label>
+                <p-select
+                  [(ngModel)]="ruleDraft.condition.combine"
+                  [options]="[
+                    { label: 'All (AND)', value: 'all' },
+                    { label: 'Any (OR)', value: 'any' }
+                  ]"
+                  optionLabel="label"
+                  optionValue="value"
+                  [showClear]="false"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Action</label>
+            <div class="action-picker">
+              <p-select
+                [(ngModel)]="ruleDraft.action.type"
+                [options]="RuleActions"
+                optionLabel="label"
+                optionValue="type"
+                [showClear]="false"
+              />
+            </div>
+          </div>
+          <div class="action-params">
+            @for (param of actionParams(); track param.key) {
+              <div class="form-group">
+                <label>{{ param.label }}</label>
+                <input pInputText [(ngModel)]="ruleDraft.action.parameters[param.key]" />
+              </div>
+            }
+          </div>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <p-button label="Cancel" icon="pi pi-times" severity="secondary" (onClick)="ruleDialog = false" />
+        <p-button
+          label="Save rule"
+          icon="pi pi-check"
+          (onClick)="saveRule()"
+          [loading]="ruleDraft.saving"
+        />
+      </ng-template>
+    </p-dialog>
+
+  <!-- Column editor dialog -->
+  <p-dialog
+    header="{{ editingColumn ? 'Edit column definition' : 'Add column definition' }}"
+    [(visible)]="columnDialog"
+    [modal]="true"
+    [style]="{ width: '500px' }">
+    <ng-template pTemplate="content">
+      <div class="dialog-form">
+        <div class="form-group">
+          <label>Field</label>
+          <input pInputText [(ngModel)]="columnDraft.field" placeholder="e.g. price" />
+        </div>
+        <div class="form-group">
+          <label>Label</label>
+          <input pInputText [(ngModel)]="columnDraft.label" placeholder="e.g. Price" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data type</label>
+            <p-select
+              [(ngModel)]="columnDraft.dataType"
+              [options]="DataTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              [showClear]="false"
+            />
+          </div>
+          <div class="form-group">
+            <label>Format</label>
+            <input pInputText [(ngModel)]="columnDraft.format" placeholder="e.g. USD or yyyy-MM-dd" />
+            <small class="hint">Required for Currency and Date types.</small>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Order</label>
+          <input pInputNumber [(ngModel)]="columnDraft.order" [min]="0" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Visible by default</label>
+            <p-toggleSwitch [(ngModel)]="columnDraft.visibleByDefault" />
+          </div>
+          <div class="form-group">
+            <label>Exportable</label>
+            <p-toggleSwitch [(ngModel)]="columnDraft.exportable" />
+          </div>
+          <div class="form-group">
+            <label>Sensitive</label>
+            <p-toggleSwitch [(ngModel)]="columnDraft.sensitive" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Width</label>
+          <input pInputText [(ngModel)]="columnDraft.width" placeholder="e.g. 200px" />
+        </div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <p-button label="Cancel" icon="pi pi-times" severity="secondary" (onClick)="columnDialog = false" />
+      <p-button label="Save column" icon="pi pi-check" (onClick)="saveColumn()" [loading]="columnDraft.saving" />
+    </ng-template>
+  </p-dialog>
+
+  <p-confirmDialog />
+</section>
