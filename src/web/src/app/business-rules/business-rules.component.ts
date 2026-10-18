@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -10,6 +10,7 @@ import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -17,20 +18,17 @@ import { ChipModule } from 'primeng/chip';
 import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService } from 'primeng/api';
-import { TabsModule } from 'primeng/tabs';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { BusinessRulesService } from '../services/business-rules.service';
 import { SessionService } from '../services/session.service';
 import {
   BusinessRuleResponse,
   BusinessRuleRequest,
-  BusinessRuleConditionRequest,
-  BusinessRuleActionRequest,
   ColumnDefinitionResponse,
   ColumnDefinitionRequest,
   ColumnDataType,
-  RuleScope
+  RuleScope,
+  RuleCondition,
+  RuleAction
 } from '../models/business-rules';
 
 interface RuleDraft extends BusinessRuleRequest {
@@ -83,17 +81,16 @@ const DATA_TYPE_OPTIONS = [
     DialogModule,
     InputTextModule,
     InputNumberModule,
-    InputTextareaModule,
+    TextareaModule,
     ToggleSwitchModule,
     SelectModule,
     MultiSelectModule,
     ChipModule,
     TagModule,
     BadgeModule,
-    ConfirmDialogModule,
-    TabsModule
+    ConfirmDialogModule
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [],
   templateUrl: './business-rules.component.html',
   styleUrl: './business-rules.component.scss'
 })
@@ -528,7 +525,7 @@ export class BusinessRulesComponent implements OnInit {
     this.businessRulesService.reorderColumnDefinitions({ ids: this.columns.map((c) => c.id) }).subscribe();
   }
 
-  scopeBadge(scope: RuleScope): string {
+  scopeBadge(scope: RuleScope): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined {
     switch (scope) {
       case RuleScope.Global: return 'info';
       case RuleScope.Schema: return 'secondary';
@@ -537,14 +534,14 @@ export class BusinessRulesComponent implements OnInit {
     }
   }
 
-  dataTypeBadge(type: ColumnDataType): string {
+  dataTypeBadge(type: ColumnDataType): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined {
     switch (type) {
-      case ColumnDataType.String: return 'primary';
+      case ColumnDataType.String: return 'info';
       case ColumnDataType.Number: return 'info';
       case ColumnDataType.Currency: return 'success';
       case ColumnDataType.Boolean: return 'secondary';
       case ColumnDataType.Date: return 'warn';
-      default: return 'primary';
+      default: return 'info';
     }
   }
 
@@ -553,6 +550,7 @@ export class BusinessRulesComponent implements OnInit {
   protected readonly RuleActions = RULE_ACTIONS;
   protected readonly ScopeOptions = SCOPE_OPTIONS;
   protected readonly DataTypeOptions = DATA_TYPE_OPTIONS;
+  protected readonly Object = Object;
 
   actionParams(): { key: string; label: string }[] {
     const action = RULE_ACTIONS.find((a) => a.type === this.ruleDraft.action.type);
