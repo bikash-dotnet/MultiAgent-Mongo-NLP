@@ -115,6 +115,7 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<IBusinessRuleStore, BusinessRuleStore>();
         services.AddSingleton<IColumnDefinitionStore, ColumnDefinitionStore>();
         services.AddSingleton<BusinessRuleEngine>();
+        services.AddSingleton<ColumnDefinitionService>();
         services.AddHostedService<RuleSeedHostedService>();
 
         services.AddSingleton<IAccessRequestStore, DurableAccessRequestStore>();
