@@ -1,4 +1,5 @@
 using Gateway.Auth;
+using Gateway.Configuration;
 using Gateway.Endpoints;
 using Gateway.Nlp;
 using Gateway.Observability;
@@ -67,6 +68,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddGatewayNlp(builder.Configuration);
 builder.Services.AddScoped<ISchemaService, SchemaService>();
 
+builder.Services.AddSingleton<ISettingsStore, SettingsStore>();
+builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
+builder.Services.AddScoped<ConfigService>();
+
 var app = builder.Build();
 
 app.UseMiddleware<SessionCorrelationMiddleware>();
@@ -92,6 +97,7 @@ app.MapGovernanceEndpoints();
 app.MapAccessRequestEndpoints();
 app.MapAgentEndpoints();
 app.MapSchemaEndpoints();
+app.MapConfigEndpoints();
 
 app.Run();
 
