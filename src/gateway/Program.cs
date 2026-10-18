@@ -100,6 +100,7 @@ app.MapAgentEndpoints();
 app.MapSchemaEndpoints();
 app.MapConfigEndpoints();
 app.MapColumnDefinitionEndpoints();
+app.MapBusinessRuleEndpoints();
 
 app.Run();
 
