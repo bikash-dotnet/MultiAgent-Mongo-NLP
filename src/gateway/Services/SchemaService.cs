@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Gateway.Audit;
 using Gateway.Infrastructure.Results;
 using Gateway.Nlp;
-using Gateway.Persistence;
 using Gateway.Schemas;
 
 namespace Gateway.Services;
@@ -15,18 +14,15 @@ public sealed class SchemaService : ISchemaService
     private readonly ISchemaRegistry _registry;
     private readonly IAuditLogStore _audit;
     private readonly ActiveSchemaProvider _activeSchema;
-    private readonly IDocumentStore _store;
 
     public SchemaService(
         ISchemaRegistry registry,
         IAuditLogStore audit,
-        ActiveSchemaProvider activeSchema,
-        IDocumentStore store)
+        ActiveSchemaProvider activeSchema)
     {
         _registry = registry;
         _audit = audit;
         _activeSchema = activeSchema;
-        _store = store;
     }
 
     public async Task<ApiResult<SchemaListResponse>> ListAsync(CancellationToken cancellationToken = default)
@@ -240,6 +236,17 @@ public sealed class SchemaService : ISchemaService
             return ApiResult<SchemaResponse>.Error(StatusCodes.Status404NotFound, $"Field '{path}' not found.");
         }
 
+        if (string.IsNullOrWhiteSpace(request.Path))
+        {
+            return ApiResult<SchemaResponse>.Error(StatusCodes.Status400BadRequest, "Field path is required.");
+        }
+
+        var renamed = !string.Equals(request.Path, path, StringComparison.Ordinal);
+        if (renamed && current.Fields.Any(f => string.Equals(f.Path, request.Path, StringComparison.Ordinal)))
+        {
+            return ApiResult<SchemaResponse>.Error(StatusCodes.Status409Conflict, $"Field '{request.Path}' already exists.");
+        }
+
         var updatedField = new SchemaField(
             request.Path, request.DataType, request.IsSensitive, request.RequiresApproval,
             request.DataOwnerRoles ?? [], request.Description);
@@ -343,6 +350,17 @@ public sealed class SchemaService : ISchemaService
         if (fields.Count == 0)
         {
             return ApiResult<SchemaResponse>.Error(StatusCodes.Status400BadRequest, "No fields to import.");
+        }
+
+        var importPaths = fields.Select(f => f.Path).ToList();
+        if (importPaths.Any(string.IsNullOrWhiteSpace))
+        {
+            return ApiResult<SchemaResponse>.Error(StatusCodes.Status400BadRequest, "Field path is required for all imported fields.");
+        }
+
+        if (importPaths.Distinct(StringComparer.Ordinal).Count() != importPaths.Count)
+        {
+            return ApiResult<SchemaResponse>.Error(StatusCodes.Status400BadRequest, "Duplicate field paths are not allowed in the import payload.");
         }
 
         var makeActive = (await _registry.ListAsync(cancellationToken)).All(s => !s.IsActiveSource);

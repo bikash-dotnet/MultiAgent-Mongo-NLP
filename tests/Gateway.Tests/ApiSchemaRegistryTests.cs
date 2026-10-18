@@ -341,6 +341,43 @@ public class ApiSchemaRegistryTests : IClassFixture<GatewayFactory>
         Assert.Equal("imported_field", created.Schema.Fields[0].Path);
     }
 
+    [Fact]
+    public async Task Import_schema_rejects_duplicate_paths()
+    {
+        var client = Client("usr_owner", "Data Owner / Admin", null);
+
+        var response = await client.PostAsJsonAsync("/api/schemas/import", new
+        {
+            fieldsJson = "[{\"path\":\"dupe\",\"dataType\":\"String\",\"isSensitive\":false,\"requiresApproval\":false,\"dataOwnerRoles\":[],\"description\":\"\"},{\"path\":\"dupe\",\"dataType\":\"Number\",\"isSensitive\":false,\"requiresApproval\":false,\"dataOwnerRoles\":[],\"description\":\"\"}]"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_field_rejects_renaming_onto_an_existing_path()
+    {
+        var client = Client("usr_owner", "Data Owner / Admin", null);
+
+        // Fetch the current fields so we can target two existing paths.
+        var current = await client.GetFromJsonAsync<SchemaDetailDto>($"/api/schemas/{SeededSchemaId}");
+        var paths = current!.Schema.Fields.Select(f => f.Path).ToList();
+        var source = paths[0];
+        var target = paths[1];
+
+        var response = await client.PutAsJsonAsync($"/api/schemas/{SeededSchemaId}/fields/{Uri.EscapeDataString(source)}", new
+        {
+            path = target,
+            dataType = "String",
+            isSensitive = false,
+            requiresApproval = false,
+            dataOwnerRoles = Array.Empty<string>(),
+            description = ""
+        });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
     private HttpClient Client(string userId, string role, string? leadUserId)
     {
         var client = _factory.CreateClient();

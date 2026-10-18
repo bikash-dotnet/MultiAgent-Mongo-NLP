@@ -7,6 +7,7 @@ public sealed class SchemaRegistryStore : ISchemaRegistry
     private const string Collection = "schemas";
 
     private readonly IDocumentStore _store;
+    private readonly SemaphoreSlim _activationGate = new(1, 1);
 
     public SchemaRegistryStore(IDocumentStore store)
     {
@@ -54,24 +55,84 @@ public sealed class SchemaRegistryStore : ISchemaRegistry
 
     public async Task ActivateAsync(string id, CancellationToken cancellationToken = default)
     {
-        var all = await ListAsync(cancellationToken);
-        var target = all.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
-        if (target is null)
+        await _activationGate.WaitAsync(cancellationToken);
+        var previous = new Dictionary<string, bool>(StringComparer.Ordinal);
+
+        try
         {
-            throw new KeyNotFoundException($"Schema '{id}' was not found.");
+            var all = await ListAsync(cancellationToken);
+            var target = all.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
+            if (target is null)
+            {
+                throw new KeyNotFoundException($"Schema '{id}' was not found.");
+            }
+
+            foreach (var schema in all)
+            {
+                previous[schema.Id] = schema.IsActiveSource;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+
+            // Activate the target first so a mid-flight failure never leaves zero active sources.
+            await _store.UpsertAsync(
+                Collection,
+                target.Id,
+                target with { IsActiveSource = true, UpdatedAt = now },
+                cancellationToken);
+
+            foreach (var schema in all)
+            {
+                if (string.Equals(schema.Id, id, StringComparison.Ordinal) || !schema.IsActiveSource)
+                {
+                    continue;
+                }
+
+                await _store.UpsertAsync(
+                    Collection,
+                    schema.Id,
+                    schema with { IsActiveSource = false, UpdatedAt = now },
+                    cancellationToken);
+            }
+        }
+        catch
+        {
+            await TryRestoreAsync(previous);
+            throw;
+        }
+        finally
+        {
+            _activationGate.Release();
+        }
+    }
+
+    private async Task TryRestoreAsync(IReadOnlyDictionary<string, bool> previous)
+    {
+        if (previous.Count == 0)
+        {
+            return;
         }
 
-        var now = DateTimeOffset.UtcNow;
-        foreach (var schema in all)
+        try
         {
-            var next = string.Equals(schema.Id, id, StringComparison.Ordinal)
-                ? schema with { IsActiveSource = true, UpdatedAt = now }
-                : schema with { IsActiveSource = false, UpdatedAt = now };
-
-            if (next.IsActiveSource != schema.IsActiveSource || next.UpdatedAt != schema.UpdatedAt)
+            var current = await ListAsync(CancellationToken.None);
+            foreach (var schema in current)
             {
-                await _store.UpsertAsync(Collection, next.Id, next, cancellationToken);
+                if (!previous.TryGetValue(schema.Id, out var wasActive) || wasActive == schema.IsActiveSource)
+                {
+                    continue;
+                }
+
+                await _store.UpsertAsync(
+                    Collection,
+                    schema.Id,
+                    schema with { IsActiveSource = wasActive },
+                    CancellationToken.None);
             }
+        }
+        catch
+        {
+            // Best-effort rollback; the original failure is more actionable to the caller.
         }
     }
 
