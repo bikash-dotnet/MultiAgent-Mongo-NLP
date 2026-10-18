@@ -36,8 +36,8 @@ public class Sprint4BenchTests
             "| --- | --- | --- |\n" +
             $"| guardrail (analyze + rules + registry) | {perCall:F4} ms | < 1 ms |\n";
 
-        var path = Path.Combine(TestPaths.RepoRoot(), "docs", "benchmarks", "sprint-4-nfr01.md");
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        // Benchmarks are recorded to a temp path so test runs do not dirty the repository.
+        var path = Path.Combine(Path.GetTempPath(), "sprint-4-nfr01.md");
         File.WriteAllText(path, content);
 
         Assert.True(perCall < 1.0, $"guardrail step {perCall:F4} ms exceeded 1 ms budget");

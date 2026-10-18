@@ -64,8 +64,8 @@ public class Sprint3BenchTests
             "| --- | --- | --- |\n" +
             $"| complex route (validation + single attempt, no network) | {perCall:F2} ms | n/a (excludes LLM) |\n";
 
-        var path = Path.Combine(TestPaths.RepoRoot(), "docs", "benchmarks", "sprint-3-nfr02.md");
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        // Benchmarks are recorded to a temp path so test runs do not dirty the repository.
+        var path = Path.Combine(Path.GetTempPath(), "sprint-3-nfr02.md");
         File.WriteAllText(path, content);
 
         Assert.True(perCall < 50, $"orchestration overhead {perCall:F2} ms exceeded 50 ms");

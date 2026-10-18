@@ -321,6 +321,48 @@ public class ApiSchemaRegistryTests : IClassFixture<GatewayFactory>
         Assert.NotNull(result);
         Assert.Equal(newId, result.Id);
         Assert.True(result.IsActiveSource);
+
+        // Activating a new source must deactivate the previously active schema.
+        var list = await client.GetFromJsonAsync<SchemaListDto>("/api/schemas");
+        Assert.NotNull(list);
+        var previouslyActive = list!.Schemas.Single(s => s.Id == SeededSchemaId);
+        Assert.False(previouslyActive.IsActiveSource);
+    }
+
+    [Fact]
+    public async Task Delete_schema_returns_204_and_get_returns_404()
+    {
+        var client = Client("usr_owner", "Data Owner / Admin", null);
+
+        var createResponse = await client.PostAsJsonAsync("/api/schemas", new
+        {
+            name = "To Be Deleted",
+            dataSource = "Mongo",
+            database = "sample_airbnb",
+            collection = "listingsAndReviews",
+            fields = new[]
+            {
+                new { path = "name", dataType = "String", isSensitive = false, requiresApproval = false, dataOwnerRoles = Array.Empty<string>(), description = "" }
+            }
+        });
+        var created = await createResponse.Content.ReadFromJsonAsync<SchemaDetailDto>();
+        var deleteId = created!.Schema.Id;
+        Assert.False(created.Schema.IsActiveSource);
+
+        var deleteResponse = await client.DeleteAsync($"/api/schemas/{deleteId}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var getResponse = await client.GetAsync($"/api/schemas/{deleteId}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_active_schema_returns_409()
+    {
+        var client = Client("usr_owner", "Data Owner / Admin", null);
+
+        var response = await client.DeleteAsync($"/api/schemas/{SeededSchemaId}");
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
