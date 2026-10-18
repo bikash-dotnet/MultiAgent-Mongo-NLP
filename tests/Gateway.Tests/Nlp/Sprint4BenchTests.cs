@@ -7,7 +7,7 @@ public class Sprint4BenchTests
     private const int Iterations = 2000;
 
     [Fact]
-    public void Guardrail_step_stays_under_one_millisecond()
+    public async Task Guardrail_step_stays_under_one_millisecond()
     {
         var evaluator = GuardrailTestFactory.FromAssets();
         const string pipeline =
@@ -15,13 +15,13 @@ public class Sprint4BenchTests
 
         for (var i = 0; i < 50; i++)
         {
-            evaluator.Evaluate(pipeline);
+            await evaluator.EvaluateAsync(pipeline);
         }
 
         var sw = Stopwatch.StartNew();
         for (var i = 0; i < Iterations; i++)
         {
-            evaluator.Evaluate(pipeline);
+            await evaluator.EvaluateAsync(pipeline);
         }
         sw.Stop();
 

@@ -8,6 +8,8 @@ using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
+using Gateway.Persistence;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -41,7 +43,7 @@ public class Sprint3BenchTests
         var corrector = new SelfCorrectingLlmQueryGenerator(new FixedGenerator(), new PipelineValidator(), provider);
         var orchestrator = new NlpOrchestrator(router, gazetteer, corrector, new InMemoryAgentEventSink(),
             new InMemoryAgentStateStore(), GuardrailTestFactory.FromAssets(), new InMemoryAccessRequestStore(),
-            TimeProvider.System);
+            TimeProvider.System, new BusinessRuleEngine(new BusinessRuleStore(new InMemoryDocumentStore())));
 
         // warm
         for (var i = 0; i < 10; i++)

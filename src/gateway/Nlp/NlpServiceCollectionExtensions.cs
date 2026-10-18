@@ -63,7 +63,8 @@ public static class NlpServiceCollectionExtensions
             sp.GetRequiredService<ISettingsProvider>()));
         services.AddSingleton<GuardrailEvaluator>(sp => new GuardrailEvaluator(
             sp.GetRequiredService<ActiveSchemaProvider>(),
-            sp.GetRequiredService<IApprovalFlagStore>()));
+            sp.GetRequiredService<IApprovalFlagStore>(),
+            sp.GetRequiredService<BusinessRuleEngine>()));
         services.AddSingleton<IAgentEventSink, InMemoryAgentEventSink>();
         services.AddSingleton<INlpOrchestrator, NlpOrchestrator>();
 
@@ -113,6 +114,7 @@ public static class NlpServiceCollectionExtensions
 
         services.AddSingleton<IBusinessRuleStore, BusinessRuleStore>();
         services.AddSingleton<IColumnDefinitionStore, ColumnDefinitionStore>();
+        services.AddSingleton<BusinessRuleEngine>();
         services.AddHostedService<RuleSeedHostedService>();
 
         services.AddSingleton<IAccessRequestStore, DurableAccessRequestStore>();

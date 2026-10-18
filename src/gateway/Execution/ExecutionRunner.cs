@@ -1,6 +1,7 @@
 using Gateway.Audit;
 using Gateway.Configuration;
 using Gateway.Nlp.Orchestrator;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -14,6 +15,7 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
     private readonly IOptions<ExecutionOptions> _options;
     private readonly ISettingsProvider _provider;
     private readonly TimeProvider _clock;
+    private readonly BusinessRuleEngine _rules;
 
     public ExecutionRunner(
         IQueryTransport transport,
@@ -21,7 +23,8 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         IAgentEventSink events,
         IOptions<ExecutionOptions> options,
         ISettingsProvider provider,
-        TimeProvider clock)
+        TimeProvider clock,
+        BusinessRuleEngine rules)
     {
         _transport = transport;
         _audit = audit;
@@ -29,6 +32,7 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         _options = options;
         _provider = provider;
         _clock = clock;
+        _rules = rules;
     }
 
     public async Task<TabularResult> ExecuteAsync(ExecutionRequest request, CancellationToken cancellationToken = default)
@@ -44,6 +48,16 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         try
         {
             result = await _transport.ExecuteAsync(request, timeout.Token);
+
+            var ruleResult = await _rules.EvaluateAsync(request.User, schemaId: null, cancellationToken);
+            var cap = BusinessRuleEngine.CapRows(ruleResult.Effects);
+            if (cap is int capped && capped >= 0 && result.Rows.Count > capped)
+            {
+                result = result with
+                {
+                    Rows = result.Rows.Take(capped).ToList()
+                };
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
