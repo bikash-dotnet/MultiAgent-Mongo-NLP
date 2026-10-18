@@ -1,4 +1,5 @@
 using Gateway.Governance;
+using Gateway.Rules;
 
 namespace Gateway.Nlp.Guardrails;
 
@@ -6,14 +7,21 @@ public sealed class GuardrailEvaluator
 {
     private readonly ActiveSchemaProvider _provider;
     private readonly IApprovalFlagStore _flags;
+    private readonly BusinessRuleEngine _rules;
 
-    public GuardrailEvaluator(ActiveSchemaProvider provider, IApprovalFlagStore flags)
+    public GuardrailEvaluator(ActiveSchemaProvider provider, IApprovalFlagStore flags, BusinessRuleEngine rules)
     {
         _provider = provider;
         _flags = flags;
+        _rules = rules;
     }
 
-    public GuardrailResult Evaluate(string? pipelineJson, string? requesterRole = null)
+    public async Task<GuardrailResult> EvaluateAsync(
+        string? pipelineJson,
+        string? requesterRole = null,
+        string? schemaId = null,
+        RequesterContext? requester = null,
+        CancellationToken cancellationToken = default)
     {
         var analysis = MqlAnalyzer.Analyze(pipelineJson);
 
@@ -30,8 +38,23 @@ public sealed class GuardrailEvaluator
                 violations);
         }
 
-        // Fail closed when no schema data has been loaded yet (registry not seeded).
-        // Rejecting is safer than allowing unknown field paths against an empty registry.
+        var ruleResult = await _rules.EvaluateAsync(requester ?? new RequesterContext(requesterRole ?? string.Empty, string.Empty, requesterRole ?? string.Empty, null), schemaId, cancellationToken);
+
+        var deniedOperators = BusinessRuleEngine.DeniedOperators(ruleResult.Effects);
+        var usedOperators = analysis.Operators;
+        foreach (var op in usedOperators)
+        {
+            if (deniedOperators.Contains(op))
+            {
+                return new GuardrailResult(
+                    GuardrailOutcome.Rejected,
+                    $"operator '{op}' is denied by business rule",
+                    [],
+                    [],
+                    [op]);
+            }
+        }
+
         if (_provider.WhitelistFields.Count == 0 && _provider.SensitiveFlags.Count == 0)
         {
             return new GuardrailResult(
@@ -73,10 +96,24 @@ public sealed class GuardrailEvaluator
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
+        // Layer rule-based requireApproval on top of schema flags.
+        var ruleRequireApproval = BusinessRuleEngine.RequireApprovalFields(ruleResult.Effects);
+        foreach (var field in ruleRequireApproval)
+        {
+            if (!approvalFields.Contains(field))
+            {
+                approvalFields.Add(field);
+            }
+        }
+
         if (approvalFields.Count > 0 && _flags.Enabled)
         {
             var approvalFlagList = matched.Where(flag => flag.RequiresApproval).ToList();
-            if (IsExempt(requesterRole, approvalFlagList))
+            var ruleExemptRoles = BusinessRuleEngine.ExemptRoles(ruleResult.Effects);
+            var isExempt = IsExempt(requesterRole, approvalFlagList) ||
+                           (ruleExemptRoles.Count > 0 && ruleExemptRoles.Contains(requesterRole ?? string.Empty));
+
+            if (isExempt)
             {
                 return new GuardrailResult(
                     GuardrailOutcome.Allowed,

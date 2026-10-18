@@ -1,14 +1,19 @@
 using Gateway.Governance;
 using Gateway.Nlp;
 using Gateway.Nlp.Guardrails;
+using Gateway.Rules;
 using Gateway.Schemas;
+using Gateway.Persistence;
 
 namespace Gateway.Tests.Nlp;
 
 internal static class GuardrailTestFactory
 {
-    public static GuardrailEvaluator FromAssets(IApprovalFlagStore? flags = null)
+    public static GuardrailEvaluator FromAssets(IApprovalFlagStore? flags = null, IBusinessRuleStore? ruleStore = null)
     {
+        var engine = ruleStore is not null ? new BusinessRuleEngine(ruleStore)
+            : new BusinessRuleEngine(new BusinessRuleStore(new InMemoryDocumentStore()));
+
         var whitelist = SchemaWhitelist.LoadFromSchemaFile(
             Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Prompts", "schema.txt"));
         var flagRegistry = InMemorySensitiveFieldRegistry.LoadFromDirectory(
@@ -40,7 +45,7 @@ internal static class GuardrailTestFactory
         var provider = new ActiveSchemaProvider(fakeRegistry);
         provider.RefreshAsync().GetAwaiter().GetResult();
 
-        return new GuardrailEvaluator(provider, flags ?? new InMemoryApprovalFlagStore(true));
+        return new GuardrailEvaluator(provider, flags ?? new InMemoryApprovalFlagStore(true), engine);
     }
 
     private sealed class FakeSchemaRegistry : ISchemaRegistry

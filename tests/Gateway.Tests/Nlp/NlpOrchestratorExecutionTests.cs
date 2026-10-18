@@ -8,6 +8,8 @@ using Gateway.Nlp.Mql;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
+using Gateway.Persistence;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -59,6 +61,7 @@ public class NlpOrchestratorExecutionTests
             GuardrailTestFactory.FromAssets(),
             new InMemoryAccessRequestStore(),
             TimeProvider.System,
+            new BusinessRuleEngine(new BusinessRuleStore(new InMemoryDocumentStore())),
             executor,
             Options.Create(new ExecutionOptions()));
         return (sut, executor);

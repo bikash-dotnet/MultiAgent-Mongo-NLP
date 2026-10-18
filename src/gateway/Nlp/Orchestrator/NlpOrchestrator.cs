@@ -3,8 +3,10 @@ using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Llm;
+using Gateway.Nlp.Mql;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Nlp.Orchestrator;
@@ -21,6 +23,7 @@ public sealed class NlpOrchestrator : INlpOrchestrator
     private readonly TimeProvider _clock;
     private readonly ITabularQueryExecutor? _executor;
     private readonly ExecutionOptions _execution;
+    private readonly BusinessRuleEngine _rules;
 
     public NlpOrchestrator(
         INlpRouter router,
@@ -31,6 +34,7 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         GuardrailEvaluator guardrails,
         IAccessRequestStore accessRequests,
         TimeProvider clock,
+        BusinessRuleEngine rules,
         ITabularQueryExecutor? executor = null,
         IOptions<ExecutionOptions>? executionOptions = null)
     {
@@ -42,6 +46,7 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         _guardrails = guardrails;
         _accessRequests = accessRequests;
         _clock = clock;
+        _rules = rules;
         _executor = executor;
         _execution = executionOptions?.Value ?? new ExecutionOptions();
     }
@@ -114,7 +119,12 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             return result;
         }
 
-        var guard = _guardrails.Evaluate(result.Mql, requester?.Role);
+        var guard = await _guardrails.EvaluateAsync(
+            result.Mql,
+            requester?.Role,
+            schemaId: null,
+            requester,
+            cancellationToken);
 
         if (guard.Outcome == GuardrailOutcome.Rejected)
         {
@@ -182,6 +192,19 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             guard.ExemptionType is not null ? requester?.Name : null);
 
         var columns = MqlAnalyzer.Analyze(result.Mql).FieldPaths;
+
+        // Apply business rule setDefault values before query execution parameters are finalized.
+        var ruleResult = await _rules.EvaluateAsync(
+            requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null),
+            schemaId: null,
+            cancellationToken);
+        var setDefaults = BusinessRuleEngine.SetDefaults(ruleResult.Effects);
+        var defaults = result.ClarificationsApplied;
+        var effectiveDefaults = new MqlDefaults(
+            setDefaults.TryGetValue("limit", out var limit) && int.TryParse(limit, out var l) ? l : defaults.Limit,
+            setDefaults.TryGetValue("sort", out var sort) ? sort : defaults.Sort,
+            setDefaults.TryGetValue("market", out var market) ? market : defaults.Market);
+
         var user = requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null);
         var execution = await _executor.ExecuteAsync(
             new ExecutionRequest(
@@ -193,9 +216,9 @@ public sealed class NlpOrchestrator : INlpOrchestrator
                 columns,
                 new Dictionary<string, string>
                 {
-                    ["limit"] = result.ClarificationsApplied.Limit.ToString(),
-                    ["sort"] = result.ClarificationsApplied.Sort,
-                    ["market"] = result.ClarificationsApplied.Market
+                    ["limit"] = effectiveDefaults.Limit.ToString(),
+                    ["sort"] = effectiveDefaults.Sort,
+                    ["market"] = effectiveDefaults.Market
                 },
                 result.SemanticCacheHit,
                 result.SlotExtractionUsed,

@@ -1,6 +1,8 @@
 using Gateway.Governance;
 using Gateway.Nlp;
 using Gateway.Nlp.Guardrails;
+using Gateway.Persistence;
+using Gateway.Rules;
 using Gateway.Schemas;
 
 namespace Gateway.Tests.Nlp;
@@ -27,7 +29,8 @@ public class GuardrailEvaluatorTests
         var provider = new ActiveSchemaProvider(registry);
         provider.RefreshAsync().GetAwaiter().GetResult();
 
-        return new GuardrailEvaluator(provider, new InMemoryApprovalFlagStore(true));
+        var engine = new BusinessRuleEngine(new BusinessRuleStore(new InMemoryDocumentStore()));
+        return new GuardrailEvaluator(provider, new InMemoryApprovalFlagStore(true), engine);
     }
 
     private sealed class TestSchemaRegistry : ISchemaRegistry
@@ -82,9 +85,9 @@ public class GuardrailEvaluatorTests
     }
 
     [Fact]
-    public void Clean_read_query_is_allowed()
+    public async Task Clean_read_query_is_allowed()
     {
-        var result = Evaluator.Evaluate(
+        var result = await Evaluator.EvaluateAsync(
             """[{"$match":{"price":{"$lte":200},"address.market":"New York"}},{"$limit":10}]""");
 
         Assert.Equal(GuardrailOutcome.Allowed, result.Outcome);
@@ -92,36 +95,36 @@ public class GuardrailEvaluatorTests
     }
 
     [Fact]
-    public void Write_stage_is_rejected()
+    public async Task Write_stage_is_rejected()
     {
-        var result = Evaluator.Evaluate("""[{"$out":"archive"}]""");
+        var result = await Evaluator.EvaluateAsync("""[{"$out":"archive"}]""");
 
         Assert.Equal(GuardrailOutcome.Rejected, result.Outcome);
         Assert.Contains("$out", result.BlockedOperators);
     }
 
     [Fact]
-    public void Unparseable_pipeline_is_rejected()
+    public async Task Unparseable_pipeline_is_rejected()
     {
-        var result = Evaluator.Evaluate("not json");
+        var result = await Evaluator.EvaluateAsync("not json");
 
         Assert.Equal(GuardrailOutcome.Rejected, result.Outcome);
         Assert.False(string.IsNullOrWhiteSpace(result.Reason));
     }
 
     [Fact]
-    public void Unknown_field_is_rejected()
+    public async Task Unknown_field_is_rejected()
     {
-        var result = Evaluator.Evaluate("""[{"$match":{"secrets.token":"x"}}]""");
+        var result = await Evaluator.EvaluateAsync("""[{"$match":{"secrets.token":"x"}}]""");
 
         Assert.Equal(GuardrailOutcome.Rejected, result.Outcome);
         Assert.Contains("secrets.token", result.UnknownFields);
     }
 
     [Fact]
-    public void Sensitive_coordinates_pause_for_approval()
+    public async Task Sensitive_coordinates_pause_for_approval()
     {
-        var result = Evaluator.Evaluate(
+        var result = await Evaluator.EvaluateAsync(
             """[{"$match":{"address.location.coordinates.lat":{"$gte":40}}}]""");
 
         Assert.Equal(GuardrailOutcome.PausedForApproval, result.Outcome);
@@ -129,26 +132,26 @@ public class GuardrailEvaluatorTests
     }
 
     [Fact]
-    public void Registry_known_field_not_in_schema_pauses()
+    public async Task Registry_known_field_not_in_schema_pauses()
     {
-        var result = Evaluator.Evaluate("""[{"$match":{"host.host_verifications.0":"verified"}}]""");
+        var result = await Evaluator.EvaluateAsync("""[{"$match":{"host.host_verifications.0":"verified"}}]""");
 
         Assert.Equal(GuardrailOutcome.PausedForApproval, result.Outcome);
         Assert.Contains("host.host_verifications", result.SensitiveFields);
     }
 
     [Fact]
-    public void Sensitive_field_without_approval_flag_is_allowed()
+    public async Task Sensitive_field_without_approval_flag_is_allowed()
     {
-        var result = Evaluator.Evaluate("""[{"$match":{"host.host_identity_verified":true}}]""");
+        var result = await Evaluator.EvaluateAsync("""[{"$match":{"host.host_identity_verified":true}}]""");
 
         Assert.Equal(GuardrailOutcome.Allowed, result.Outcome);
     }
 
     [Fact]
-    public void Parent_reference_to_sensitive_document_pauses()
+    public async Task Parent_reference_to_sensitive_document_pauses()
     {
-        var result = Evaluator.Evaluate("""[{"$match":{"address":"x"}}]""");
+        var result = await Evaluator.EvaluateAsync("""[{"$match":{"address":"x"}}]""");
 
         Assert.Equal(GuardrailOutcome.PausedForApproval, result.Outcome);
         Assert.Contains("address.location.coordinates", result.SensitiveFields);
