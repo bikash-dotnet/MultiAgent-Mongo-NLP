@@ -79,11 +79,15 @@ public sealed class SettingsService
                 source = SettingsSource.Default;
             }
 
+            var displayValue = spec.Secret
+                ? JsonSerializer.SerializeToElement((string?)null)
+                : effective;
+
             values.Add(new SettingValue(
                 shortKey,
                 spec.Label,
                 spec.Type,
-                effective,
+                displayValue,
                 source,
                 spec.Editable,
                 spec.Secret,

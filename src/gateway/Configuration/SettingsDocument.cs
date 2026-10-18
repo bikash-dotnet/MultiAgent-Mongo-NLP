@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace Gateway.Configuration;
 
-[JsonConverter(typeof(JsonStringEnumConverter<SettingsSource>))]
 public sealed record SettingsDocument(
     string Id,
     string ValuesJson,

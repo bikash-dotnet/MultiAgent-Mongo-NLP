@@ -1,6 +1,8 @@
 using Gateway.Audit;
+using Gateway.Configuration;
 using Gateway.Nlp.Orchestrator;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Gateway.Execution;
 
@@ -9,7 +11,8 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
     private readonly IQueryTransport _transport;
     private readonly IAuditLogStore _audit;
     private readonly IAgentEventSink _events;
-    private readonly ExecutionOptions _options;
+    private readonly IOptions<ExecutionOptions> _options;
+    private readonly ISettingsProvider _provider;
     private readonly TimeProvider _clock;
 
     public ExecutionRunner(
@@ -17,12 +20,14 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         IAuditLogStore audit,
         IAgentEventSink events,
         IOptions<ExecutionOptions> options,
+        ISettingsProvider provider,
         TimeProvider clock)
     {
         _transport = transport;
         _audit = audit;
         _events = events;
-        _options = options.Value;
+        _options = options;
+        _provider = provider;
         _clock = clock;
     }
 
@@ -32,8 +37,9 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         var started = _clock.GetTimestamp();
         TabularResult result;
 
+        var timeoutMs = GetTimeoutMs();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(_options.TimeoutMs);
+        timeout.CancelAfter(timeoutMs);
 
         try
         {
@@ -47,7 +53,7 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
                 request.DataSource.ToString(),
                 Elapsed(started),
                 TimedOut: true,
-                Error: $"Query exceeded the {_options.TimeoutMs} ms execution limit.");
+                Error: $"Query exceeded the {timeoutMs} ms execution limit.");
         }
         catch (Exception error)
         {
@@ -72,6 +78,16 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
             $"{result.RowCount} rows in {result.DurationMs} ms"));
 
         return result;
+    }
+
+    private int GetTimeoutMs()
+    {
+        if (_provider.TryGetValue("Execution", "TimeoutMs", out var value) &&
+            value.ValueKind == JsonValueKind.Number)
+        {
+            return value.GetInt32();
+        }
+        return _options.Value.TimeoutMs;
     }
 
     private long Elapsed(long started)

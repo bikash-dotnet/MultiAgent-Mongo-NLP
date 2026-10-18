@@ -53,6 +53,10 @@ public static class ConfigHandlers
         {
             return Results.NotFound(new { error = ex.Message });
         }
+        catch (OptimisticConcurrencyException ex)
+        {
+            return Results.Conflict(new { error = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
             return Results.BadRequest(new { error = ex.Message });

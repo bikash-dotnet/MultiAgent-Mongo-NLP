@@ -1,3 +1,4 @@
+using Gateway.Configuration;
 using Gateway.Governance;
 using Gateway.Nlp.Abstractions;
 using Gateway.Nlp.Cache;
@@ -34,7 +35,7 @@ public class NlpOrchestratorExemptionTests
     {
         var gazetteer = Gazetteer.LoadFromDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Gazetteers"));
         var builder = ScribanSimpleMqlBuilder.FromAssetsDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates"));
-        var router = new NlpRouter(new VectorEmbedder(), new SemanticCache(), builder, gazetteer);
+        var router = new NlpRouter(new VectorEmbedder(), new SemanticCache(new SettingsProvider()), builder, gazetteer);
         var corrector = new SelfCorrectingLlmQueryGenerator(
             new StubGenerator("""[{"$match":{"address.location.coordinates.lat":{"$gte":40}}}]"""),
             new PipelineValidator(),
