@@ -99,6 +99,7 @@ app.MapAccessRequestEndpoints();
 app.MapAgentEndpoints();
 app.MapSchemaEndpoints();
 app.MapConfigEndpoints();
+app.MapColumnDefinitionEndpoints();
 
 app.Run();
 
