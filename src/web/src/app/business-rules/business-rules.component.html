@@ -18,16 +18,37 @@
     <p class="error" role="alert">{{ error }}</p>
   }
 
-  <p-tabs [(activeIndex)]="selectedTab">
-    <p-tabpanel header="Business Rules">
-      <div class="tab-content">
-        @if (rules.length) {
-          <p-table
-            [value]="rules"
-            [paginator]="true"
-            [rows]="10"
-            [responsive]="true"
-            dataKey="id">
+  <div class="tab-bar">
+    <p-button
+      label="Business Rules"
+      icon="pi pi-list"
+      [severity]="selectedTab === 0 ? 'secondary' : null"
+      (onClick)="selectedTab = 0" />
+    <p-button
+      label="Column Definitions"
+      icon="pi pi-table"
+      [severity]="selectedTab === 1 ? 'secondary' : null"
+      (onClick)="selectedTab = 1" />
+  </div>
+
+  @if (selectedTab === 0) {
+    <div class="tab-content">
+      <div class="toolbar">
+        <h1>Business Rules</h1>
+        <p class="subtitle">Define rules that apply across guardrails, execution, grid columns, and exports.</p>
+        <div class="toolbar-actions">
+          @if (canManage) {
+            <p-button label="Add rule" icon="pi pi-plus" (onClick)="addRule()" />
+          }
+        </div>
+      </div>
+
+      @if (rules.length) {
+        <p-table
+          [value]="rules"
+          [paginator]="true"
+          [rows]="10"
+          dataKey="id">
             <ng-template pTemplate="header">
               <tr>
                 <th pSortableColumn="enabled">Enabled</th>
@@ -158,22 +179,21 @@
               }
             </div>
           }
-        </div>
-      </div>
-    </p-tabpanel>
+    </div>
+  </div>
+}
 
-    <p-tabpanel header="Column Definitions">
-      <div class="tab-content">
-        @if (columns.length) {
-          <div class="column-toolbar">
-            @if (canManage) {
-              <p-button label="Add column" icon="pi pi-plus" (onClick)="addColumn()" />
-            }
-          </div>
-          <p-table
-            [value]="columns"
-            [responsive]="true"
-            dataKey="id">
+  @if (selectedTab === 1) {
+    <div class="tab-content">
+      @if (columns.length) {
+        <div class="column-toolbar">
+          @if (canManage) {
+            <p-button label="Add column" icon="pi pi-plus" (onClick)="addColumn()" />
+          }
+        </div>
+        <p-table
+          [value]="columns"
+          dataKey="id">
             <ng-template pTemplate="header">
               <tr>
                 <th>Field</th>
@@ -287,8 +307,7 @@
           <div class="empty">No column definitions defined. Click "Add column" to create one.</div>
         }
       </div>
-    </p-tabpanel>
-  </p-tabs>
+    }
 
   <!-- Rule editor dialog -->
   <p-dialog
@@ -345,7 +364,7 @@
               </div>
               <div class="cond-field">
                 <label>Values</label>
-                <input pInputText [(ngModel)]="ruleDraft.conditionValuesText" placeholder="e.g. eq, ne" />
+                <input pInputText [(ngModel)]="conditionValuesText" placeholder="e.g. eq, ne" />
                 <small class="hint">Comma-separated values.</small>
               </div>
               <div class="cond-field">

@@ -1,7 +1,10 @@
 using System.Linq;
 using System.Text.Json;
+using Gateway.Audit;
 using Gateway.Conversations;
 using Gateway.Nlp;
+using Gateway.Schemas;
+using System.Collections.Immutable;
 
 namespace Gateway.Rules;
 
@@ -10,14 +13,17 @@ public sealed class ColumnDefinitionService
     private readonly IColumnDefinitionStore _store;
     private readonly IColumnCatalog _catalog;
     private readonly ActiveSchemaProvider? _schema;
+    private readonly IAuditLogStore? _audit;
 
     public ColumnDefinitionService(
         IColumnDefinitionStore store,
         IColumnCatalog catalog,
+        IAuditLogStore? audit = null,
         ActiveSchemaProvider? schema = null)
     {
         _store = store;
         _catalog = catalog;
+        _audit = audit;
         _schema = schema;
     }
 
@@ -74,7 +80,10 @@ public sealed class ColumnDefinitionService
 
         ValidateDataType(request.DataType, request.Format);
 
-        var maxOrder = (await _store.ListAsync(cancellationToken)).Max(d => d.Order);
+        var maxOrder = (await _store.ListAsync(cancellationToken))
+            .Select(d => d.Order)
+            .DefaultIfEmpty(0)
+            .Max();
         var def = new ColumnDefinition(
             ColumnDefinition.NewId(),
             request.Field,
@@ -88,7 +97,12 @@ public sealed class ColumnDefinitionService
             request.Width,
             1, DateTimeOffset.UtcNow, updatedBy);
 
-        return await _store.UpsertAsync(def, updatedBy, cancellationToken);
+        var stored = await _store.UpsertAsync(def, updatedBy, cancellationToken);
+
+        await AuditColumnDefinitionAsync(updatedBy, "column-definitions", "column_definition.create", stored.Id, stored.Version,
+            $"created column '{stored.Field}' (type={stored.DataType})", cancellationToken);
+
+        return stored;
     }
 
     public async Task<ColumnDefinition> UpdateAsync(
@@ -124,11 +138,32 @@ public sealed class ColumnDefinitionService
             UpdatedBy = updatedBy
         };
 
-        return await _store.UpsertAsync(def, updatedBy, cancellationToken);
+        var stored = await _store.UpsertAsync(def, updatedBy, cancellationToken);
+
+        await AuditColumnDefinitionAsync(updatedBy, "column-definitions", "column_definition.update", stored.Id, stored.Version,
+            $"updated column '{stored.Field}' (type={stored.DataType})", cancellationToken);
+
+        return stored;
     }
 
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
-        await _store.DeleteAsync(id, cancellationToken);
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var current = await _store.GetAsync(id, cancellationToken);
+        if (current is null)
+        {
+            return false;
+        }
+
+        var deleted = await _store.DeleteAsync(id, cancellationToken);
+
+        if (deleted)
+        {
+            await AuditColumnDefinitionAsync("anonymous", "column-definitions", "column_definition.delete", id, current.Version,
+                $"deleted column '{current.Field}' (type={current.DataType})", cancellationToken);
+        }
+
+        return deleted;
+    }
 
     public async Task ReorderAsync(ColumnDefinitionReorderRequest request, string updatedBy, CancellationToken cancellationToken = default)
     {
@@ -144,6 +179,33 @@ public sealed class ColumnDefinitionService
                 await _store.UpsertAsync(updated, updatedBy, cancellationToken);
             }
         }
+
+        await AuditColumnDefinitionAsync(updatedBy, "column-definitions", "column_definition.reorder", null, null,
+            $"reordered {request.Ids.Count} columns", cancellationToken);
+    }
+
+    private async Task AuditColumnDefinitionAsync(
+        string updatedBy,
+        string dataSource,
+        string action,
+        string? entityId,
+        int? version,
+        string notes,
+        CancellationToken cancellationToken)
+    {
+        if (_audit is null)
+        {
+            return;
+        }
+
+        await _audit.AppendAsync(AuditLogDocument.ForSchemaManagement(
+            Guid.NewGuid().ToString("N"),
+            DateTimeOffset.UtcNow,
+            updatedBy,
+            SchemaDataSource.Mongo,
+            action,
+            version ?? 0,
+            notes), cancellationToken);
     }
 
     private static void ValidateDataType(ColumnDataType dataType, string? format)

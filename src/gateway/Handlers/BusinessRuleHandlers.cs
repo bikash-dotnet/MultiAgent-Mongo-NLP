@@ -1,9 +1,12 @@
 using Gateway.Auth;
+using Gateway.Audit;
 using Gateway.Rules;
+using Gateway.Schemas;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Security.Claims;
+using System.Collections.Immutable;
 
 namespace Gateway.Handlers;
 
@@ -34,9 +37,11 @@ public static class BusinessRuleHandlers
         BusinessRuleRequest request,
         ClaimsPrincipal user,
         IBusinessRuleStore store,
+        IAuditLogStore audit,
         CancellationToken ct)
     {
         var userId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
+        var role = user.FindFirst(SessionClaims.Role)?.Value ?? string.Empty;
 
         var scope = Enum.Parse<RuleScope>(request.Scope);
         var condition = new RuleCondition(
@@ -60,6 +65,12 @@ public static class BusinessRuleHandlers
             1, DateTimeOffset.UtcNow, userId);
 
         var stored = await store.UpsertAsync(rule, userId, ct);
+
+        await audit.AppendAsync(BuildRuleAuditDoc(
+            Guid.NewGuid().ToString("N"), DateTimeOffset.UtcNow, userId, role,
+            "business-rules", "business_rule.create", stored.Id, stored.Version,
+            $"created rule '{stored.Name}' (scope={stored.Scope}, priority={stored.Priority})"), ct);
+
         return Results.Ok(stored);
     }
 
@@ -68,10 +79,12 @@ public static class BusinessRuleHandlers
         BusinessRuleRequest request,
         ClaimsPrincipal user,
         IBusinessRuleStore store,
+        IAuditLogStore audit,
         CancellationToken ct,
         [FromQuery] int version)
     {
         var userId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
+        var role = user.FindFirst(SessionClaims.Role)?.Value ?? string.Empty;
 
         var current = await store.GetAsync(id, ct);
         if (current is null)
@@ -109,19 +122,65 @@ public static class BusinessRuleHandlers
         };
 
         var stored = await store.UpsertAsync(rule, userId, ct);
+
+        await audit.AppendAsync(BuildRuleAuditDoc(
+            Guid.NewGuid().ToString("N"), DateTimeOffset.UtcNow, userId, role,
+            "business-rules", "business_rule.update", stored.Id, stored.Version,
+            $"updated rule '{stored.Name}' (scope={stored.Scope}, priority={stored.Priority})"), ct);
+
         return Results.Ok(stored);
     }
 
     public static async Task<IResult> DeleteRule(
         string id,
+        ClaimsPrincipal user,
         IBusinessRuleStore store,
+        IAuditLogStore audit,
         CancellationToken ct)
     {
+        var userId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
+        var role = user.FindFirst(SessionClaims.Role)?.Value ?? string.Empty;
+
+        var current = await store.GetAsync(id, ct);
+        if (current is null)
+        {
+            return Results.NotFound(new { error = $"Business rule '{id}' not found." });
+        }
+
         var deleted = await store.DeleteAsync(id, ct);
         if (!deleted)
         {
             return Results.NotFound(new { error = $"Business rule '{id}' not found." });
         }
+
+        await audit.AppendAsync(BuildRuleAuditDoc(
+            Guid.NewGuid().ToString("N"), DateTimeOffset.UtcNow, userId, role,
+            "business-rules", "business_rule.delete", id, current.Version,
+            $"deleted rule '{current.Name}' (scope={current.Scope})"), ct);
+
         return Results.NoContent();
+    }
+
+    private static AuditLogDocument BuildRuleAuditDoc(
+        string id,
+        DateTimeOffset timestamp,
+        string userId,
+        string role,
+        string dataSource,
+        string action,
+        string? entityId,
+        int? version,
+        string notes)
+    {
+        var detail = entityId is not null ? $" {entityId} v{version}" : $" v{version}";
+        var combinedNotes = notes is not null ? $"{detail} ({notes})" : detail;
+        return AuditLogDocument.ForSchemaManagement(
+            id,
+            timestamp,
+            userId,
+            SchemaDataSource.Mongo,
+            action,
+            version ?? 0,
+            combinedNotes);
     }
 }
