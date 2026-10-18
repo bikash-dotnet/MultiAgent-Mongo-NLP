@@ -21,6 +21,7 @@ public sealed record ConfigSectionResponse(
     string SectionName,
     string Label,
     bool AdminOnly,
+    int Version,
     IReadOnlyList<SettingValueResponse> Values);
 
 public sealed record ConfigSchemaResponse(

@@ -14,6 +14,7 @@ const section: ConfigSectionResponse = {
   sectionName: 'Execution',
   label: 'Execution',
   adminOnly: false,
+  version: 0,
   values: [
     {
       key: 'TimeoutMs',

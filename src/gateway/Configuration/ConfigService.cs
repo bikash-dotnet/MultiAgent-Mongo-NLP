@@ -53,6 +53,8 @@ public sealed class ConfigService
 
         ValidateSection(sectionName, request.Values, out var validatedJson);
 
+        await ValidateCrossFieldAsync(sectionName, request.Values, cancellationToken);
+
         var current = await _store.GetAsync(sectionName, cancellationToken);
         if (current is not null && current.Version != request.Version)
         {
@@ -62,12 +64,22 @@ public sealed class ConfigService
         var now = DateTimeOffset.UtcNow;
         var userId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
 
+        var previous = current is null
+            ? new Dictionary<string, JsonElement>()
+            : current.ValuesAsElement().ValueKind == JsonValueKind.Object
+                ? current.ValuesAsElement().EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone())
+                : new Dictionary<string, JsonElement>();
+
         await _store.UpsertAsync(sectionName, validatedJson, userId, cancellationToken);
 
         var root = JsonElement.Parse(validatedJson.ToString()).Clone();
         _provider.UpdateSection(sectionName, root, current is null ? 1 : current.Version + 1);
 
-        await AuditChangeAsync(userId, sectionName, request.Values, now, cancellationToken);
+        var next = validatedJson.ValueKind == JsonValueKind.Object
+            ? validatedJson.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone())
+            : new Dictionary<string, JsonElement>();
+
+        await AuditChangeAsync(userId, sectionName, previous, next, now, cancellationToken);
 
         return await GetSectionAsync(sectionName, user, cancellationToken);
     }
@@ -91,13 +103,18 @@ public sealed class ConfigService
         _provider.RemoveSection(sectionName);
 
         var userId = user.FindFirst(SessionClaims.UserId)?.Value ?? "anonymous";
-        await AuditChangeAsync(userId, sectionName, new Dictionary<string, JsonElement>(), DateTimeOffset.UtcNow, cancellationToken);
+        await AuditChangeAsync(userId, sectionName, new Dictionary<string, JsonElement>(), new Dictionary<string, JsonElement>(), DateTimeOffset.UtcNow, cancellationToken, deleted: true);
     }
 
     public async Task ResetAllAsync(CancellationToken cancellationToken = default)
     {
+        var now = DateTimeOffset.UtcNow;
+        var userId = "system";
+
         await _store.ResetAsync(cancellationToken);
         _provider.ResetAll();
+
+        await AuditChangeAsync(userId, "all", new Dictionary<string, JsonElement>(), new Dictionary<string, JsonElement>(), now, cancellationToken, deleted: true);
     }
 
     public ConfigSchemaResponse GetSchema()
@@ -109,7 +126,7 @@ public sealed class ConfigService
                 section.AdminOnly,
                 section.Settings.Select(spec =>
                 {
-                    var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
+                    var shortKey = ShortKey(spec.Key);
                     return new SettingsFieldSchema(
                         shortKey,
                         spec.Label,
@@ -141,7 +158,7 @@ public sealed class ConfigService
 
         foreach (var spec in section.Settings)
         {
-            var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
+            var shortKey = ShortKey(spec.Key);
 
             if (!spec.Editable && input.ContainsKey(shortKey))
             {
@@ -163,25 +180,10 @@ public sealed class ConfigService
             dict[shortKey] = Coerce(raw, spec);
         }
 
-        // Cross-field rule: EnterpriseCore.BaseUrl required when Execution.DataSource = EnterpriseCoreREST
-        if (string.Equals(sectionName, "Execution", StringComparison.Ordinal) &&
-            inputByKey.TryGetValue("DataSource", out var ds) &&
-            ds.ValueKind == JsonValueKind.String &&
-            ds.GetString() == "EnterpriseCoreREST")
-        {
-            if (!dict.TryGetValue("BaseUrl", out var baseUrl) ||
-                baseUrl.ValueKind != JsonValueKind.String ||
-                string.IsNullOrWhiteSpace(baseUrl.GetString()))
-            {
-                throw new InvalidOperationException(
-                    "EnterpriseCore.BaseUrl is required when Execution.DataSource is EnterpriseCoreREST.");
-            }
-        }
-
         // Range validation for Number/Port/Double settings.
         foreach (var spec in section.Settings)
         {
-            var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
+            var shortKey = ShortKey(spec.Key);
             if (!dict.TryGetValue(shortKey, out var value) || value.ValueKind != JsonValueKind.Number)
             {
                 continue;
@@ -210,6 +212,44 @@ public sealed class ConfigService
         validated = JsonSerializer.SerializeToElement(dict);
     }
 
+    private static string ShortKey(string fullKey)
+    {
+        var dot = fullKey.LastIndexOf('.');
+        return dot < 0 ? fullKey : fullKey[(dot + 1)..];
+    }
+
+    private async Task ValidateCrossFieldAsync(
+        string sectionName,
+        IReadOnlyDictionary<string, JsonElement> input,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(sectionName, "Execution", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var inputByKey = input.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+        if (!inputByKey.TryGetValue("DataSource", out var ds) ||
+            ds.ValueKind != JsonValueKind.String ||
+            ds.GetString() != "EnterpriseCoreREST")
+        {
+            return;
+        }
+
+        var doc = await _store.GetAsync("EnterpriseCore", cancellationToken);
+        if (doc is not null &&
+            doc.ValuesAsElement().ValueKind == JsonValueKind.Object &&
+            doc.ValuesAsElement().TryGetProperty("BaseUrl", out var dbBaseUrl) &&
+            dbBaseUrl.ValueKind == JsonValueKind.String &&
+            !string.IsNullOrWhiteSpace(dbBaseUrl.GetString()))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "EnterpriseCore.BaseUrl is required when Execution.DataSource is EnterpriseCoreREST.");
+    }
+
     private static JsonElement Coerce(JsonElement value, SettingSpec spec)
     {
         return spec.Type switch
@@ -227,10 +267,20 @@ public sealed class ConfigService
     private async Task AuditChangeAsync(
         string userId,
         string sectionName,
-        IReadOnlyDictionary<string, JsonElement> input,
+        IReadOnlyDictionary<string, JsonElement> previous,
+        IReadOnlyDictionary<string, JsonElement> next,
         DateTimeOffset timestamp,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool deleted = false)
     {
+        var changedKeys = previous.Keys
+            .Union(next.Keys)
+            .Where(k => !EqualsValue(previous.GetValueOrDefault(k), next.GetValueOrDefault(k)))
+            .ToList();
+
+        var previousNonSecret = MaskSecrets(sectionName, previous);
+        var nextNonSecret = MaskSecrets(sectionName, next);
+
         var doc = new AuditLogDocument(
             Guid.NewGuid().ToString("N"),
             timestamp,
@@ -239,11 +289,40 @@ public sealed class ConfigService
             new AuditLogUser(userId, userId, null, string.Empty),
             new AuditLogNlpPerformance(false, false, 0, 0),
             new AuditLogRequestDetails("", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty),
-            new AuditLogExecutionDetails("", "app_settings", 0, null, null),
-            new AuditLogGovernance(false, [], null, false, $"{userId}: updated config section {sectionName}"),
-            "config.update",
-            0);
+            new AuditLogExecutionDetails("", "app_settings", next.Count, null, null),
+            new AuditLogGovernance(false, [], null, false,
+                deleted
+                    ? $"{userId}: deleted config section {sectionName}"
+                    : $"{userId}: updated config section {sectionName}; changed: {string.Join(", ", changedKeys)}"),
+            deleted ? "config.delete" : "config.update",
+            next.Count);
 
         await _audit.AppendAsync(doc, cancellationToken);
+    }
+
+    private static bool EqualsValue(JsonElement? a, JsonElement? b)
+    {
+        if (a is null && b is null) return true;
+        if (a is null || b is null) return false;
+        return a.Value.ValueKind == b.Value.ValueKind && a.Value.GetRawText() == b.Value.GetRawText();
+    }
+
+    private static IReadOnlyDictionary<string, JsonElement> MaskSecrets(
+        string sectionName,
+        IReadOnlyDictionary<string, JsonElement> values)
+    {
+        var result = new Dictionary<string, JsonElement>();
+        foreach (var kvp in values)
+        {
+            if (SettingsCatalog.IsSecret(sectionName, kvp.Key))
+            {
+                result[kvp.Key] = JsonSerializer.SerializeToElement((string?)null);
+            }
+            else
+            {
+                result[kvp.Key] = kvp.Value.Clone();
+            }
+        }
+        return result;
     }
 }

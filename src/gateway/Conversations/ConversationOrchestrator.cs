@@ -1,4 +1,7 @@
+using System.Text.Json;
+using Gateway.Audit;
 using System.Text.RegularExpressions;
+using Gateway.Configuration;
 using Gateway.Execution;
 using Gateway.Governance;
 using Gateway.Nlp.Guardrails;
@@ -20,6 +23,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
     private readonly IColumnCatalog _columns;
     private readonly IAgentEventSink _events;
     private readonly ReportsOptions _reports;
+    private readonly ISettingsProvider _settings;
     private readonly TimeProvider _clock;
     private readonly ITabularQueryExecutor? _executor;
     private readonly ExecutionOptions _execution;
@@ -35,7 +39,8 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         IOptions<ReportsOptions> reports,
         TimeProvider clock,
         ITabularQueryExecutor? executor = null,
-        IOptions<ExecutionOptions>? executionOptions = null)
+        IOptions<ExecutionOptions>? executionOptions = null,
+        ISettingsProvider? settings = null)
     {
         _nlp = nlp;
         _store = store;
@@ -45,6 +50,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         _columns = columns;
         _events = events;
         _reports = reports.Value;
+        _settings = settings ?? new SettingsProvider();
         _clock = clock;
         _executor = executor;
         _execution = executionOptions?.Value ?? new ExecutionOptions();
@@ -63,7 +69,14 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         var mql = result.Mql;
         var demo = false;
 
-        if (kind == NlpRouteKind.ComplexLlmFailed && _reports.DemoFallbackEnabled)
+        var demoFallback = _reports.DemoFallbackEnabled;
+        if (_settings.TryGetValue("Reports", "DemoFallbackEnabled", out var demoValue) &&
+            (demoValue.ValueKind == JsonValueKind.True || demoValue.ValueKind == JsonValueKind.False))
+        {
+            demoFallback = demoValue.GetBoolean();
+        }
+
+        if (kind == NlpRouteKind.ComplexLlmFailed && demoFallback)
         {
             kind = NlpRouteKind.ComplexLlmRequired;
             mql = DemoReportPipeline.FromUtterance(utterance);

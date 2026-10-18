@@ -1,4 +1,6 @@
+using Gateway.Configuration;
 using Gateway.Nlp.Llm;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Tests.Nlp;
@@ -20,8 +22,12 @@ public class SelfCorrectionTests
         }
     }
 
-    private static SelfCorrectingLlmQueryGenerator Sut(ILlmQueryGenerator generator, int maxAttempts = 3) =>
-        new(generator, new PipelineValidator(), Options.Create(new NvidiaNimOptions { MaxAttempts = maxAttempts }));
+    private static SelfCorrectingLlmQueryGenerator Sut(ILlmQueryGenerator generator, int maxAttempts = 3)
+    {
+        var provider = new SettingsProvider();
+        provider.UpdateSection("NvidiaNim", JsonSerializer.SerializeToElement(new { MaxAttempts = maxAttempts }), 1);
+        return new(generator, new PipelineValidator(), provider);
+    }
 
     [Fact]
     public async Task Returns_first_valid_pipeline()

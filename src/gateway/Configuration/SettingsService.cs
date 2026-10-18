@@ -17,6 +17,7 @@ public sealed record SectionSnapshot(
     string SectionName,
     string Label,
     bool AdminOnly,
+    int Version,
     IReadOnlyList<SettingValue> Values);
 
 public sealed class SettingsService
@@ -40,6 +41,7 @@ public sealed class SettingsService
         }
 
         var document = await _store.GetAsync(sectionName, cancellationToken);
+        var version = document is null ? 0 : document.Version;
         JsonElement? dbRoot = document is null
             ? null
             : document.ValuesAsElement();
@@ -54,8 +56,8 @@ public sealed class SettingsService
         var values = new List<SettingValue>();
         foreach (var spec in section.Settings)
         {
-            var shortKey = spec.Key[(spec.Key.IndexOf('.') + 1)..];
-            var configPath = $"{sectionName}:{shortKey}";
+            var shortKey = ShortKey(spec.Key);
+            var configPath = $"{sectionName.Replace('.', ':')}:{shortKey}";
             var bootstrap = _configuration[configPath];
 
             JsonElement effective;
@@ -80,7 +82,7 @@ public sealed class SettingsService
             }
 
             var displayValue = spec.Secret
-                ? JsonSerializer.SerializeToElement((string?)null)
+                ? SecretDisplayValue(bootstrap)
                 : effective;
 
             values.Add(new SettingValue(
@@ -94,7 +96,7 @@ public sealed class SettingsService
                 spec.Description));
         }
 
-        return new SectionSnapshot(section.SectionName, section.Label, section.AdminOnly, values);
+        return new SectionSnapshot(section.SectionName, section.Label, section.AdminOnly, version, values);
     }
 
     public async Task<IReadOnlyList<SectionSnapshot>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -120,5 +122,18 @@ public sealed class SettingsService
                 JsonSerializer.SerializeToElement(double.Parse(value, CultureInfo.InvariantCulture)),
             _ => JsonSerializer.SerializeToElement(value)
         };
+    }
+
+    private static string ShortKey(string fullKey)
+    {
+        var dot = fullKey.LastIndexOf('.');
+        return dot < 0 ? fullKey : fullKey[(dot + 1)..];
+    }
+
+    private static JsonElement SecretDisplayValue(string? bootstrap)
+    {
+        return string.IsNullOrWhiteSpace(bootstrap)
+            ? JsonSerializer.SerializeToElement((string?)null)
+            : JsonSerializer.SerializeToElement(true);
     }
 }

@@ -9,6 +9,7 @@ using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace Gateway.Tests.Nlp;
 
@@ -45,7 +46,9 @@ public class NlpOrchestratorExecutionTests
         var gazetteer = Gazetteer.LoadFromDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Gazetteers"));
         var builder = ScribanSimpleMqlBuilder.FromAssetsDirectory(Path.Combine(AppContext.BaseDirectory, "Nlp", "Assets", "Templates"));
         var router = new NlpRouter(new VectorEmbedder(), new SemanticCache(new SettingsProvider()), builder, gazetteer);
-        var corrector = new SelfCorrectingLlmQueryGenerator(new StubGenerator(), new PipelineValidator(), Options.Create(new NvidiaNimOptions()));
+        var provider = new SettingsProvider();
+        provider.UpdateSection("NvidiaNim", JsonSerializer.SerializeToElement(new { MaxAttempts = 3 }), 1);
+        var corrector = new SelfCorrectingLlmQueryGenerator(new StubGenerator(), new PipelineValidator(), provider);
         var executor = new StubExecutor();
         var sut = new NlpOrchestrator(
             router,
