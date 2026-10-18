@@ -6,11 +6,12 @@ import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { CheckboxModule } from 'primeng/checkbox';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
+import { TabsModule } from 'primeng/tabs';
 import { ConfigurationService } from '../services/configuration.service';
 import { SessionService } from '../services/session.service';
 import {
@@ -39,11 +40,12 @@ interface SectionDraft {
     CardModule,
     InputTextModule,
     InputNumberModule,
-    CheckboxModule,
+    ToggleSwitchModule,
     SelectModule,
     TagModule,
     BadgeModule,
-    ButtonModule
+    ButtonModule,
+    TabsModule
   ],
   providers: [MessageService],
   templateUrl: './configuration.component.html',
