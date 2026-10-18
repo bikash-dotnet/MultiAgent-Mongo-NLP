@@ -6,13 +6,20 @@ namespace Gateway.Configuration;
 [JsonConverter(typeof(JsonStringEnumConverter<SettingsSource>))]
 public sealed record SettingsDocument(
     string Id,
-    JsonElement Values,
+    string ValuesJson,
     int Version,
     SettingsSource Source = SettingsSource.Database,
     DateTimeOffset? UpdatedAt = null,
     string? UpdatedBy = null)
 {
     public static string NewId(string sectionKey) => $"cfg_{sectionKey}";
+
+    public JsonElement ValuesAsElement()
+    {
+        return string.IsNullOrWhiteSpace(ValuesJson)
+            ? default
+            : JsonElement.Parse(ValuesJson).Clone();
+    }
 }
 
 public sealed record SettingsSummary(
