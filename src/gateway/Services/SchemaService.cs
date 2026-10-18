@@ -422,17 +422,16 @@ public sealed class SchemaService : ISchemaService
         int version,
         string? notes = null)
     {
-        var viewer = new AuditLogUser(userId, userId, null, string.Empty);
-        return new AuditLogDocument(
+        var detail = schemaId is not null ? $" {schemaId} v{version}" : $" v{version}";
+        var combinedNotes = notes is not null ? $"{detail} ({notes})" : detail;
+        return AuditLogDocument.ForSchemaManagement(
             Guid.NewGuid().ToString("N"),
             DateTimeOffset.UtcNow,
-            "schema-management",
-            dataSource.ToString(),
-            viewer,
-            new AuditLogNlpPerformance(false, false, 0, 0),
-            new AuditLogRequestDetails("", System.Collections.Immutable.ImmutableDictionary<string, string>.Empty),
-            new AuditLogExecutionDetails("", "schemas", 0, null, null),
-            new AuditLogGovernance(false, [], null, false, $"{viewer.Name}: {action} {(schemaId ?? string.Empty)} v{version}" + (notes is not null ? $" ({notes})" : string.Empty)));
+            userId,
+            dataSource,
+            action,
+            version,
+            combinedNotes);
     }
 
     private static IReadOnlyList<SchemaFieldRequest> ParseSchemaTxt(string schemaTxt)

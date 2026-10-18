@@ -47,8 +47,8 @@ public class NfrBenchTests
             $"| slot extraction | {slotMs:F3} ms | < 5 ms |\n" +
             $"| simple MQL render | {mqlMs:F3} ms | < 2 ms |\n";
 
-        var path = Path.Combine(TestPaths.RepoRoot(), "docs", "benchmarks", "sprint-2-nfr01.md");
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        // Benchmarks are recorded to a temp path so test runs do not dirty the repository.
+        var path = Path.Combine(Path.GetTempPath(), "sprint-2-nfr01.md");
         File.WriteAllText(path, Header + rows);
 
         // Budget asserts on in-memory steps (embed excluded from cache budget assert)

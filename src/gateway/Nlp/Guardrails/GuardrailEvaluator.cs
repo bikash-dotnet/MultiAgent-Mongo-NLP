@@ -30,10 +30,16 @@ public sealed class GuardrailEvaluator
                 violations);
         }
 
-        // Fail open when no schema data has been loaded yet (registry not seeded).
+        // Fail closed when no schema data has been loaded yet (registry not seeded).
+        // Rejecting is safer than allowing unknown field paths against an empty registry.
         if (_provider.WhitelistFields.Count == 0 && _provider.SensitiveFlags.Count == 0)
         {
-            return new GuardrailResult(GuardrailOutcome.Allowed, null, [], [], []);
+            return new GuardrailResult(
+                GuardrailOutcome.Rejected,
+                "schema registry is not loaded",
+                [],
+                [],
+                []);
         }
 
         var unknownFields = _provider

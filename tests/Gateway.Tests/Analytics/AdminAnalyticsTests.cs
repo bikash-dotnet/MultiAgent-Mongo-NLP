@@ -97,6 +97,8 @@ public class AdminAnalyticsTests
             new AuditLogNlpPerformance(cacheHit, false, tokens, duration),
             new AuditLogRequestDetails("prompt", new Dictionary<string, string>()),
             new AuditLogExecutionDetails("[{}]", "listingsAndReviews", 0, exportFormat, null),
-            new AuditLogGovernance(sensitive, [], null, over, null));
+            new AuditLogGovernance(sensitive, [], null, over, null),
+            null,
+            null);
     }
 }

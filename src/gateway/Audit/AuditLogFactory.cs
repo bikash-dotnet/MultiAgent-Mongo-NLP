@@ -29,6 +29,8 @@ public static class AuditLogFactory
                 request.Governance.FlagsTriggered,
                 request.Governance.ExemptionType,
                 request.Governance.OverrideInvoked,
-                request.Governance.AuthorizedBy));
+                request.Governance.AuthorizedBy),
+            null,
+            null);
     }
 }
