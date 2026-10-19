@@ -98,30 +98,31 @@
 
   <div class="form-grid">
     <label for="schemaName">Name</label>
-    <input id="schemaName" pInputText [(ngModel)]="schemaForm.name" />
+    <input id="schemaName" name="schemaName" pInputText [(ngModel)]="schemaForm.name" />
 
     <label for="schemaDatabase">Database</label>
-    <input id="schemaDatabase" pInputText [(ngModel)]="schemaForm.database" />
+    <input id="schemaDatabase" name="schemaDatabase" pInputText [(ngModel)]="schemaForm.database" />
 
     <label for="schemaCollection">Collection</label>
-    <input id="schemaCollection" pInputText [(ngModel)]="schemaForm.collection" />
+    <input id="schemaCollection" name="schemaCollection" pInputText [(ngModel)]="schemaForm.collection" />
 
     <label for="schemaDataSource">Data source</label>
-    <p-select
-      inputId="schemaDataSource"
-      [options]="dataSourceOptions"
-      optionLabel="label"
-      optionValue="value"
-      [(ngModel)]="schemaForm.dataSource"
-      appendTo="body"
-    />
+      <p-select
+        name="schemaDataSource"
+        inputId="schemaDataSource"
+        [options]="dataSourceOptions"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="schemaForm.dataSource"
+        appendTo="body"
+      />
 
     <label for="schemaDescription">Description</label>
-    <input id="schemaDescription" pInputText [(ngModel)]="schemaForm.description" />
+    <input id="schemaDescription" name="schemaDescription" pInputText [(ngModel)]="schemaForm.description" />
 
     <label>Active source</label>
     <div class="checkbox-row">
-      <p-checkbox inputId="schemaActive" [(ngModel)]="schemaForm.isActiveSource" [binary]="true" />
+      <p-checkbox name="schemaActive" inputId="schemaActive" [(ngModel)]="schemaForm.isActiveSource" [binary]="true" />
       <label for="schemaActive">Make this the active source</label>
     </div>
   </div>
@@ -208,20 +209,22 @@
 
   <div class="form-grid">
     <label for="fieldPath">Path</label>
-    <input id="fieldPath" pInputText [(ngModel)]="fieldDraft.path" placeholder="address.market" />
+    <input id="fieldPath" name="fieldPath" pInputText [(ngModel)]="fieldDraft.path" placeholder="address.market" />
 
     <label for="fieldType">Type</label>
-    <p-select
-      inputId="fieldType"
-      [options]="fieldTypeOptions"
-      optionLabel="label"
-      optionValue="value"
-      [(ngModel)]="fieldDraft.dataType"
-      appendTo="body"
-    />
+      <p-select
+        name="fieldType"
+        inputId="fieldType"
+        [options]="fieldTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="fieldDraft.dataType"
+        appendTo="body"
+      />
 
     <label for="fieldRoles">Data owner roles</label>
     <p-multiselect
+      name="fieldRoles"
       inputId="fieldRoles"
       [options]="roleOptions"
       [(ngModel)]="fieldDraft.dataOwnerRoles"
@@ -232,13 +235,13 @@
     />
 
     <label for="fieldDescription">Description</label>
-    <input id="fieldDescription" pInputText [(ngModel)]="fieldDraft.description" />
+    <input id="fieldDescription" name="fieldDescription" pInputText [(ngModel)]="fieldDraft.description" />
 
     <label>Flags</label>
     <div class="checkbox-row">
-      <p-checkbox inputId="fieldSensitive" [(ngModel)]="fieldDraft.isSensitive" [binary]="true" />
+      <p-checkbox name="fieldSensitive" inputId="fieldSensitive" [(ngModel)]="fieldDraft.isSensitive" [binary]="true" />
       <label for="fieldSensitive">Sensitive</label>
-      <p-checkbox inputId="fieldApproval" [(ngModel)]="fieldDraft.requiresApproval" [binary]="true" />
+      <p-checkbox name="fieldApproval" inputId="fieldApproval" [(ngModel)]="fieldDraft.requiresApproval" [binary]="true" />
       <label for="fieldApproval">Requires approval</label>
     </div>
   </div>
@@ -260,6 +263,7 @@
 >
   <p class="hint">Paste schema.txt lines (one field per line). Required paths are unique.</p>
   <textarea
+    name="importText"
     pTextarea
     [(ngModel)]="importText"
     rows="7"
@@ -269,6 +273,7 @@
 
   <p class="hint">Or paste a JSON array of fields. JSON takes precedence when both are provided.</p>
   <textarea
+    name="importJson"
     pTextarea
     [(ngModel)]="importJson"
     rows="5"
