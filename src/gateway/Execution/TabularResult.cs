@@ -6,7 +6,8 @@ public sealed record TabularResult(
     string DataSource,
     long DurationMs,
     bool TimedOut = false,
-    string? Error = null)
+    string? Error = null,
+    IReadOnlyDictionary<string, string>? ColumnLabels = null)
 {
     public int RowCount => Rows.Count;
 

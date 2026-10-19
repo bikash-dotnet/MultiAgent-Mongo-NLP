@@ -124,7 +124,7 @@
             <label class="column-item">
               <input type="checkbox" [checked]="selectedColumns.has(column.name)"
                 (change)="toggleColumn(column.name, $any($event.target).checked)" />
-              <span>{{ column.name }}</span>
+              <span>{{ column.label ?? column.name }}</span>
             </label>
             }
           </div>

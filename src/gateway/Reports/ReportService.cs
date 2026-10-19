@@ -1,10 +1,12 @@
+using Gateway.Rules;
+
 namespace Gateway.Reports;
 
 public sealed record ReportBuild(bool Ready, string? Csv, string? Reason);
 
 public static class ReportService
 {
-    public static ReportBuild BuildCsv(IReadOnlyList<string> columns, bool awaitingApproval)
+    public static ReportBuild BuildCsv(IReadOnlyList<ColumnDefinition> columns, bool awaitingApproval)
     {
         if (awaitingApproval)
         {
@@ -22,7 +24,7 @@ public static class ReportService
         return new ReportBuild(true, CsvExporter.Export(DemoListingSource.Rows(), columns), null);
     }
 
-    public static ReportBuild BuildCsv(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<string> columns)
+    public static ReportBuild BuildCsv(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<ColumnDefinition> columns)
     {
         if (columns.Count == 0)
         {

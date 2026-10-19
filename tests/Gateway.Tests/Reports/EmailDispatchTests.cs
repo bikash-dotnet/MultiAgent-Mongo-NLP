@@ -1,5 +1,6 @@
 using System.Text;
 using Gateway.Reports;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Tests.Reports;
@@ -14,9 +15,10 @@ public class EmailDispatchTests
         {
             new Dictionary<string, string?> { ["name"] = "a" }
         };
+        var columns = new[] { new ColumnDefinition(ColumnDefinition.NewId(), "name", "name", ColumnDataType.String, null, 0, true, true, false, null, 0, null, null) };
 
-        var csv = service.Csv(["name"], rows);
-        var xlsx = service.Xlsx(["name"], rows);
+        var csv = service.Csv(columns, rows);
+        var xlsx = service.Xlsx(columns, rows);
 
         Assert.Equal("CSV", csv.Format);
         Assert.Equal("text/csv", csv.ContentType);

@@ -9,7 +9,7 @@
     <p-table [value]="execution.rows" [tableStyle]="{ 'min-width': '50rem' }" styleClass="p-datatable-striped p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
-          <th *ngFor="let column of execution.columns">{{ column }}</th>
+          <th *ngFor="let column of execution.columns">{{ label(column) }}</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>

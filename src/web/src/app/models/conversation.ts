@@ -3,6 +3,7 @@ import { ExecutionPayload } from './execution';
 export interface ColumnOption {
   name: string;
   selected: boolean;
+  label?: string | null;
 }
 
 export interface ConversationTurn {
