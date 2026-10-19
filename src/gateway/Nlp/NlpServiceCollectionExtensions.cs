@@ -14,6 +14,7 @@ using Gateway.Nlp.Router;
 using Gateway.Nlp.Slots;
 using Gateway.Persistence;
 using Gateway.Reports;
+using Gateway.Mcp;
 using Gateway.Rules;
 using Gateway.Schemas;
 using Microsoft.Extensions.Options;
@@ -117,6 +118,9 @@ public static class NlpServiceCollectionExtensions
         services.AddSingleton<BusinessRuleEngine>();
         services.AddSingleton<ColumnDefinitionService>();
         services.AddHostedService<RuleSeedHostedService>();
+
+        services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
+        services.AddHostedService<McpServerSeedHostedService>();
 
         services.AddSingleton<IAccessRequestStore, DurableAccessRequestStore>();
         services.AddSingleton<IAgentStateStore, DurableAgentStateStore>();
