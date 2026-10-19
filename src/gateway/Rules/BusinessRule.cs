@@ -22,6 +22,7 @@ public sealed record BusinessRule(
     public BusinessRule withVersion(int version) => this with { Version = version };
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<RuleScope>))]
 public enum RuleScope
 {
     Global,

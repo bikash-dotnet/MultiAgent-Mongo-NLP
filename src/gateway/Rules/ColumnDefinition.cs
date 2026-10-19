@@ -23,6 +23,7 @@ public sealed record ColumnDefinition(
     public ColumnDefinition withVersion(int version) => this with { Version = version };
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ColumnDataType>))]
 public enum ColumnDataType
 {
     String,
