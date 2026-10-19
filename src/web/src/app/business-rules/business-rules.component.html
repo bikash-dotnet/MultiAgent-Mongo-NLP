@@ -246,7 +246,7 @@
                 </td>
                 <td>
                   @if (canManage) {
-                    <input name="col-order-{{ column.id }}" pInputNumber [(ngModel)]="column.order" [min]="0" />
+                    <p-inputNumber name="col-order-{{ column.id }}" [(ngModel)]="column.order" [min]="0" />
                   } @else {
                     {{ column.order }}
                   }
@@ -347,7 +347,7 @@
           </div>
           <div class="form-group">
             <label>Priority</label>
-            <input name="ruleDraft-priority" pInputNumber [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
+            <p-inputNumber name="ruleDraft-priority" [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
             <small class="hint">Rules with the same priority run in ID order.</small>
           </div>
           <div class="form-group">
@@ -456,7 +456,7 @@
         </div>
         <div class="form-group">
           <label>Order</label>
-          <input name="columnDraft-order" pInputNumber [(ngModel)]="columnDraft.order" [min]="0" />
+          <p-inputNumber name="columnDraft-order" [(ngModel)]="columnDraft.order" [min]="0" />
         </div>
         <div class="form-row">
           <div class="form-group">

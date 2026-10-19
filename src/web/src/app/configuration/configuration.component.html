@@ -81,7 +81,8 @@
                         showClear="false"
                       />
                     } @else {
-                      <p-inputText
+                      <input
+                        pInputText
                         name="text-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [disabled]="!setting.editable || setting.secret"
