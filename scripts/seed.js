@@ -1,21 +1,23 @@
 // MongoDB seed script for MultiAgent-Mongo-NLP
 // Compatible with mongosh shell (MongoDB Compass, Studio 3T, mongosh CLI)
 // Usage: paste the entire file into the mongosh shell or run:
-//   mongosh --file scripts/seed.js
+//   mongosh <database-name> --file scripts/seed.js
 //
-// IMPORTANT: The .NET API reads from database configured by MongoDb:Database
-// (appsettings.json), defaulting to "sample_airbnb". Run mongosh against that
-// database, or switch with: use <database-name>
-//   mongosh sample_airbnb --file scripts/seed.js
+// The .NET API reads from database configured by MongoDb:Database
+// (default: "sample_airbnb"). Run mongosh against that database.
 //
-// Optional: set MONGODB_DB env var before launching mongosh if your wrapper
-// reads it to select the database.
+// Field naming convention: PascalCase for C# record properties (e.g. ValuesJson,
+// SectionKey, UpdatedAt, UpdatedBy). The _id field is the MongoDB document id.
+// Enums without [JsonStringEnumConverter] serialize as numbers:
+//   RuleScope: 0=Global, 1=Schema, 2=Role
+//   ColumnDataType: 0=String, 1=Number, 2=Currency, 3=Boolean, 4=Date
+// Enums WITH [JsonStringEnumConverter] serialize as strings:
+//   SettingsSource: "Default"/"Database"
+//   SchemaDataSource: "Mongo"/"EnterpriseCoreREST"/"Elasticsearch"
+//   SchemaFieldType: "String"/"Number"/"Boolean"/"Date"/"Object"/"Array"
+//   SettingType: "String"/"Number"/"Double"/"Boolean"/"Select"/"Url"/"Password"/"Port"
 
-// ----------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------
 const now = new Date();
-const dbName = (typeof __dbName !== 'undefined' && __dbName) ? __dbName : db.getName();
 
 // ----------------------------------------------------------------
 // Schema definition (mirrors Gateway.Schemas.SchemaSeeder.BuildDefault())
@@ -23,19 +25,19 @@ const dbName = (typeof __dbName !== 'undefined' && __dbName) ? __dbName : db.get
 //              src/gateway/Nlp/Assets/Schema/field_registry.json
 // ----------------------------------------------------------------
 const schemaFields = [
-  { path: 'name', dataType: 'String', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'price', dataType: 'Number', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'room_type', dataType: 'String', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'accommodates', dataType: 'Number', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'amenities', dataType: 'Array', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'beds', dataType: 'Number', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'bedrooms', dataType: 'Number', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'address.market', dataType: 'String', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'property_type', dataType: 'String', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'review_scores.rating', dataType: 'Number', isSensitive: false, requiresApproval: false, dataOwnerRoles: [], description: '' },
-  { path: 'address.location.coordinates', dataType: 'String', isSensitive: true, requiresApproval: true, dataOwnerRoles: ['DataOwner', 'Admin'], description: '' },
-  { path: 'host.host_verifications', dataType: 'String', isSensitive: true, requiresApproval: true, dataOwnerRoles: ['DataOwner', 'Admin'], description: '' },
-  { path: 'host.host_identity_verified', dataType: 'String', isSensitive: true, requiresApproval: false, dataOwnerRoles: ['DataOwner', 'Admin'], description: '' }
+  { Path: 'name', DataType: 'String', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'price', DataType: 'Number', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'room_type', DataType: 'String', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'accommodates', DataType: 'Number', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'amenities', DataType: 'Array', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'beds', DataType: 'Number', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'bedrooms', DataType: 'Number', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'address.market', DataType: 'String', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'property_type', DataType: 'String', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'review_scores.rating', DataType: 'Number', IsSensitive: false, RequiresApproval: false, DataOwnerRoles: [], Description: '' },
+  { Path: 'address.location.coordinates', DataType: 'String', IsSensitive: true, RequiresApproval: true, DataOwnerRoles: ['DataOwner', 'Admin'], Description: '' },
+  { Path: 'host.host_verifications', DataType: 'String', IsSensitive: true, RequiresApproval: true, DataOwnerRoles: ['DataOwner', 'Admin'], Description: '' },
+  { Path: 'host.host_identity_verified', DataType: 'String', IsSensitive: true, RequiresApproval: false, DataOwnerRoles: ['DataOwner', 'Admin'], Description: '' }
 ];
 
 const defaultSchema = {
@@ -49,12 +51,15 @@ const defaultSchema = {
   IsActiveSource: true,
   Version: 1,
   Description: 'Default schema seeded from field_registry.json and schema.txt.',
-  UpdatedAt: now
+  CreatedAt: now,
+  UpdatedAt: now,
+  UpdatedBy: 'seed'
 };
 
 // ----------------------------------------------------------------
 // Configuration defaults (mirrors Gateway.Configuration.SettingsCatalog)
 // Seeded as DB overrides in the app_settings collection.
+// SettingsDocument record: Id, ValuesJson, Version, Source, UpdatedAt, UpdatedBy
 // ----------------------------------------------------------------
 const configDefaults = [
   {
@@ -168,51 +173,54 @@ const configDefaults = [
 ];
 
 // ----------------------------------------------------------------
-// Business rule defaults (Sprint 12 seeded rules)
+// Business rule defaults (mirrors Gateway.Rules.RuleSeedHostedService)
+// BusinessRule record: Id, Name, Description, Scope, ScopeValue, Priority,
+//   Enabled, Condition, Action, Version, UpdatedAt, UpdatedBy
+// RuleScope enum has NO JsonStringEnumConverter -> numbers: 0=Global, 1=Schema, 2=Role
+// RuleAction.Parameters is IReadOnlyDictionary<string, string> -> all values are strings
 // ----------------------------------------------------------------
 const businessRules = [
   {
     _id: 'br_default_limit',
     Id: 'br_default_limit',
     Name: 'Default result limit',
-    Scope: 'Global',
+    Description: 'Apply the configured default result limit when the user does not specify one.',
+    Scope: 0,
     ScopeValue: null,
-    Priority: 100,
-    Enabled: true,
-    Condition: { Field: null, Operator: null, Values: [], Combine: 'AND' },
-    Actions: [ { Type: 'setDefault', Parameters: { key: 'Nlp.Defaults.Limit', value: 10 } } ],
-    Version: 1,
-    UpdatedAt: now,
-    UpdatedBy: 'seed'
-  },
-  {
-    _id: 'br_mask_sensitive',
-    Id: 'br_mask_sensitive',
-    Name: 'Mask sensitive fields',
-    Scope: 'Role',
-    ScopeValue: 'Analyst',
-    Priority: 50,
-    Enabled: true,
-    Condition: { Field: null, Operator: null, Values: [], Combine: 'AND' },
-    Actions: [
-      { Type: 'maskColumn', Parameters: { field: 'address.location.coordinates' } },
-      { Type: 'maskColumn', Parameters: { field: 'host.host_verifications' } },
-      { Type: 'maskColumn', Parameters: { field: 'host.host_identity_verified' } }
-    ],
-    Version: 1,
-    UpdatedAt: now,
-    UpdatedBy: 'seed'
-  },
-  {
-    _id: 'br_exempt_data_owner',
-    Id: 'br_exempt_data_owner',
-    Name: 'Exempt Data Owner from masking',
-    Scope: 'Role',
-    ScopeValue: 'Data Owner / Admin',
     Priority: 10,
     Enabled: true,
-    Condition: { Field: null, Operator: null, Values: [], Combine: 'AND' },
-    Actions: [ { Type: 'exemptRole', Parameters: { role: 'Data Owner / Admin' } } ],
+    Condition: { Field: '*', Operator: 'equals', Values: ['*'], Combine: 'all' },
+    Action: { Type: 'setDefault', Parameters: { key: 'limit', value: '10' } },
+    Version: 1,
+    UpdatedAt: now,
+    UpdatedBy: 'seed'
+  },
+  {
+    _id: 'br_deny_destructive',
+    Id: 'br_deny_destructive',
+    Name: 'Deny destructive operators',
+    Description: 'Reject write/admin operators as a defense-in-depth safety rule.',
+    Scope: 0,
+    ScopeValue: null,
+    Priority: 20,
+    Enabled: true,
+    Condition: { Field: '*', Operator: 'equals', Values: ['*'], Combine: 'all' },
+    Action: { Type: 'denyOperator', Parameters: { operator: 'delete' } },
+    Version: 1,
+    UpdatedAt: now,
+    UpdatedBy: 'seed'
+  },
+  {
+    _id: 'br_deny_drop',
+    Id: 'br_deny_drop',
+    Name: 'Deny drop operator',
+    Description: 'Reject the drop operator as a defense-in-depth safety rule.',
+    Scope: 0,
+    ScopeValue: null,
+    Priority: 21,
+    Enabled: true,
+    Condition: { Field: '*', Operator: 'equals', Values: ['*'], Combine: 'all' },
+    Action: { Type: 'denyOperator', Parameters: { operator: 'drop' } },
     Version: 1,
     UpdatedAt: now,
     UpdatedBy: 'seed'
@@ -221,6 +229,9 @@ const businessRules = [
 
 // ----------------------------------------------------------------
 // Column definition defaults
+// ColumnDefinition record: Id, Field, Label, DataType, Format, Order,
+//   VisibleByDefault, Exportable, Sensitive, Width, Version, UpdatedAt, UpdatedBy
+// ColumnDataType enum has NO JsonStringEnumConverter -> numbers: 0=String, 1=Number
 // ----------------------------------------------------------------
 const columnDefinitions = [
   { _id: 'cd_name', Id: 'cd_name', Field: 'name', Label: 'Name', DataType: 0, Format: null, Order: 0, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
@@ -235,7 +246,7 @@ const columnDefinitions = [
 // ----------------------------------------------------------------
 // Seed (idempotent: skips documents that already exist)
 // ----------------------------------------------------------------
-print('Seeding MultiAgent-Mongo-NLP into database: ' + dbName);
+print('Seeding MultiAgent-Mongo-NLP into database: ' + db.getName());
 
 // --- schemas ---
 const existingSchemas = db.schemas.countDocuments({});
