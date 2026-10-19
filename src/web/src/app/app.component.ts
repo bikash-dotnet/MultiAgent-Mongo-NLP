@@ -20,7 +20,8 @@ export class AppComponent {
     { label: 'Admin', icon: 'pi pi-chart-bar', routerLink: '/admin' },
     { label: 'Schemas', icon: 'pi pi-database', routerLink: '/schemas' },
     { label: 'Configuration', icon: 'pi pi-cog', routerLink: '/configuration' },
-    { label: 'Business Rules', icon: 'pi pi-sliders-h', routerLink: '/business-rules' }
+    { label: 'Business Rules', icon: 'pi pi-sliders-h', routerLink: '/business-rules' },
+    { label: 'MCP Servers', icon: 'pi pi-plug', routerLink: '/mcp-servers' }
   ];
 
   toggleMenu(): void {
