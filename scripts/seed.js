@@ -258,50 +258,37 @@ const columnDefinitions = [
 ];
 
 // ----------------------------------------------------------------
-// Seed (idempotent: skips documents that already exist)
+// Seed (upsert: replaces existing documents, ensuring camelCase field names)
+// Old PascalCase documents are overwritten on re-run.
 // ----------------------------------------------------------------
 print('Seeding MultiAgent-Mongo-NLP into database: ' + db.getName());
 
 // --- schemas ---
-const existingSchemas = db.schemas.countDocuments({});
-if (existingSchemas === 0) {
-  db.schemas.insertOne(defaultSchema);
-  print('[schemas] Inserted default schema: sch_airbnb_listings');
-} else {
-  print('[schemas] Skipped (' + existingSchemas + ' already exist)');
-}
+db.schemas.replaceOne({ _id: defaultSchema._id }, defaultSchema, { upsert: true });
+print('[schemas] Upserted default schema: sch_airbnb_listings');
 
 // --- app_settings (config overrides) ---
-let settingsInserted = 0;
+let settingsUpserted = 0;
 for (const doc of configDefaults) {
-  const exists = db.app_settings.countDocuments({ _id: doc._id });
-  if (exists === 0) {
-    db.app_settings.insertOne(doc);
-    settingsInserted++;
-  }
+  db.app_settings.replaceOne({ _id: doc._id }, doc, { upsert: true });
+  settingsUpserted++;
 }
-print('[app_settings] Inserted ' + settingsInserted + ' config sections');
+print('[app_settings] Upserted ' + settingsUpserted + ' config sections');
 
 // --- business_rules ---
-let rulesInserted = 0;
+let rulesUpserted = 0;
 for (const doc of businessRules) {
-  const exists = db.business_rules.countDocuments({ _id: doc._id });
-  if (exists === 0) {
-    db.business_rules.insertOne(doc);
-    rulesInserted++;
-  }
+  db.business_rules.replaceOne({ _id: doc._id }, doc, { upsert: true });
+  rulesUpserted++;
 }
-print('[business_rules] Inserted ' + rulesInserted + ' rules');
+print('[business_rules] Upserted ' + rulesUpserted + ' rules');
 
 // --- column_definitions ---
-let columnsInserted = 0;
+let columnsUpserted = 0;
 for (const doc of columnDefinitions) {
-  const exists = db.column_definitions.countDocuments({ _id: doc._id });
-  if (exists === 0) {
-    db.column_definitions.insertOne(doc);
-    columnsInserted++;
-  }
+  db.column_definitions.replaceOne({ _id: doc._id }, doc, { upsert: true });
+  columnsUpserted++;
 }
-print('[column_definitions] Inserted ' + columnsInserted + ' columns');
+print('[column_definitions] Upserted ' + columnsUpserted + ' columns');
 
 print('\nSeed complete.');
