@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccessRequest } from '../models/governance';
@@ -19,7 +19,8 @@ export class GovernanceQueueComponent implements OnInit {
 
   constructor(
     private readonly governance: GovernanceService,
-    private readonly session: SessionService
+    private readonly session: SessionService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -41,6 +42,7 @@ export class GovernanceQueueComponent implements OnInit {
       next: (requests) => {
         this.requests = requests;
         this.error = null;
+        this.cdr.markForCheck();
       },
       error: () => (this.error = 'Unable to load the approval queue.')
     });

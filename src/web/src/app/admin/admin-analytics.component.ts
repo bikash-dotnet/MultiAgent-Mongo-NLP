@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { catchError, interval, of, startWith, Subscription, switchMap } from 'rxjs';
 import { AdminAnalyticsMetrics } from '../models/analytics';
@@ -19,7 +19,7 @@ export class AdminAnalyticsComponent implements OnInit, OnDestroy {
 
   private sub = new Subscription();
 
-  constructor(private readonly analytics: AnalyticsService) {}
+  constructor(private readonly analytics: AnalyticsService, private readonly cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.sub.add(
@@ -41,6 +41,7 @@ export class AdminAnalyticsComponent implements OnInit, OnDestroy {
               this.metrics = metrics;
               this.error = null;
               this.refreshedAt = new Date();
+              this.cdr.markForCheck();
             }
           }
         })

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
@@ -63,7 +63,8 @@ export class ConfigurationComponent implements OnInit {
   constructor(
     private readonly configurationService: ConfigurationService,
     private readonly session: SessionService,
-    private readonly message: MessageService
+    private readonly message: MessageService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -78,6 +79,7 @@ export class ConfigurationComponent implements OnInit {
     this.configurationService.schema().subscribe({
       next: (schema) => {
         this.schema = schema;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load configuration schema.';
@@ -97,6 +99,7 @@ export class ConfigurationComponent implements OnInit {
           });
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load configuration.';

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConversationService } from '../services/conversation.service';
 
@@ -40,7 +40,7 @@ export class GovernanceToggleComponent implements OnInit {
   enabled = true;
   error: string | null = null;
 
-  constructor(private readonly conversations: ConversationService) {}
+  constructor(private readonly conversations: ConversationService, private readonly cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     if (!this.visible) {
@@ -51,6 +51,7 @@ export class GovernanceToggleComponent implements OnInit {
       next: (flag) => (this.enabled = flag.enabled),
       error: () => (this.error = 'Unable to read the approval flag.')
     });
+    this.cdr.markForCheck();
   }
 
   toggle(enabled: boolean): void {
@@ -59,10 +60,12 @@ export class GovernanceToggleComponent implements OnInit {
       next: (flag) => {
         this.enabled = flag.enabled;
         this.error = null;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.enabled = !enabled;
         this.error = 'Unable to change the approval flag.';
+        this.cdr.markForCheck();
       }
     });
   }

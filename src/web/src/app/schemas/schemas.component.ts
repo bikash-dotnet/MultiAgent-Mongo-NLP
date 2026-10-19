@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
@@ -100,7 +100,8 @@ export class SchemasComponent implements OnInit {
   constructor(
     private readonly schemasService: SchemasService,
     private readonly session: SessionService,
-    private readonly confirmation: ConfirmationService
+    private readonly confirmation: ConfirmationService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -122,6 +123,7 @@ export class SchemasComponent implements OnInit {
       next: (response) => {
         this.schemas = response.schemas;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.error = 'Unable to load schemas.';
