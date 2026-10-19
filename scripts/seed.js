@@ -8,14 +8,13 @@
 //
 // Field naming convention: PascalCase for C# record properties (e.g. ValuesJson,
 // SectionKey, UpdatedAt, UpdatedBy). The _id field is the MongoDB document id.
-// Enums without [JsonStringEnumConverter] serialize as numbers:
-//   RuleScope: 0=Global, 1=Schema, 2=Role
-//   ColumnDataType: 0=String, 1=Number, 2=Currency, 3=Boolean, 4=Date
 // Enums WITH [JsonStringEnumConverter] serialize as strings:
 //   SettingsSource: "Default"/"Database"
 //   SchemaDataSource: "Mongo"/"EnterpriseCoreREST"/"Elasticsearch"
 //   SchemaFieldType: "String"/"Number"/"Boolean"/"Date"/"Object"/"Array"
 //   SettingType: "String"/"Number"/"Double"/"Boolean"/"Select"/"Url"/"Password"/"Port"
+//   ColumnDataType: "String"/"Number"/"Currency"/"Boolean"/"Date"
+//   RuleScope: "Global"/"Schema"/"Role"
 
 const now = new Date();
 
@@ -176,7 +175,7 @@ const configDefaults = [
 // Business rule defaults (mirrors Gateway.Rules.RuleSeedHostedService)
 // BusinessRule record: Id, Name, Description, Scope, ScopeValue, Priority,
 //   Enabled, Condition, Action, Version, UpdatedAt, UpdatedBy
-// RuleScope enum has NO JsonStringEnumConverter -> numbers: 0=Global, 1=Schema, 2=Role
+// RuleScope uses JsonStringEnumConverter -> strings: "Global"/"Schema"/"Role"
 // RuleAction.Parameters is IReadOnlyDictionary<string, string> -> all values are strings
 // ----------------------------------------------------------------
 const businessRules = [
@@ -185,7 +184,7 @@ const businessRules = [
     Id: 'br_default_limit',
     Name: 'Default result limit',
     Description: 'Apply the configured default result limit when the user does not specify one.',
-    Scope: 0,
+    Scope: 'Global',
     ScopeValue: null,
     Priority: 10,
     Enabled: true,
@@ -200,7 +199,7 @@ const businessRules = [
     Id: 'br_deny_destructive',
     Name: 'Deny destructive operators',
     Description: 'Reject write/admin operators as a defense-in-depth safety rule.',
-    Scope: 0,
+    Scope: 'Global',
     ScopeValue: null,
     Priority: 20,
     Enabled: true,
@@ -215,7 +214,7 @@ const businessRules = [
     Id: 'br_deny_drop',
     Name: 'Deny drop operator',
     Description: 'Reject the drop operator as a defense-in-depth safety rule.',
-    Scope: 0,
+    Scope: 'Global',
     ScopeValue: null,
     Priority: 21,
     Enabled: true,
@@ -231,16 +230,16 @@ const businessRules = [
 // Column definition defaults
 // ColumnDefinition record: Id, Field, Label, DataType, Format, Order,
 //   VisibleByDefault, Exportable, Sensitive, Width, Version, UpdatedAt, UpdatedBy
-// ColumnDataType enum has NO JsonStringEnumConverter -> numbers: 0=String, 1=Number
+// ColumnDataType uses JsonStringEnumConverter -> strings: "String"/"Number"
 // ----------------------------------------------------------------
 const columnDefinitions = [
-  { _id: 'cd_name', Id: 'cd_name', Field: 'name', Label: 'Name', DataType: 0, Format: null, Order: 0, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_price', Id: 'cd_price', Field: 'price', Label: 'Price', DataType: 1, Format: 'USD', Order: 1, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_room_type', Id: 'cd_room_type', Field: 'room_type', Label: 'Room Type', DataType: 0, Format: null, Order: 2, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_address_market', Id: 'cd_address_market', Field: 'address.market', Label: 'Market', DataType: 0, Format: null, Order: 3, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_review_rating', Id: 'cd_review_rating', Field: 'review_scores.rating', Label: 'Rating', DataType: 1, Format: null, Order: 4, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_address_coordinates', Id: 'cd_address_coordinates', Field: 'address.location.coordinates', Label: 'Coordinates', DataType: 0, Format: null, Order: 10, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_host_verifications', Id: 'cd_host_verifications', Field: 'host.host_verifications', Label: 'Host Verifications', DataType: 0, Format: null, Order: 11, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' }
+  { _id: 'cd_name', Id: 'cd_name', Field: 'name', Label: 'Name', DataType: 'String', Format: null, Order: 0, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_price', Id: 'cd_price', Field: 'price', Label: 'Price', DataType: 'Number', Format: 'USD', Order: 1, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_room_type', Id: 'cd_room_type', Field: 'room_type', Label: 'Room Type', DataType: 'String', Format: null, Order: 2, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_address_market', Id: 'cd_address_market', Field: 'address.market', Label: 'Market', DataType: 'String', Format: null, Order: 3, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_review_rating', Id: 'cd_review_rating', Field: 'review_scores.rating', Label: 'Rating', DataType: 'Number', Format: null, Order: 4, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_address_coordinates', Id: 'cd_address_coordinates', Field: 'address.location.coordinates', Label: 'Coordinates', DataType: 'String', Format: null, Order: 10, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_host_verifications', Id: 'cd_host_verifications', Field: 'host.host_verifications', Label: 'Host Verifications', DataType: 'String', Format: null, Order: 11, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' }
 ];
 
 // ----------------------------------------------------------------
