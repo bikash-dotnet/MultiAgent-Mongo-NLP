@@ -19,7 +19,7 @@
 //   ColumnDataType: "String"/"Number"/"Currency"/"Boolean"/"Date"
 //   RuleScope: "Global"/"Schema"/"Role"
 
-const now = new Date();
+const now = new Date().toISOString();
 
 // ----------------------------------------------------------------
 // Schema definition (mirrors Gateway.Schemas.SchemaSeeder.BuildDefault())
