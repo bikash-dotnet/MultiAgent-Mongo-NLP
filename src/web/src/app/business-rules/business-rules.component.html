@@ -64,6 +64,7 @@
               <tr>
                 <td>
                   <p-toggleSwitch
+                    name="rule-enabled-{{ rule.id }}"
                     [(ngModel)]="rule.enabled"
                     (onChange)="toggleRule(rule)"
                     [inputId]="'rule-enabled-' + rule.id"
@@ -130,9 +131,9 @@
           <p>Enter a requester role and comma-separated field set to preview which rules would fire.</p>
           <div class="tester-form">
             <label>Requester role</label>
-            <input pInputText [(ngModel)]="testerRole" placeholder="e.g. Data Owner / Admin" />
+            <input name="testerRole" pInputText [(ngModel)]="testerRole" placeholder="e.g. Data Owner / Admin" />
             <label>Fields (comma-separated)</label>
-            <input pInputText [(ngModel)]="testerFields" placeholder="e.g. price, address.market" />
+            <input name="testerFields" pInputText [(ngModel)]="testerFields" placeholder="e.g. price, address.market" />
             <p-button label="Test" icon="pi pi-search" (onClick)="testRules()" [loading]="testing" [disabled]="!testerRole.trim()" />
           </div>
 
@@ -217,43 +218,44 @@
                 </td>
                 <td>
                   @if (canManage) {
-                    <input pInputText [(ngModel)]="column.label" />
+                    <input name="col-label-{{ column.id }}" pInputText [(ngModel)]="column.label" />
                   } @else {
                     {{ column.label }}
                   }
                 </td>
                 <td>
                   @if (canManage) {
-                    <p-select
-                      [(ngModel)]="column.dataType"
-                      [options]="DataTypeOptions"
-                      optionLabel="label"
-                      optionValue="value"
-                      [showClear]="false"
-                    />
+                      <p-select
+                        name="col-datatype-{{ column.id }}"
+                        [(ngModel)]="column.dataType"
+                        [options]="DataTypeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        [showClear]="false"
+                      />
                   } @else {
                     <p-badge [value]="column.dataType" [severity]="dataTypeBadge(column.dataType)" />
                   }
                 </td>
                 <td>
                   @if (canManage) {
-                    <input pInputText [(ngModel)]="column.format" placeholder="optional" />
+                    <input name="col-format-{{ column.id }}" pInputText [(ngModel)]="column.format" placeholder="optional" />
                   } @else {
                     {{ column.format || '\u2014' }}
                   }
                 </td>
                 <td>
                   @if (canManage) {
-                    <input pInputNumber [(ngModel)]="column.order" [min]="0" />
+                    <input name="col-order-{{ column.id }}" pInputNumber [(ngModel)]="column.order" [min]="0" />
                   } @else {
                     {{ column.order }}
                   }
                 </td>
                 <td>
-                  <p-toggleSwitch [(ngModel)]="column.visibleByDefault" [inputId]="'col-visible-' + column.id" />
+                  <p-toggleSwitch name="col-visible-{{ column.id }}" [(ngModel)]="column.visibleByDefault" [inputId]="'col-visible-' + column.id" />
                 </td>
                 <td>
-                  <p-toggleSwitch [(ngModel)]="column.exportable" [inputId]="'col-export-' + column.id" />
+                  <p-toggleSwitch name="col-export-{{ column.id }}" [(ngModel)]="column.exportable" [inputId]="'col-export-' + column.id" />
                 </td>
                 @if (canManage) {
                   <td>
@@ -319,16 +321,17 @@
         <div class="dialog-form">
           <div class="form-group">
             <label>Name</label>
-            <input pInputText [(ngModel)]="ruleDraft.name" placeholder="e.g. Default result limit" />
+            <input name="ruleDraft-name" pInputText [(ngModel)]="ruleDraft.name" placeholder="e.g. Default result limit" />
           </div>
           <div class="form-group">
             <label>Description</label>
-            <textarea pInputTextarea [(ngModel)]="ruleDraft.description" placeholder="Optional description" rows="2"></textarea>
+            <textarea name="ruleDraft-description" pInputTextarea [(ngModel)]="ruleDraft.description" placeholder="Optional description" rows="2"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Scope</label>
               <p-select
+                name="ruleDraft-scope"
                 [(ngModel)]="ruleDraft.scope"
                 [options]="ScopeOptions"
                 optionLabel="label"
@@ -338,47 +341,48 @@
             </div>
             <div class="form-group">
               <label>Scope value</label>
-              <input pInputText [(ngModel)]="ruleDraft.scopeValue" placeholder="Schema ID or role" />
+              <input name="ruleDraft-scopeValue" pInputText [(ngModel)]="ruleDraft.scopeValue" placeholder="Schema ID or role" />
               <small class="hint">Only for Schema or Role scope.</small>
             </div>
           </div>
           <div class="form-group">
             <label>Priority</label>
-            <input pInputNumber [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
+            <input name="ruleDraft-priority" pInputNumber [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
             <small class="hint">Rules with the same priority run in ID order.</small>
           </div>
           <div class="form-group">
             <label>Enabled</label>
-            <p-toggleSwitch [(ngModel)]="ruleDraft.enabled" />
+            <p-toggleSwitch name="ruleDraft-enabled" [(ngModel)]="ruleDraft.enabled" />
           </div>
           <div class="form-group">
             <label>Condition</label>
             <div class="condition-builder">
               <div class="cond-field">
                 <label>Field</label>
-                <input pInputText [(ngModel)]="ruleDraft.condition.field" placeholder="e.g. price" />
+                <input name="ruleDraft-condition-field" pInputText [(ngModel)]="ruleDraft.condition.field" placeholder="e.g. price" />
               </div>
               <div class="cond-field">
                 <label>Operator</label>
-                <input pInputText [(ngModel)]="ruleDraft.condition.operator" placeholder="e.g. equals" />
+                <input name="ruleDraft-condition-operator" pInputText [(ngModel)]="ruleDraft.condition.operator" placeholder="e.g. equals" />
               </div>
               <div class="cond-field">
                 <label>Values</label>
-                <input pInputText [(ngModel)]="conditionValuesText" placeholder="e.g. eq, ne" />
+                <input name="conditionValuesText" pInputText [(ngModel)]="conditionValuesText" placeholder="e.g. eq, ne" />
                 <small class="hint">Comma-separated values.</small>
               </div>
               <div class="cond-field">
                 <label>Combine</label>
-                <p-select
-                  [(ngModel)]="ruleDraft.condition.combine"
-                  [options]="[
-                    { label: 'All (AND)', value: 'all' },
-                    { label: 'Any (OR)', value: 'any' }
-                  ]"
-                  optionLabel="label"
-                  optionValue="value"
-                  [showClear]="false"
-                />
+              <p-select
+                name="ruleDraft-condition-combine"
+                [(ngModel)]="ruleDraft.condition.combine"
+                [options]="[
+                  { label: 'All (AND)', value: 'all' },
+                  { label: 'Any (OR)', value: 'any' }
+                ]"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="false"
+              />
               </div>
             </div>
           </div>
@@ -386,6 +390,7 @@
             <label>Action</label>
             <div class="action-picker">
               <p-select
+                name="ruleDraft-action-type"
                 [(ngModel)]="ruleDraft.action.type"
                 [options]="RuleActions"
                 optionLabel="label"
@@ -398,7 +403,7 @@
             @for (param of actionParams(); track param.key) {
               <div class="form-group">
                 <label>{{ param.label }}</label>
-                <input pInputText [(ngModel)]="ruleDraft.action.parameters[param.key]" />
+                <input name="ruleDraft-action-param-{{ param.key }}" pInputText [(ngModel)]="ruleDraft.action.parameters[param.key]" />
               </div>
             }
           </div>
@@ -425,16 +430,17 @@
       <div class="dialog-form">
         <div class="form-group">
           <label>Field</label>
-          <input pInputText [(ngModel)]="columnDraft.field" placeholder="e.g. price" />
+          <input name="columnDraft-field" pInputText [(ngModel)]="columnDraft.field" placeholder="e.g. price" />
         </div>
         <div class="form-group">
           <label>Label</label>
-          <input pInputText [(ngModel)]="columnDraft.label" placeholder="e.g. Price" />
+          <input name="columnDraft-label" pInputText [(ngModel)]="columnDraft.label" placeholder="e.g. Price" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Data type</label>
             <p-select
+              name="columnDraft-dataType"
               [(ngModel)]="columnDraft.dataType"
               [options]="DataTypeOptions"
               optionLabel="label"
@@ -444,31 +450,31 @@
           </div>
           <div class="form-group">
             <label>Format</label>
-            <input pInputText [(ngModel)]="columnDraft.format" placeholder="e.g. USD or yyyy-MM-dd" />
+            <input name="columnDraft-format" pInputText [(ngModel)]="columnDraft.format" placeholder="e.g. USD or yyyy-MM-dd" />
             <small class="hint">Required for Currency and Date types.</small>
           </div>
         </div>
         <div class="form-group">
           <label>Order</label>
-          <input pInputNumber [(ngModel)]="columnDraft.order" [min]="0" />
+          <input name="columnDraft-order" pInputNumber [(ngModel)]="columnDraft.order" [min]="0" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Visible by default</label>
-            <p-toggleSwitch [(ngModel)]="columnDraft.visibleByDefault" />
+            <p-toggleSwitch name="columnDraft-visibleByDefault" [(ngModel)]="columnDraft.visibleByDefault" />
           </div>
           <div class="form-group">
             <label>Exportable</label>
-            <p-toggleSwitch [(ngModel)]="columnDraft.exportable" />
+            <p-toggleSwitch name="columnDraft-exportable" [(ngModel)]="columnDraft.exportable" />
           </div>
           <div class="form-group">
             <label>Sensitive</label>
-            <p-toggleSwitch [(ngModel)]="columnDraft.sensitive" />
+            <p-toggleSwitch name="columnDraft-sensitive" [(ngModel)]="columnDraft.sensitive" />
           </div>
         </div>
         <div class="form-group">
           <label>Width</label>
-          <input pInputText [(ngModel)]="columnDraft.width" placeholder="e.g. 200px" />
+          <input name="columnDraft-width" pInputText [(ngModel)]="columnDraft.width" placeholder="e.g. 200px" />
         </div>
       </div>
     </ng-template>
