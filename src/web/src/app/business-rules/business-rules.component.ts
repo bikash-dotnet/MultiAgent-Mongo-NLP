@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
@@ -90,7 +90,7 @@ const DATA_TYPE_OPTIONS = [
     BadgeModule,
     ConfirmDialogModule
   ],
-  providers: [],
+  providers: [ConfirmationService],
   templateUrl: './business-rules.component.html',
   styleUrl: './business-rules.component.scss'
 })
@@ -125,7 +125,8 @@ export class BusinessRulesComponent implements OnInit {
     private readonly businessRulesService: BusinessRulesService,
     private readonly session: SessionService,
     private readonly message: MessageService,
-    private readonly confirmation: ConfirmationService
+    private readonly confirmation: ConfirmationService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -140,6 +141,7 @@ export class BusinessRulesComponent implements OnInit {
       next: (rules) => {
         this.rules = rules;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load business rules.';
@@ -152,6 +154,7 @@ export class BusinessRulesComponent implements OnInit {
     this.businessRulesService.listColumnDefinitions().subscribe({
       next: (columns) => {
         this.columns = columns.sort((a, b) => a.order - b.order);
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load column definitions.';
