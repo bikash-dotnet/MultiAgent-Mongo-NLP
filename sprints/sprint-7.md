@@ -32,7 +32,7 @@
 ### S7-01 Narrative Insights Agent
 - Standard briefing: counts, median prices, top locations via templates (zero tokens)
 - Optional qualitative summary: NVIDIA path, still AST-checked if it re-queries
-- Stream briefing text over SSE
+- Stream briefing text over SignalR
 
 ### S7-02 In-memory export (BRD-FR-11)
 - CSV and XLSX generated in `MemoryStream` / `RecyclableMemoryStream`

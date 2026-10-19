@@ -3319,7 +3319,7 @@ Replace `src/web/src/app/app.component.html` with:
 
     <aside class="telemetry">
       <h2>Agent swarm</h2>
-      <p>Transport: Server-Sent Events</p>
+      <p>Transport: SignalR (WebSockets)</p>
       <p class="status">Status: {{ streamStatus }}</p>
       <ul class="activity">
         @for (event of agentActivity; track $index) {

@@ -138,7 +138,7 @@ sequenceDiagram
          });
 
          this.hubConnection.start().catch(() => {
-           this.zone.run(() => this.eventSubject.next({ event: 'sse-disconnected', data: 'error' }));
+           this.zone.run(() => this.eventSubject.next({ event: 'signalr-connection-failed', data: 'error' }));
          });
 
          return this.eventSubject.asObservable();

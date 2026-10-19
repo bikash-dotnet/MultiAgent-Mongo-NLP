@@ -54,7 +54,7 @@
 
 ### S6-05 Results grid
 - Angular Material / PrimeNG grid bound to execution payload
-- Stream `agent.executing` / `agent.completed` SSE events
+- Stream `agent.executing` / `agent.completed` SignalR events
 
 ---
 

@@ -317,7 +317,7 @@ The existing governance flag endpoints and chat endpoints are unchanged.
   lack the authority; the server remains the source of truth.
 - The chat pause state shows the captured justification and, for approvers, a link to
   `/governance`.
-- After any action the queue refreshes; SSE already carries `governance.approved` and
+- After any action the queue refreshes; SignalR already carries `governance.approved` and
   `governance.rejected` for clients that subscribe.
 
 ## 15. Error handling and fail-closed behaviour

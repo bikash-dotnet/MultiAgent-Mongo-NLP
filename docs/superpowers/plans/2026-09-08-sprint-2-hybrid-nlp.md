@@ -2030,7 +2030,7 @@ After `app.UseAuthorization();` add the service registration before `app.Build()
 builder.Services.AddGatewayNlp(builder.Configuration);
 ```
 
-Add the endpoint after the greeting endpoint (still inside the file, before the SSE stream or after — order irrelevant in Minimal APIs), using a helper that maps the route:
+Add the endpoint after the greeting endpoint (still inside the file, before the SignalR hub mapping or after — order irrelevant in Minimal APIs), using a helper that maps the route:
 
 ```csharp
 app.MapPost("/api/nlp/query", (NlpQueryRequest request, INlpRouter router) =>
@@ -2195,4 +2195,4 @@ git push
 - If `dotnet` is not on PATH, prefix with `DOTNET_ROOT=/root/.dotnet` and add `/root/.dotnet` to PATH (as done in Sprint 1).
 - `docs/BRD.md`, `sprints/sprint-0.md`, and the SPA are intentionally not modified by this sprint (except the sprint-2.md acceptance ticks). Update `sprints/sprint-0.md` only if the sprint index format requires it (check Sprint 1 precedent — it did not list sprint files).
 - If Scriban `for.last` rendering is problematic in the match template, fall back to the `conditions_joined` variant noted in Task 7 — tests pin the exact JSON shape either way.
-- WebApplicationFactory resolves the embedder lazily; endpoints not touching NLP (health/greeting/SSE) work even before model download, keeping Sprint 1 tests independent.
+- WebApplicationFactory resolves the embedder lazily; endpoints not touching NLP (health/greeting/SignalR) work even before model download, keeping Sprint 1 tests independent.

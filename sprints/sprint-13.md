@@ -48,7 +48,7 @@ services rather than an `Agent` base class:
 
 `GovernanceService` is cross-cutting (approvals/overrides) and is not one of the six. There is
 currently **no first-class agent registry**; agent identity surfaces only through the `agent.*`
-SSE event vocabulary. Sprint 13 stores the MCP tool surface these agents may call; a dedicated
+events streamed over the SignalR hub (`/hubs/agent-stream`). Sprint 13 stores the MCP tool surface these agents may call; a dedicated
 Agent Registry (per-agent enablement, model binding, tool grants) is a follow-on sprint.
 
 ---

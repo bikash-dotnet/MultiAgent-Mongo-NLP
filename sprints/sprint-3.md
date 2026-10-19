@@ -35,7 +35,7 @@
 - Session identity already from Sprint 1
 - Max-1 Clarification Rule: never more than one follow-up per turn
 - Silent fallbacks: `limit(10)`, `sort: rating_desc`, `market: All`
-- Stream agent status events over existing SSE (`agent.started`, `agent.clarifying`, `agent.completed`)
+- Stream agent status events over the existing SignalR hub (`agent.started`, `agent.clarifying`, `agent.completed`)
 
 ### S3-02 Query generator agent
 - Invoke NVIDIA NIM **only** when Sprint 2 router returns `COMPLEX_LLM_REQUIRED`

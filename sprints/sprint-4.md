@@ -47,7 +47,7 @@
 ### S4-04 Field sensitivity registry (BRD-FR-05)
 - Seed `schema_field_registry` including `address.location.coordinates` and host verification fields
 - Flags: `is_sensitive`, `requires_approval`, `data_owner_roles`
-- If `requires_approval` and no exemption yet: halt and emit `governance.paused` SSE event
+- If `requires_approval` and no exemption yet: halt and emit a `governance.paused` SignalR event
 - Create `access_requests` stub with status `PENDING_LEAD` (approval UX in Sprint 5)
 
 ### S4-05 Guardrail agent in the SK graph

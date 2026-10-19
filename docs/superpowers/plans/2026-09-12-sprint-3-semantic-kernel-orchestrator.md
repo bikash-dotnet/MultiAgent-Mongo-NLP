@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a Semantic Kernel style orchestrator that, for complex English queries only, calls NVIDIA NIM to synthesize a validated MongoDB aggregation pipeline, retries on invalid output up to 3 times, streams agent status events over SSE, and shows that activity in the SPA.
+**Goal:** Add a Semantic Kernel style orchestrator that, for complex English queries only, calls NVIDIA NIM to synthesize a validated MongoDB aggregation pipeline, retries on invalid output up to 3 times, streams agent status events over SignalR, and shows that activity in the SPA.
 
-**Architecture:** Keep the Sprint 2 deterministic pipeline intact. The router now marks every complex intent `ComplexLlmRequired`; a new `NlpOrchestrator` supervises: simple/cached/clarify paths pass through untouched, complex paths invoke an `ILlmQueryGenerator` (NVIDIA NIM via a Semantic Kernel chat-completion service) wrapped in a self-correcting loop that validates the produced pipeline with a light schema validator. Orchestrator stages publish `AgentEvent`s into an in-memory sink that the existing `GET /api/agents/stream` endpoint drains as SSE. An in-memory `IAgentStateStore` captures paused/governance state for later sprints. The SPA subscribes to the new SSE events and posts utterances to `/api/nlp/query`.
+**Architecture:** Keep the Sprint 2 deterministic pipeline intact. The router now marks every complex intent `ComplexLlmRequired`; a new `NlpOrchestrator` supervises: simple/cached/clarify paths pass through untouched, complex paths invoke an `ILlmQueryGenerator` (NVIDIA NIM via a Semantic Kernel chat-completion service) wrapped in a self-correcting loop that validates the produced pipeline with a light schema validator. Orchestrator stages publish `AgentEvent`s into an in-memory sink that dispatches them to SignalR clients through the `/hubs/agent-stream` hub. An in-memory `IAgentStateStore` captures paused/governance state for later sprints. The SPA subscribes to the new SignalR events and posts utterances to `/api/nlp/query`.
 
 **Tech Stack:** .NET 10 (`net10.0`), ASP.NET Core Minimal APIs, `Microsoft.SemanticKernel` 1.80.1 + `Microsoft.SemanticKernel.Connectors.OpenAI` 1.80.1 (OpenAI-compatible, pointed at the NVIDIA NIM endpoint), `System.Threading.Channels`, xUnit 2.9.3 + `WebApplicationFactory`, Angular 21 standalone components with Vitest 4 + jsdom.
 
@@ -1402,7 +1402,7 @@ git commit -m "Add NLP orchestrator supervisor and in-memory agent event sink"
 
 ---
 
-### Task 7: DI wiring, orchestrator endpoint, and SSE agent events
+### Task 7: DI wiring, orchestrator endpoint, and SignalR agent events
 
 **Files:**
 - Modify: `src/gateway/Nlp/NlpServiceCollectionExtensions.cs:12-34`
@@ -1538,7 +1538,7 @@ public static class NlpServiceCollectionExtensions
 }
 ```
 
-- [ ] **Step 4: Update the endpoint and SSE stream**
+- [ ] **Step 4: Update the endpoint and SignalR hub**
 
 In `src/gateway/Program.cs`, add the orchestrator using (next to `using Gateway.Nlp.Router;`):
 
@@ -1568,41 +1568,13 @@ app.MapPost("/api/nlp/query", async (NlpQueryRequest request, ClaimsPrincipal us
 }).RequireAuthorization();
 ```
 
-Replace the `/api/agents/stream` mapping (lines 134-158) with:
+Replace the `/api/agents/stream` mapping (lines 134-158) with the SignalR hub mapping:
 
 ```csharp
-app.MapGet("/api/agents/stream", async (HttpContext context, IAgentEventSink events, CancellationToken cancellationToken) =>
-{
-    context.Response.Headers.ContentType = "text/event-stream";
-    context.Response.Headers.CacheControl = "no-cache";
-    context.Response.Headers.Connection = "keep-alive";
-
-    await WriteAgentEvent(context, new AgentEvent("agent.idle", "idle"), cancellationToken);
-
-    try
-    {
-        await foreach (var agentEvent in events.ReadAllAsync(cancellationToken))
-        {
-            await WriteAgentEvent(context, agentEvent, cancellationToken);
-        }
-    }
-    catch (OperationCanceledException)
-    {
-    }
-}).RequireAuthorization();
+app.MapHub<AgentHub>("/hubs/agent-stream").RequireAuthorization();
 ```
 
-Immediately before `public partial class Program;` (currently line 162), add the helper:
-
-```csharp
-static async Task WriteAgentEvent(HttpContext context, AgentEvent agentEvent, CancellationToken cancellationToken)
-{
-    var payload = JsonSerializer.Serialize(new { status = agentEvent.Status, detail = agentEvent.Detail });
-    await context.Response.WriteAsync($"event: {agentEvent.Name}\n", cancellationToken);
-    await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
-    await context.Response.Body.FlushAsync(cancellationToken);
-}
-```
+`InMemoryAgentEventSink` receives `IHubContext<AgentHub, IAgentHubClient>` and dispatches each `AgentEvent` through `IAgentHubClient.ReceiveAgentEvent`. No streaming response helper is required.
 
 - [ ] **Step 5: Run the full suite**
 
@@ -1619,7 +1591,7 @@ Expected: PASS. Simple queries still return `SimpleMql` with zero tokens; the co
 
 ```bash
 git add src/gateway/Nlp/NlpServiceCollectionExtensions.cs src/gateway/Program.cs tests/Gateway.Tests/ApiContractTests.cs
-git commit -m "Wire orchestrator into DI, endpoint, and SSE agent stream"
+git commit -m "Wire orchestrator into DI, endpoint, and SignalR agent hub"
 ```
 
 ---
@@ -1636,7 +1608,7 @@ git commit -m "Wire orchestrator into DI, endpoint, and SSE agent stream"
 - Test: `src/web/src/app/app.component.spec.ts:26-32` (add provider)
 
 **Interfaces:**
-- Consumes: gateway `POST /api/nlp/query`, `GET /api/agents/stream` events `agent.started`, `agent.clarifying`, `agent.completed`.
+- Consumes: gateway `POST /api/nlp/query`, `/hubs/agent-stream` SignalR events `agent.started`, `agent.clarifying`, `agent.completed`.
 - Produces:
   - `AgentStreamService.connect()` emits every listed event.
   - `NlpQueryService.query(utterance: string): Observable<NlpQueryResponse>`.
@@ -1737,38 +1709,33 @@ export class NlpQueryService {
 }
 ```
 
-- [ ] **Step 4: Extend the SSE service**
+- [ ] **Step 4: Extend the SignalR service**
 
-Replace `connect()` in `src/web/src/app/services/agent-stream.service.ts` with:
+Add `import { HubConnectionBuilder } from '@microsoft/signalr';` at the top of the file, then replace `connect()` in `src/web/src/app/services/agent-stream.service.ts` with:
 
 ```typescript
   connect(): Observable<AgentEvent> {
     return new Observable((subscriber) => {
       const token = this.session.token();
-      const params = new URLSearchParams();
-      if (token) {
-        params.set('access_token', token);
-      }
-      const source = new EventSource(`/api/agents/stream?${params.toString()}`);
-      const names = ['agent.idle', 'agent.started', 'agent.clarifying', 'agent.completed'];
+      const connection = new HubConnectionBuilder()
+        .withUrl('/hubs/agent-stream', token ? { accessTokenFactory: () => token } : {})
+        .withAutomaticReconnect()
+        .build();
 
-      const handlers = names.map((name) => {
-        const handler = (event: MessageEvent) => {
-          this.zone.run(() => subscriber.next({ event: name, data: event.data }));
-        };
-        source.addEventListener(name, handler as EventListener);
-        return { name, handler };
+      connection.on('ReceiveAgentEvent', (event: string, data: string) => {
+        this.zone.run(() => subscriber.next({ event, data }));
       });
 
-      source.onerror = () => {
-        this.zone.run(() => subscriber.error(new Error('sse-disconnected')));
-      };
+      connection.onclose(() => {
+        this.zone.run(() => subscriber.error(new Error('signalr-disconnected')));
+      });
+
+      connection.start().catch(() => {
+        this.zone.run(() => subscriber.error(new Error('signalr-connection-failed')));
+      });
 
       return () => {
-        for (const { name, handler } of handlers) {
-          source.removeEventListener(name, handler as EventListener);
-        }
-        source.close();
+        void connection.stop();
       };
     });
   }
@@ -1872,7 +1839,7 @@ Replace the `<section class="telemetry">` block in `src/web/src/app/app.componen
 ```html
   <section class="telemetry">
     <h2>Agent swarm</h2>
-    <p>Transport: Server-Sent Events</p>
+    <p>Transport: SignalR (WebSockets)</p>
     <p class="status">Status: {{ streamStatus }}</p>
     <ul class="activity">
       @for (event of agentActivity; track $index) {
@@ -2083,5 +2050,5 @@ git commit -m "Record complex MQL orchestration benchmark and tick Sprint 3 crit
 - Run `.NET` commands with `export PATH="$PATH:/root/.dotnet"`; the SDK is at `/root/.dotnet/dotnet` (v10.0.400). Angular commands run from `src/web`.
 - `NvidiaNim:ApiKey` is `TBD` in this environment, so complex queries correctly return `ComplexLlmFailed` with an "NVIDIA NIM is not configured" style error at runtime. Once a real key is provided via env `NvidiaNim__ApiKey`, the same path produces a synthesized pipeline. Do not add a live-key test to the default suite; keep it behind a manual run.
 - `NlpRouteResult` keeps `LlmTokensConsumed` for backward compatibility and adds `LlmAttempts` + `Error` at the end so existing constructions compile unchanged.
-- The SSE stream only relays events published after a subscriber connects. `NlpOrchestratorTests` read the sink directly; `ApiContractTests` only assert the opening `agent.idle` frame, preserving the Sprint 1 contract.
+- The SignalR hub only relays events published after a client connects. `NlpOrchestratorTests` read the sink directly; `ApiContractTests` only assert the opening `agent.idle` event, preserving the Sprint 1 contract.
 - If `AddOpenAIChatCompletion(modelId, endpoint, apiKey)` is unavailable in the pinned SK version, use an `OpenAIClient` with `OpenAIClientOptions.Endpoint` and register the client provider; keep the `ILlmQueryGenerator` interface unchanged.
