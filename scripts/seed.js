@@ -3,9 +3,13 @@
 // Usage: paste the entire file into the mongosh shell or run:
 //   mongosh --file scripts/seed.js
 //
-// Optional env vars (set in your shell before running mongosh):
-//   MONGODB_DB=multiagent   (default: multiagent)
-//   MONGODB_URI             (passed to mongosh connection string)
+// IMPORTANT: The .NET API reads from database configured by MongoDb:Database
+// (appsettings.json), defaulting to "sample_airbnb". Run mongosh against that
+// database, or switch with: use <database-name>
+//   mongosh sample_airbnb --file scripts/seed.js
+//
+// Optional: set MONGODB_DB env var before launching mongosh if your wrapper
+// reads it to select the database.
 
 // ----------------------------------------------------------------
 // Helpers
@@ -56,7 +60,7 @@ const configDefaults = [
   {
     _id: 'Execution',
     SectionKey: 'Execution',
-    Values: JSON.stringify({ DataSource: 'Mongo', TimeoutMs: 5000, Collection: 'listingsAndReviews', Database: 'sample_airbnb' }),
+    ValuesJson: JSON.stringify({ DataSource: 'Mongo', TimeoutMs: 5000, Collection: 'listingsAndReviews', Database: 'sample_airbnb' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -65,7 +69,7 @@ const configDefaults = [
   {
     _id: 'Nlp.Cache',
     SectionKey: 'Nlp.Cache',
-    Values: JSON.stringify({ Threshold: 0.95 }),
+    ValuesJson: JSON.stringify({ Threshold: 0.95 }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -74,7 +78,7 @@ const configDefaults = [
   {
     _id: 'Nlp.Defaults',
     SectionKey: 'Nlp.Defaults',
-    Values: JSON.stringify({ Limit: 10, Sort: 'rating_desc', Market: 'All' }),
+    ValuesJson: JSON.stringify({ Limit: 10, Sort: 'rating_desc', Market: 'All' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -83,7 +87,7 @@ const configDefaults = [
   {
     _id: 'Nlp.Embeddings',
     SectionKey: 'Nlp.Embeddings',
-    Values: JSON.stringify({ MaxTokens: 512 }),
+    ValuesJson: JSON.stringify({ MaxTokens: 512 }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -92,7 +96,7 @@ const configDefaults = [
   {
     _id: 'Governance',
     SectionKey: 'Governance',
-    Values: JSON.stringify({ ApprovalEnabled: true }),
+    ValuesJson: JSON.stringify({ ApprovalEnabled: true }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -101,7 +105,7 @@ const configDefaults = [
   {
     _id: 'Reports',
     SectionKey: 'Reports',
-    Values: JSON.stringify({ DemoFallbackEnabled: true }),
+    ValuesJson: JSON.stringify({ DemoFallbackEnabled: true }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -110,7 +114,7 @@ const configDefaults = [
   {
     _id: 'Reports.Smtp',
     SectionKey: 'Reports.Smtp',
-    Values: JSON.stringify({ Host: 'localhost', Port: 25, User: '', From: '', Password: '' }),
+    ValuesJson: JSON.stringify({ Host: 'localhost', Port: 25, User: '', From: '', Password: '' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -119,7 +123,7 @@ const configDefaults = [
   {
     _id: 'EnterpriseCore',
     SectionKey: 'EnterpriseCore',
-    Values: JSON.stringify({ BaseUrl: '', QueryPath: '/api/query' }),
+    ValuesJson: JSON.stringify({ BaseUrl: '', QueryPath: '/api/query' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -128,7 +132,7 @@ const configDefaults = [
   {
     _id: 'NvidiaNim',
     SectionKey: 'NvidiaNim',
-    Values: JSON.stringify({ Model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning', BaseUrl: 'https://integrate.api.nvidia.com/v1', MaxAttempts: 3, TimeoutSeconds: 30, ApiKey: '' }),
+    ValuesJson: JSON.stringify({ Model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning', BaseUrl: 'https://integrate.api.nvidia.com/v1', MaxAttempts: 3, TimeoutSeconds: 30, ApiKey: '' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -137,7 +141,7 @@ const configDefaults = [
   {
     _id: 'MongoDb',
     SectionKey: 'MongoDb',
-    Values: JSON.stringify({ ConnectionString: '', Database: 'sample_airbnb' }),
+    ValuesJson: JSON.stringify({ ConnectionString: '', Database: 'sample_airbnb' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -146,7 +150,7 @@ const configDefaults = [
   {
     _id: 'Jwt',
     SectionKey: 'Jwt',
-    Values: JSON.stringify({ Issuer: 'MultiAgentMongoNlp', Audience: 'MultiAgentMongoNlp.Spa', SigningKey: '' }),
+    ValuesJson: JSON.stringify({ Issuer: 'MultiAgentMongoNlp', Audience: 'MultiAgentMongoNlp.Spa', SigningKey: '' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -155,7 +159,7 @@ const configDefaults = [
   {
     _id: 'Persistence',
     SectionKey: 'Persistence',
-    Values: JSON.stringify({ Mode: 'Mongo', DataDirectory: 'data' }),
+    ValuesJson: JSON.stringify({ Mode: 'Mongo', DataDirectory: 'data' }),
     Version: 1,
     Source: 'Database',
     UpdatedAt: now,
@@ -219,13 +223,13 @@ const businessRules = [
 // Column definition defaults
 // ----------------------------------------------------------------
 const columnDefinitions = [
-  { _id: 'cd_name', Id: 'cd_name', Field: 'name', Label: 'Name', DataType: 'String', Format: null, Order: 0, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_price', Id: 'cd_price', Field: 'price', Label: 'Price', DataType: 'Number', Format: 'USD', Order: 1, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_room_type', Id: 'cd_room_type', Field: 'room_type', Label: 'Room Type', DataType: 'String', Format: null, Order: 2, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_address_market', Id: 'cd_address_market', Field: 'address.market', Label: 'Market', DataType: 'String', Format: null, Order: 3, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_review_rating', Id: 'cd_review_rating', Field: 'review_scores.rating', Label: 'Rating', DataType: 'Number', Format: null, Order: 4, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_address_coordinates', Id: 'cd_address_coordinates', Field: 'address.location.coordinates', Label: 'Coordinates', DataType: 'String', Format: null, Order: 10, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
-  { _id: 'cd_host_verifications', Id: 'cd_host_verifications', Field: 'host.host_verifications', Label: 'Host Verifications', DataType: 'String', Format: null, Order: 11, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' }
+  { _id: 'cd_name', Id: 'cd_name', Field: 'name', Label: 'Name', DataType: 0, Format: null, Order: 0, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_price', Id: 'cd_price', Field: 'price', Label: 'Price', DataType: 1, Format: 'USD', Order: 1, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_room_type', Id: 'cd_room_type', Field: 'room_type', Label: 'Room Type', DataType: 0, Format: null, Order: 2, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_address_market', Id: 'cd_address_market', Field: 'address.market', Label: 'Market', DataType: 0, Format: null, Order: 3, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_review_rating', Id: 'cd_review_rating', Field: 'review_scores.rating', Label: 'Rating', DataType: 1, Format: null, Order: 4, VisibleByDefault: true, Exportable: true, Sensitive: false, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_address_coordinates', Id: 'cd_address_coordinates', Field: 'address.location.coordinates', Label: 'Coordinates', DataType: 0, Format: null, Order: 10, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' },
+  { _id: 'cd_host_verifications', Id: 'cd_host_verifications', Field: 'host.host_verifications', Label: 'Host Verifications', DataType: 0, Format: null, Order: 11, VisibleByDefault: false, Exportable: false, Sensitive: true, Width: null, Version: 1, UpdatedAt: now, UpdatedBy: 'seed' }
 ];
 
 // ----------------------------------------------------------------
