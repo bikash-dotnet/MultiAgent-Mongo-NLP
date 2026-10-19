@@ -1,5 +1,21 @@
 # Migration Sprint Plan — MongoDB Native Driver + Convention Alignment
 
+## Status (branch `261019-refactor-mongodb-native-driver`)
+
+**Implemented**
+- `MongoDocumentStore` reads and writes typed `IMongoCollection<T>` documents with native
+  `FindAsync` / `ReplaceOneAsync`; the System.Text.Json round-trip is gone.
+- `MongoBsonConfiguration` registers camelCase element names, string enum values, ISO-8601
+  `DateTimeOffset` values, and `Id` → `_id` class maps (plus `AgentState.SessionId` and
+  `ActivationLock.Id`). JSON string converters remain on enums for HTTP contracts.
+- `seed.js` no longer writes a duplicate `id` field; `scripts/migrate-remove-duplicate-id.js`
+  cleans legacy documents.
+- `RuleSeedHostedService` is retained as a safety net and still skips when data exists.
+
+**Pending**
+- Run `scripts/migrate-remove-duplicate-id.js` against each deployed database (no MongoDB
+  instance is available in this environment).
+
 ## Deferred from current sprint (Option A applied now)
 
 ### 1. Native MongoDB Driver Migration (`MongoDocumentStore`)
@@ -12,11 +28,11 @@
 - Replace `IMongoCollection<BsonDocument>` with `IMongoCollection<T>` per document type
 - Remove `BsonDocument.Parse(JsonSerializer.Serialize(...))` round-trip
 - Use driver's native `ReplaceOneAsync`/`FindAsync` with typed filters
-- Enable MongoDB BSON attributes (`[BsonRepresentation]`, `[BsonElement]`, `[BsonIgnore]`)
+- Register BSON conventions and class maps (`Id` → `_id`, camelCase elements, string enums)
 
 **Benefits:**
 - Eliminates JSON serialization overhead on every read/write
-- `[BsonRepresentation(BsonType.String)]` enums work natively (no JsonConverter needed)
+- String enum values are handled natively in BSON (JSON converters remain for HTTP)
 - Map C# `Id` → MongoDB `_id` natively (eliminates `_id`/`Id` duplication)
 
 ### 2. Deduplicate `_id` / `Id` fields
@@ -41,20 +57,20 @@
 | Config `Values` → `ValuesJson` | Done (previous commit) |
 | Column `DataType` string → number then back to string with converter | Done |
 
-## Migration sprint tasks (not started)
+## Migration sprint tasks
 
-1. Refactor `MongoDocumentStore` to `IMongoCollection<T>`
-2. Add `[BsonRepresentation(BsonType.String)]` to enums (replacing JsonConverter)
-3. Map C# `Id` → MongoDB `_id` natively
-4. Remove `_id`/`Id` duplication from all stored documents
-5. Evaluate removing C# `RuleSeedHostedService` seeding redundancy
-6. Update all store classes (`BusinessRuleStore`, `ColumnDefinitionStore`, `SettingsStore`, `SchemaRegistryStore`) for typed collections
+1. [x] Refactor `MongoDocumentStore` to `IMongoCollection<T>`
+2. [x] Store enums as strings in BSON via `EnumRepresentationConvention(BsonType.String)`; keep `JsonStringEnumConverter` for HTTP responses
+3. [x] Map C# `Id` → MongoDB `_id` natively
+4. [x] Remove `_id`/`Id` duplication from writes, `seed.js`, and add a legacy cleanup script
+5. [x] Evaluate removing C# `RuleSeedHostedService` seeding redundancy — retained as an idempotent safety net
+6. [x] Store classes need no changes; the generic `IDocumentStore` methods now use typed collections internally
 
 ## Verification checklist for migration sprint
 
-- [ ] `dotnet test` passes with typed MongoDB collections
-- [ ] `ng build` production clean
-- [ ] `ng test` 48/48 pass
-- [ ] Seed script inserts camelCase documents that deserialize correctly
-- [ ] No duplicate `_id`/`Id` fields in MongoDB documents
-- [ ] Enum values stored as strings in MongoDB (verifiable via Compass/Studio 3T)
+- [x] `dotnet test` passes with typed MongoDB collections (378/378)
+- [x] `ng build` production clean
+- [x] `ng test` 57/57 pass
+- [x] Seed script inserts camelCase documents without duplicate ids; BSON round-trip tests cover every document shape
+- [ ] No duplicate `_id`/`Id` fields in MongoDB documents (run `scripts/migrate-remove-duplicate-id.js`)
+- [x] Enum values stored as strings in BSON (covered by `MongoBsonConfigurationTests`)

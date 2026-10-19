@@ -6,12 +6,12 @@
 // The .NET API reads from database configured by MongoDb:Database
 // (default: "sample_airbnb"). Run mongosh against that database.
 //
-// Field naming convention: camelCase to match C# System.Text.Json serialization
-// (JsonSerializerDefaults.Web). The _id field is the MongoDB document id.
-// Id property is duplicated alongside _id for C# model compatibility
-// (MongoDocumentStore copies Id -> _id on write, strips _id on read).
+// Field naming convention: camelCase to match the gateway's BSON conventions.
+// The _id field is the MongoDB document id and maps directly to the C# Id
+// property (or SessionId for agent_states); no duplicate id field is stored.
 //
-// Enums WITH [JsonStringEnumConverter] serialize as strings:
+// Enums serialize as strings over both HTTP (JsonStringEnumConverter) and BSON
+// (EnumRepresentationConvention):
 //   SettingsSource: "Default"/"Database"
 //   SchemaDataSource: "Mongo"/"EnterpriseCoreREST"/"Elasticsearch"
 //   SchemaFieldType: "String"/"Number"/"Boolean"/"Date"/"Object"/"Array"
@@ -46,7 +46,6 @@ const schemaFields = [
 
 const defaultSchema = {
   _id: 'sch_airbnb_listings',
-  id: 'sch_airbnb_listings',
   name: 'Airbnb Listings',
   dataSource: 'Mongo',
   database: 'sample_airbnb',
@@ -63,13 +62,11 @@ const defaultSchema = {
 // ----------------------------------------------------------------
 // Configuration defaults (mirrors Gateway.Configuration.SettingsCatalog)
 // Seeded as DB overrides in the app_settings collection.
-// SettingsDocument record: id, valuesJson, version, source, updatedAt, updatedBy
+// SettingsDocument record: _id (section key), valuesJson, version, source, updatedAt, updatedBy
 // ----------------------------------------------------------------
 const configDefaults = [
   {
     _id: 'Execution',
-    id: 'Execution',
-    sectionKey: 'Execution',
     valuesJson: JSON.stringify({ dataSource: 'Mongo', timeoutMs: 5000, collection: 'listingsAndReviews', database: 'sample_airbnb' }),
     version: 1,
     source: 'Database',
@@ -78,8 +75,6 @@ const configDefaults = [
   },
   {
     _id: 'Nlp.Cache',
-    id: 'Nlp.Cache',
-    sectionKey: 'Nlp.Cache',
     valuesJson: JSON.stringify({ threshold: 0.95 }),
     version: 1,
     source: 'Database',
@@ -88,8 +83,6 @@ const configDefaults = [
   },
   {
     _id: 'Nlp.Defaults',
-    id: 'Nlp.Defaults',
-    sectionKey: 'Nlp.Defaults',
     valuesJson: JSON.stringify({ limit: 10, sort: 'rating_desc', market: 'All' }),
     version: 1,
     source: 'Database',
@@ -98,8 +91,6 @@ const configDefaults = [
   },
   {
     _id: 'Nlp.Embeddings',
-    id: 'Nlp.Embeddings',
-    sectionKey: 'Nlp.Embeddings',
     valuesJson: JSON.stringify({ maxTokens: 512 }),
     version: 1,
     source: 'Database',
@@ -108,8 +99,6 @@ const configDefaults = [
   },
   {
     _id: 'Governance',
-    id: 'Governance',
-    sectionKey: 'Governance',
     valuesJson: JSON.stringify({ approvalEnabled: true }),
     version: 1,
     source: 'Database',
@@ -118,8 +107,6 @@ const configDefaults = [
   },
   {
     _id: 'Reports',
-    id: 'Reports',
-    sectionKey: 'Reports',
     valuesJson: JSON.stringify({ demoFallbackEnabled: true }),
     version: 1,
     source: 'Database',
@@ -128,8 +115,6 @@ const configDefaults = [
   },
   {
     _id: 'Reports.Smtp',
-    id: 'Reports.Smtp',
-    sectionKey: 'Reports.Smtp',
     valuesJson: JSON.stringify({ host: 'localhost', port: 25, user: '', from: '', password: '' }),
     version: 1,
     source: 'Database',
@@ -138,8 +123,6 @@ const configDefaults = [
   },
   {
     _id: 'EnterpriseCore',
-    id: 'EnterpriseCore',
-    sectionKey: 'EnterpriseCore',
     valuesJson: JSON.stringify({ baseUrl: '', queryPath: '/api/query' }),
     version: 1,
     source: 'Database',
@@ -148,8 +131,6 @@ const configDefaults = [
   },
   {
     _id: 'NvidiaNim',
-    id: 'NvidiaNim',
-    sectionKey: 'NvidiaNim',
     valuesJson: JSON.stringify({ model: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning', baseUrl: 'https://integrate.api.nvidia.com/v1', maxAttempts: 3, timeoutSeconds: 30, apiKey: '' }),
     version: 1,
     source: 'Database',
@@ -158,8 +139,6 @@ const configDefaults = [
   },
   {
     _id: 'MongoDb',
-    id: 'MongoDb',
-    sectionKey: 'MongoDb',
     valuesJson: JSON.stringify({ connectionString: '', database: 'sample_airbnb' }),
     version: 1,
     source: 'Database',
@@ -168,8 +147,6 @@ const configDefaults = [
   },
   {
     _id: 'Jwt',
-    id: 'Jwt',
-    sectionKey: 'Jwt',
     valuesJson: JSON.stringify({ issuer: 'MultiAgentMongoNlp', audience: 'MultiAgentMongoNlp.Spa', signingKey: '' }),
     version: 1,
     source: 'Database',
@@ -178,8 +155,6 @@ const configDefaults = [
   },
   {
     _id: 'Persistence',
-    id: 'Persistence',
-    sectionKey: 'Persistence',
     valuesJson: JSON.stringify({ mode: 'Mongo', dataDirectory: 'data' }),
     version: 1,
     source: 'Database',
@@ -198,7 +173,6 @@ const configDefaults = [
 const businessRules = [
   {
     _id: 'br_default_limit',
-    id: 'br_default_limit',
     name: 'Default result limit',
     description: 'Apply the configured default result limit when the user does not specify one.',
     scope: 'Global',
@@ -213,7 +187,6 @@ const businessRules = [
   },
   {
     _id: 'br_deny_destructive',
-    id: 'br_deny_destructive',
     name: 'Deny destructive operators',
     description: 'Reject write/admin operators as a defense-in-depth safety rule.',
     scope: 'Global',
@@ -228,7 +201,6 @@ const businessRules = [
   },
   {
     _id: 'br_deny_drop',
-    id: 'br_deny_drop',
     name: 'Deny drop operator',
     description: 'Reject the drop operator as a defense-in-depth safety rule.',
     scope: 'Global',
@@ -250,13 +222,13 @@ const businessRules = [
 // ColumnDataType uses JsonStringEnumConverter -> strings: "String"/"Number"
 // ----------------------------------------------------------------
 const columnDefinitions = [
-  { _id: 'cd_name', id: 'cd_name', field: 'name', label: 'Name', dataType: 'String', format: null, order: 0, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_price', id: 'cd_price', field: 'price', label: 'Price', dataType: 'Number', format: 'USD', order: 1, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_room_type', id: 'cd_room_type', field: 'room_type', label: 'Room Type', dataType: 'String', format: null, order: 2, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_address_market', id: 'cd_address_market', field: 'address.market', label: 'Market', dataType: 'String', format: null, order: 3, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_review_rating', id: 'cd_review_rating', field: 'review_scores.rating', label: 'Rating', dataType: 'Number', format: null, order: 4, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_address_coordinates', id: 'cd_address_coordinates', field: 'address.location.coordinates', label: 'Coordinates', dataType: 'String', format: null, order: 10, visibleByDefault: false, exportable: false, sensitive: true, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
-  { _id: 'cd_host_verifications', id: 'cd_host_verifications', field: 'host.host_verifications', label: 'Host Verifications', dataType: 'String', format: null, order: 11, visibleByDefault: false, exportable: false, sensitive: true, width: null, version: 1, updatedAt: now, updatedBy: 'seed' }
+  { _id: 'cd_name', field: 'name', label: 'Name', dataType: 'String', format: null, order: 0, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_price', field: 'price', label: 'Price', dataType: 'Number', format: 'USD', order: 1, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_room_type', field: 'room_type', label: 'Room Type', dataType: 'String', format: null, order: 2, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_address_market', field: 'address.market', label: 'Market', dataType: 'String', format: null, order: 3, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_review_rating', field: 'review_scores.rating', label: 'Rating', dataType: 'Number', format: null, order: 4, visibleByDefault: true, exportable: true, sensitive: false, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_address_coordinates', field: 'address.location.coordinates', label: 'Coordinates', dataType: 'String', format: null, order: 10, visibleByDefault: false, exportable: false, sensitive: true, width: null, version: 1, updatedAt: now, updatedBy: 'seed' },
+  { _id: 'cd_host_verifications', field: 'host.host_verifications', label: 'Host Verifications', dataType: 'String', format: null, order: 11, visibleByDefault: false, exportable: false, sensitive: true, width: null, version: 1, updatedAt: now, updatedBy: 'seed' }
 ];
 
 // ----------------------------------------------------------------
@@ -267,7 +239,6 @@ const columnDefinitions = [
 // ----------------------------------------------------------------
 const pocMcpServer = {
   _id: 'mcp_mongo_ai_query',
-  id: 'mcp_mongo_ai_query',
   name: 'mongo-ai-query',
   description: 'Sample POC MCP server (stdio). Not part of the production solution and can be removed.',
   transport: 'Stdio',
