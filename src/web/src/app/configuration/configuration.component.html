@@ -56,32 +56,20 @@
                     @if (isNumberType(setting.type)) {
                       <p-inputNumber
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [name]="setting.key"
                         [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
                         [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
-                        [disabled]="!setting.editable"
-                        class="control-sm"
-                      />
-                    } @else if (setting.type === SettingType.Double) {
-                      <p-inputNumber
-                        [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [name]="setting.key"
-                        [min]="getFieldSchema(section.sectionName, setting.key)?.minD ?? null"
-                        [max]="getFieldSchema(section.sectionName, setting.key)?.maxD ?? null"
                         [disabled]="!setting.editable"
                         class="control-sm"
                       />
                     } @else if (isBooleanType(setting.type)) {
                       <p-toggleSwitch
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [name]="setting.key"
                         [disabled]="!setting.editable"
                         inputId="toggle-{{ section.sectionName }}-{{ setting.key }}"
                       />
                     } @else if (isSelectType(setting.type)) {
                       <p-select
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [name]="setting.key"
                         [options]="(getFieldSchema(section.sectionName, setting.key)?.allowedValues ?? []).map((v) => ({ label: v, value: v }))"
                         [disabled]="!setting.editable"
                         class="control-sm"
@@ -92,7 +80,6 @@
                     } @else {
                       <p-inputText
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [name]="setting.key"
                         [disabled]="!setting.editable || setting.secret"
                         class="control-sm"
                       />
