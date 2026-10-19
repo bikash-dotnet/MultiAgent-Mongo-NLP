@@ -1,0 +1,304 @@
+<section class="mcp-servers">
+  <header class="toolbar">
+    <div>
+      <h1>MCP Servers</h1>
+      <p class="subtitle">Register and manage Model Context Protocol servers available to the assistant.</p>
+    </div>
+    @if (canManage) {
+      <div class="toolbar-actions">
+        <p-button label="Create server" icon="pi pi-plus" severity="secondary" (onClick)="startCreate()" />
+      </div>
+    }
+  </header>
+
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  <p-table
+    [value]="servers"
+    [loading]="loading"
+    [paginator]="servers.length > 10"
+    [rows]="10"
+    styleClass="p-datatable-striped p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Name</th>
+        <th>Transport</th>
+        <th>Scope</th>
+        <th>Enabled</th>
+        <th>Health</th>
+        <th>Tools</th>
+        <th>Updated</th>
+        <th></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-server>
+      <tr>
+        <td>{{ server.name }}</td>
+        <td>{{ server.transport }}</td>
+        <td>{{ server.scope }}</td>
+        <td>
+          @if (server.enabled) {
+            <p-tag value="Yes" severity="success" />
+          } @else {
+            <p-tag value="No" severity="secondary" />
+          }
+        </td>
+        <td>
+          <p-tag [value]="server.health" [severity]="healthSeverity(server.health)" />
+        </td>
+        <td>{{ server.toolCount }}</td>
+        <td>{{ server.updatedAt ? (server.updatedAt | date: 'short') : '-' }}</td>
+        <td class="row-actions">
+          <p-button
+            icon="pi pi-pencil"
+            [text]="true"
+            severity="secondary"
+            [attr.aria-label]="'Edit ' + server.name"
+            (onClick)="startEdit(server)"
+          />
+          @if (server.enabled && canManage) {
+            <p-button
+              icon="pi pi-toggle-off"
+              [text]="true"
+              severity="warn"
+              [attr.aria-label]="'Disable ' + server.name"
+              (onClick)="disableServer(server)"
+            />
+          } @else if (!server.enabled && canManage) {
+            <p-button
+              icon="pi pi-toggle-on"
+              [text]="true"
+              severity="success"
+              [attr.aria-label]="'Enable ' + server.name"
+              (onClick)="enableServer(server)"
+            />
+          }
+          <p-button
+            icon="pi pi-bug"
+            [text]="true"
+            severity="info"
+            [attr.aria-label]="'Test ' + server.name"
+            (onClick)="testServer(server)"
+          />
+          @if (canManage) {
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              [attr.aria-label]="'Delete ' + server.name"
+              (onClick)="deleteServer(server)"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8">No MCP servers defined.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>
+
+<p-dialog
+  [(visible)]="editorVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '64rem', maxWidth: '95vw' }"
+  [header]="editorTitle"
+  (onHide)="closeEditor()"
+>
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  <div class="form-grid">
+    <label for="serverName">Name</label>
+    <input id="serverName" name="serverName" pInputText [(ngModel)]="serverForm.name" />
+
+    <label for="serverDescription">Description</label>
+    <input id="serverDescription" name="serverDescription" pInputText [(ngModel)]="serverForm.description" />
+
+    <label for="serverTransport">Transport</label>
+    <p-select
+      name="serverTransport"
+      inputId="serverTransport"
+      [options]="transportOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="serverForm.transport"
+      appendTo="body"
+    />
+
+    <label for="serverCommand">Command</label>
+    <input
+      id="serverCommand"
+      name="serverCommand"
+      pInputText
+      [(ngModel)]="serverForm.command"
+      placeholder="node"
+    />
+
+    <label for="serverArgs">Arguments</label>
+    <input
+      id="serverArgs"
+      name="serverArgs"
+      pInputText
+      [(ngModel)]="serverForm.args"
+      placeholder="--port 3000 --verbose"
+    />
+
+    <label for="serverUrl">URL</label>
+    <input
+      id="serverUrl"
+      name="serverUrl"
+      pInputText
+      [(ngModel)]="serverForm.url"
+      placeholder="http://localhost:3100/mcp"
+    />
+
+    <label for="serverEnvKeys">Env keys</label>
+    <textarea
+      id="serverEnvKeys"
+      name="serverEnvKeys"
+      pTextarea
+      [(ngModel)]="serverForm.envKeys"
+      rows="3"
+      placeholder="API_KEY&#10;MONGO_URI"
+    ></textarea>
+    <p class="hint">Secret values are never stored here. Configure them in the backend environment.</p>
+
+    @if (envKeyStatuses.length > 0) {
+      <label>Env key status</label>
+      <div class="flag-row">
+        @for (status of envKeyStatuses; track status.name) {
+          <p-tag [value]="status.name + (status.configured ? ' (configured)' : ' (not configured)')" [severity]="status.configured ? 'success' : 'info'" />
+        }
+      </div>
+    }
+
+    <label for="serverAllowedTools">Allowed tools</label>
+    <p-multiselect
+      inputId="serverAllowedTools"
+      name="serverAllowedTools"
+      [options]="allowedToolOptions"
+      [(ngModel)]="serverForm.allowedTools"
+      [filter]="true"
+      appendTo="body"
+      placeholder="Select tool names"
+    />
+    <p class="hint">Empty means no tools are callable (deny by default). Only read-only tools can be enabled.</p>
+
+    <div class="checkbox-row">
+      <p-checkbox name="serverReadOnly" inputId="serverReadOnly" [(ngModel)]="serverForm.readOnly" [binary]="true" />
+      <label for="serverReadOnly">Read-only (write tools rejected)</label>
+    </div>
+
+    <div class="checkbox-row">
+      <p-checkbox name="serverEnabled" inputId="serverEnabled" [(ngModel)]="serverForm.enabled" [binary]="true" />
+      <label for="serverEnabled">Enabled</label>
+    </div>
+
+    <label for="serverTimeoutMs">Timeout (ms)</label>
+    <input id="serverTimeoutMs" name="serverTimeoutMs" pInputText type="number" [(ngModel)]="serverForm.timeoutMs" />
+
+    <label for="serverScope">Scope</label>
+    <p-select
+      name="serverScope"
+      inputId="serverScope"
+      [options]="scopeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="serverForm.scope"
+      appendTo="body"
+    />
+
+    <label for="serverScopeValue">Scope value</label>
+    <input id="serverScopeValue" name="serverScopeValue" pInputText [(ngModel)]="serverForm.scopeValue" placeholder="database or role" />
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="closeEditor()" />
+    <p-button
+      [label]="saving ? 'Saving...' : 'Save server'"
+      icon="pi pi-check"
+      [loading]="saving"
+      (onClick)="saveServer()"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="testDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '52rem', maxWidth: '95vw' }"
+  header="Connection test"
+  appendTo="body"
+  (onHide)="closeTest()"
+>
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @if (testResult) {
+    <div class="test-result">
+      <div class="test-line">
+        <span class="label">Status:</span>
+        <p-tag [value]="testResult.health" [severity]="healthSeverity(testResult.health)" />
+        @if (testResult.latencyMs > 0) {
+          <span class="latency">{{ testResult.latencyMs }} ms</span>
+        }
+      </div>
+
+      @if (testResult.error) {
+        <p class="error" role="alert">{{ testResult.error }}</p>
+      }
+
+      @if (testResult.tools && testResult.tools.length > 0) {
+        <h3>Available tools</h3>
+        <p-table [value]="testResult.tools" styleClass="p-datatable-sm p-datatable-striped">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Name</th>
+              <th>Allowed</th>
+              <th>Read-only</th>
+              <th>Description</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-tool>
+            <tr>
+              <td>{{ tool.name }}</td>
+              <td>
+                <p-toggleSwitch
+                  [ngModel]="isToolAllowed(tool.name)"
+                  (ngModelChange)="setToolAllowed(tool, $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [disabled]="!tool.readOnly || !canManage"
+                />
+              </td>
+              <td>
+                <p-tag [value]="tool.readOnly ? 'Yes' : 'No'" [severity]="tool.readOnly ? 'success' : 'danger'" />
+              </td>
+              <td>{{ tool.description ?? '-' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button label="Close" severity="secondary" [text]="true" (onClick)="closeTest()" />
+    @if (canManage && testResult) {
+      <p-button label="Save allow-list" icon="pi pi-check" [loading]="saving" (onClick)="saveServer()" />
+    }
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog />

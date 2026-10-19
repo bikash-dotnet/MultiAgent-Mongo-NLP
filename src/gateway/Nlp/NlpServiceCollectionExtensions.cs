@@ -121,6 +121,9 @@ public static class NlpServiceCollectionExtensions
 
         services.AddSingleton<IMcpServerRegistry, McpServerRegistry>();
         services.AddHostedService<McpServerSeedHostedService>();
+        services.AddSingleton<IMcpSessionFactory, ProcessMcpSessionFactory>();
+        services.AddSingleton<IMcpHost, McpHost>();
+        services.AddSingleton<IMcpSecretProbe, EnvironmentMcpSecretProbe>();
 
         services.AddSingleton<IAccessRequestStore, DurableAccessRequestStore>();
         services.AddSingleton<IAgentStateStore, DurableAgentStateStore>();

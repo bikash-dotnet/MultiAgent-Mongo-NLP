@@ -1,5 +1,12 @@
 # mongo-ai-query (POC)
 
+> **Not part of the production solution.** This directory is a standalone proof
+> of concept used as a reference MCP endpoint for connectivity tests. It is not
+> built, deployed, or referenced by the .NET gateway. In production, MCP servers
+> are registered and governed through the configuration console
+> (`/api/mcp-servers`), and secrets are supplied by the environment — never
+> stored in MongoDB or rendered in the UI.
+
 Natural language to MongoDB aggregation pipeline, powered by Gemini, with a
 schema-aware prompt and a strict validator that mirrors every prompt rule.
 

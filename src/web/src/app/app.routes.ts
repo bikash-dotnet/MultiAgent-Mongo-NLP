@@ -23,5 +23,10 @@ export const routes: Routes = [
     path: 'business-rules',
     loadComponent: () =>
       import('./business-rules/business-rules.component').then((m) => m.BusinessRulesComponent)
+  },
+  {
+    path: 'mcp-servers',
+    loadComponent: () =>
+      import('./mcp-servers/mcp-servers.component').then((m) => m.McpServersComponent)
   }
 ];

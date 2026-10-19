@@ -101,6 +101,7 @@ app.MapSchemaEndpoints();
 app.MapConfigEndpoints();
 app.MapColumnDefinitionEndpoints();
 app.MapBusinessRuleEndpoints();
+app.MapMcpServerEndpoints();
 
 app.Run();
 
