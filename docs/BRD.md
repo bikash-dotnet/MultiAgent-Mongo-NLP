@@ -11,7 +11,7 @@
 
 | Layer | Choice |
 | --- | --- |
-| Client | Angular 21 SPA, standalone components, Angular Material / PrimeNG, RxJS `EventSource` |
+| Client | Angular 21 SPA, standalone components, Angular Material / PrimeNG, SignalR client (`@microsoft/signalr`) |
 | Gateway | ASP.NET Core 10 (`net10.0`) Minimal APIs / Web API |
 | Auth / RBAC | JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
 | Contracts | FluentValidation + DataAnnotations |
@@ -22,7 +22,7 @@
 | Simple MQL templates | Scriban |
 | Guardrails | C# MQL AST walker + rule engine |
 | Persistence | MongoDB.Driver against `sample_airbnb` |
-| Streaming | HTTPS + Server-Sent Events (`IAsyncEnumerable`) |
+| Streaming | HTTPS + ASP.NET Core SignalR (WebSockets) |
 | Export | ClosedXML / CsvHelper in-memory; MailKit SMTP; QuestPDF for PDF |
 
 #### Stack substitution from v4.0
@@ -155,7 +155,7 @@ flowchart LR
         D2["MongoDB sample_airbnb"]
     end
 
-    Client -->|"HTTPS / Server-Sent Events SSE"| Gateway
+    Client -->|"HTTPS / SignalR WebSockets"| Gateway
     G5 --> D1
     G5 --> D2
 ```
@@ -166,7 +166,7 @@ Angular 21 Single Page Application with:
 
 - Standalone components
 - Angular Material / PrimeNG data grids
-- RxJS `EventSource` handlers for streaming agent updates
+- SignalR hub client handlers (`AgentStreamService`) for streaming agent updates
 
 Client capabilities:
 
@@ -181,7 +181,7 @@ Client capabilities:
 ASP.NET Core 10 (`net10.0`) Minimal APIs / Web API providing:
 
 - Asynchronous task handling (`async`/`await`, `IHostedService`)
-- Streaming response pipelines (`IAsyncEnumerable`, SSE)
+- Streaming response pipelines (`IAsyncEnumerable`, SignalR events)
 - FluentValidation + DataAnnotations contract validation
 - JWT auth and RBAC middleware (`Microsoft.AspNetCore.Authentication.JwtBearer`)
 - Semantic cache and slot extractor
@@ -216,7 +216,7 @@ NVIDIA-hosted language model inference endpoint configured with domain prompt te
 ### 3.6 Transport
 
 - Client-to-gateway: HTTPS
-- Streaming agent telemetry and incremental results: Server-Sent Events (SSE)
+- Streaming agent telemetry and incremental results: ASP.NET Core SignalR
 
 ---
 
@@ -507,7 +507,7 @@ Approval lifecycle tracking and managerial override records.
 | BRD-NFR-08 | Security | Read-only execution only; block `$out`, `$merge`, `drop`, `deleteMany` |
 | BRD-NFR-09 | Audit | `audit_logs` is append-only / immutable |
 | BRD-NFR-10 | Privacy | Export path is in-memory only; no temp files on disk |
-| BRD-NFR-11 | Streaming | Agent activity and results stream over SSE |
+| BRD-NFR-11 | Streaming | Agent activity and results stream over SignalR |
 | BRD-NFR-12 | Auth | JWT session identity on every request |
 | BRD-NFR-13 | Persistence | Semantic Kernel paused-state persistence during governance holds |
 
@@ -616,7 +616,7 @@ Approval lifecycle tracking and managerial override records.
 | --- | --- |
 | MAS | Hierarchical Multi-Agent System |
 | MQL | MongoDB Query / Aggregation Language |
-| SSE | Server-Sent Events |
+| SignalR | ASP.NET Core real-time transport (WebSockets) |
 | AST | Abstract Syntax Tree used for read-only and whitelist checks (C# MQL walker) |
 | NIM | NVIDIA Inference Microservice endpoint |
 | SK | Microsoft Semantic Kernel — agent orchestration and process state |

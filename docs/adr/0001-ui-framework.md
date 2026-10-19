@@ -34,7 +34,7 @@ Adoption is constrained by the rules in Sprint 9:
 - Components are imported per standalone component, not globally, so the build stays tree-shakable.
 - Feature routes (`/schemas`, `/configuration`, `/business-rules`) are lazy-loaded.
 - PrimeNG's design tokens drive theming; incidental SCSS is minimized.
-- Existing `EventSource`/`conversation`/`nlp-query` services remain the data layer; the framework
+- Existing SignalR/`conversation`/`nlp-query` services remain the data layer; the framework
   is presentation-only.
 
 ---

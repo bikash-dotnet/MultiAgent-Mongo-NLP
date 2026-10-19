@@ -36,7 +36,7 @@ Add tests that would have caught the bug, so it cannot recur silently.
 ## For This Project
 
 - .NET gateway issues: inspect `Program.cs`, middleware, NLP guardrail, governance, and execution modules
-- Angular SPA issues: check `proxy.conf.json` routing, SignalR hubs (`/hubs`), SSE stream (`/api/agents/stream`), and vitest tests
+- Angular SPA issues: check `proxy.conf.json` routing (including WebSocket proxying), SignalR hub (`/hubs/agent-stream`), and vitest tests
 - Test failures: `dotnet test tests/Gateway.Tests/Gateway.Tests.csproj` and `npm test` in `src/web`
 
 ## Principles

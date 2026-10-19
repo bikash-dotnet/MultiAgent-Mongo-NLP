@@ -207,7 +207,7 @@ existing NLP response fields for direct answers.
   - purpose: a text area plus an optional project code input;
   - columns: a checkbox list with a select-all control;
   - delivery: two radio options plus confirm.
-- The agent activity stream and SSE status move from the primary panel into a collapsible
+- The agent activity stream and SignalR status move from the primary panel into a collapsible
   right rail so the chat is the focus.
 - The greeting chips become starter prompts that populate the composer.
 - A "Governance: approval gate" switch appears in the header only when the user's role
@@ -227,7 +227,7 @@ existing NLP response fields for direct answers.
 
 ## 13. Events
 
-New server-sent events published through the existing `IAgentEventSink`, in addition to the
+New SignalR events published through the existing `IAgentEventSink`, in addition to the
 existing `governance.paused`:
 
 | Event | When |

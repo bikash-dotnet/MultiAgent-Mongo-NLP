@@ -43,7 +43,7 @@ after a restart.
   conversation, including execution on approval resume.
 - Angular results grid bound to the execution payload, plus the existing CSV download fed by real
   rows instead of demo rows.
-- `agent.executing` and `agent.completed` SSE events around execution.
+- `agent.executing` and `agent.completed` SignalR events around execution.
 
 **Out of scope**
 
@@ -107,7 +107,7 @@ graph TD
     DOC --> MDBS["MongoDocumentStore"]
     DOC --> FILE["FileDocumentStore"]
     AUDIT --> DOC
-    RUNNER --> EVENTS["IAgentEventSink SSE"]
+    RUNNER --> EVENTS["IAgentEventSink SignalR"]
 ```
 
 - **`Gateway.Persistence`** owns the generic document seam and the Mongo/File adapters.
@@ -263,7 +263,7 @@ acceptance path for "sensitive query after approval returns listing rows".
 - `ReportService.BuildCsv` gains an overload that accepts executed rows and columns; the existing
   demo-based call remains for the demo fallback.
 
-## 11. SSE events
+## 11. SignalR events
 
 - `agent.executing` with the chosen data source, published before the transport call.
 - `agent.completed` with the row count and duration, published after the call, including on timeout

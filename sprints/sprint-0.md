@@ -6,7 +6,7 @@
 
 | Sprint | File | Goal | Primary BRD IDs |
 | --- | --- | --- | --- |
-| 1 | `sprints/sprint-1.md` | Gateway, JWT, greeting, SSE skeleton | FR-01, NFR-11, NFR-12 |
+| 1 | `sprints/sprint-1.md` | Gateway, JWT, greeting, SignalR skeleton | FR-01, NFR-11, NFR-12 |
 | 2 | `sprints/sprint-2.md` | Hybrid NLP cache, slots, simple MQL | FR-02, NFR-01, NFR-04, NFR-05 |
 | 3 | `sprints/sprint-3.md` | Semantic Kernel orchestrator, complex MQL | FR-03, NFR-02, NFR-06, NFR-07, NFR-13 |
 | 4 | `sprints/sprint-4.md` | MQL AST guardrails, field flags | FR-04, FR-05, NFR-08 |

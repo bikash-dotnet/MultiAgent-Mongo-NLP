@@ -1,7 +1,7 @@
 # Sprint 1 — Platform Foundation, Auth, and Greeting Engine
 
 **Duration:** 2 weeks  
-**Sprint goal:** Stand up the Angular 21 SPA and ASP.NET Core 10 gateway with JWT auth, SSE plumbing, and the time-aware personalized greeting.
+**Sprint goal:** Stand up the Angular 21 SPA and ASP.NET Core 10 gateway with JWT auth, SignalR plumbing, and the time-aware personalized greeting.
 
 **BRD version:** 4.2  
 **Depends on:** none
@@ -13,7 +13,7 @@
 | BRD ID | Priority | Coverage in this sprint |
 | --- | --- | --- |
 | BRD-FR-01 | High | Dynamic, time-aware greeting from authenticated session |
-| BRD-NFR-11 | — | SSE transport skeleton (client `EventSource` + server `IAsyncEnumerable`) |
+| BRD-NFR-11 | — | SignalR transport skeleton (client `@microsoft/signalr` + server `AgentHub`) |
 | BRD-NFR-12 | — | JWT session identity on every request |
 
 ---
@@ -49,9 +49,9 @@
 - Zero model calls; latency target < 1 ms server-side (BRD-NFR-01)
 - SPA renders greeting + quick-action chips on load
 
-### S1-04 SSE skeleton
-- `GET /api/agents/stream` emits named SSE events (`agent.idle` heartbeat)
-- Angular `EventSource` service reconnects on drop
+### S1-04 SignalR skeleton
+- `/hubs/agent-stream` SignalR hub emits `ReceiveAgentEvent` events (`agent.idle` heartbeat)
+- Angular `AgentStreamService` reconnects automatically via SignalR
 - No agent graph yet; stream proves transport only
 
 ### S1-05 Health and observability baseline
@@ -65,7 +65,7 @@
 - [x] Authenticated user sees a time-aware greeting with their session name and quick-action chips (BRD-FR-01)
 - [x] Unauthenticated requests to greeting/stream return `401`
 - [x] Greeting path does not call NVIDIA NIM
-- [x] SPA can open an SSE connection to the gateway and receive a heartbeat
+- [x] SPA can open a SignalR connection to the gateway and receive a heartbeat
 - [x] `/api` from the SPA is reverse-proxied to the gateway
 
 ---
@@ -80,4 +80,4 @@
 
 - Runnable gateway + SPA
 - JWT-protected greeting endpoint
-- SSE client/server stub
+- SignalR client/hub stub

@@ -22,7 +22,7 @@ CI/CD is a platform concern rather than a single BRD feature. It exists to make 
 | BRD ID | Priority | Coverage in this sprint |
 | --- | --- | --- |
 | BRD-NFR-08 | — | Container and image scan gates run before deploy; execution stays read-only |
-| BRD-NFR-11 | — | Smoke test verifies the SSE greeting path on the deployed environment |
+| BRD-NFR-11 | — | Smoke test verifies the SignalR greeting path on the deployed environment |
 | BRD-NFR-12 | — | JWT signing key and audience/issuer flow from secrets, never from image layers |
 | BRD-NFR-03 | — | Post-deploy smoke test asserts the 5,000 ms timeout config is present |
 
@@ -112,7 +112,7 @@ CI/CD is a platform concern rather than a single BRD feature. It exists to make 
 - [ ] New tag `v*.*.*` builds both images and pushes them to GHCR
 - [ ] Staging deploys automatically; production deploy is blocked until an explicit approval
 - [ ] `docker compose up -d` on a clean VPS brings up the SPA reachable at the host, proxying `/api` and `/health` to the gateway
-- [ ] Post-deploy smoke test passes: `/health` returns healthy, greeting endpoint issues a valid JWT-gated response, SSE greeting streams
+- [ ] Post-deploy smoke test passes: `/health` returns healthy, greeting endpoint issues a valid JWT-gated response, SignalR greeting streams
 - [ ] No secret appears in any image layer, workflow log, or committed `.env`; secrets are injected at container runtime
 - [ ] Rollback to the previous image tag is documented and demonstrated on staging
 

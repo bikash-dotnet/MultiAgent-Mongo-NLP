@@ -1,7 +1,7 @@
 # Sprint 9 — UI Foundation, App Shell, and Chat Experience
 
 **Duration:** 2 weeks
-**Sprint goal:** Adopt PrimeNG as the single component framework, deliver a cohesive admin shell, and rebuild the workspace as an AdminLTE-style chat experience wired to the existing NLP, conversation, and SSE services.
+**Sprint goal:** Adopt PrimeNG as the single component framework, deliver a cohesive admin shell, and rebuild the workspace as an AdminLTE-style chat experience wired to the existing NLP, conversation, and SignalR services.
 
 **BRD version:** 4.2
 **Depends on:** Sprint 8
@@ -17,7 +17,7 @@ These sprints are UI/API enhancements layered on the BRD feature set; they trace
 | BRD §3.1 | PrimeNG adopted as the Angular 21 component framework; standalone components preserved |
 | BRD §9.1–9.4 | Session start, conversation, results, and governance UX expressed in the new shell |
 | BRD-NFR-07 | Chat composer enforces at most one clarification question per turn |
-| BRD-NFR-11 | Agent activity and results surface over the existing SSE stream |
+| BRD-NFR-11 | Agent activity and results surface over the existing SignalR hub |
 | BRD-NFR-12 | JWT session identity unchanged; auth interceptor reused |
 
 ---
@@ -71,7 +71,7 @@ Chat layout references `https://adminlte.io/themes/v4/pages/chat.html`:
 - Consume `AgentStreamService` to show live agent state: idle, started, executing, clarifying,
   completed, plus governance/report events
 - Typing indicator and per-agent activity strip; subscribe to all 16 gateway event names
-- Graceful degraded state when SSE is unavailable (banner, no infinite spinner)
+- Graceful degraded state when SignalR is unavailable (banner, no infinite spinner)
 
 ### S9-05 Responsive, accessibility, and polish
 - Responsive breakpoints: sidebar collapses under `lg`, right rail stacks under `md`
@@ -96,7 +96,7 @@ Chat layout references `https://adminlte.io/themes/v4/pages/chat.html`:
    the Angular 21 + PrimeNG 21 baseline; lazy chunks: admin-analytics 4.42 kB, governance-queue 4.31 kB,
   configuration 540 B, business-rules 536 B, schemas 527 B)
 - [x] Chat page matches the agreed AdminLTE-style layout (thread, right rail, composer) with the left contacts column absent
-- [x] Agent activity streams live over SSE; the composer allows at most one clarification question per turn (BRD-NFR-07)
+- [x] Agent activity streams live over SignalR; the composer allows at most one clarification question per turn (BRD-NFR-07)
 - [x] Existing governance toggle and analytics route keep working against unchanged APIs
 - [x] Responsive behavior verified at `sm`, `md`, `lg`; thread has `aria-live`; keyboard-only operation works
   (sidebar collapses under `lg`, right rail stacks under `md` per `workspace.component.scss:40-54`;
