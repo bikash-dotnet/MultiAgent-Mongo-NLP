@@ -8,7 +8,9 @@ using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Http;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Nlp.Router;
+using Gateway.Persistence;
 using Gateway.Reports;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Conversations;
@@ -27,6 +29,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
     private readonly TimeProvider _clock;
     private readonly ITabularQueryExecutor? _executor;
     private readonly ExecutionOptions _execution;
+    private readonly ColumnDefinitionService _columnDefs;
 
     public ConversationOrchestrator(
         INlpOrchestrator nlp,
@@ -40,7 +43,8 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         TimeProvider clock,
         ITabularQueryExecutor? executor = null,
         IOptions<ExecutionOptions>? executionOptions = null,
-        ISettingsProvider? settings = null)
+        ISettingsProvider? settings = null,
+        ColumnDefinitionService? columnDefs = null)
     {
         _nlp = nlp;
         _store = store;
@@ -54,7 +58,13 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         _clock = clock;
         _executor = executor;
         _execution = executionOptions?.Value ?? new ExecutionOptions();
+        _columnDefs = columnDefs ?? new ColumnDefinitionService(
+            new ColumnDefinitionStore(new InMemoryDocumentStore()),
+            new ColumnCatalog());
+        _columnLabels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     }
+
+    private IReadOnlyDictionary<string, string> _columnLabels;
 
     public async Task<ConversationTurn> StartAsync(
         string utterance,
@@ -292,7 +302,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
 
         if (resumed.Mql is not null && _executor is not null)
         {
-            var execution = await _executor.ExecuteAsync(
+            var execution = await ExecuteWithLabelsAsync(
                 BuildRequest(resumed, governance, resumed.Draft.DeliveryFormat),
                 cancellationToken);
             resumed = await _store.UpdateAsync(resumed with { Execution = execution }, cancellationToken);
@@ -368,7 +378,7 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
 
         if (!approvalRequired && updated.Mql is not null && _executor is not null)
         {
-            var execution = await _executor.ExecuteAsync(
+            var execution = await ExecuteWithLabelsAsync(
                 BuildRequest(updated, GovernanceDecision.None, updated.Draft.DeliveryFormat),
                 cancellationToken);
             updated = updated with { Execution = execution };
@@ -381,6 +391,18 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
 
         _events.Publish(new AgentEvent("conversation.completed", "completed", updated.Id));
         return updated;
+    }
+
+    private async Task<TabularResult> ExecuteWithLabelsAsync(
+        ExecutionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var execution = await _executor!.ExecuteAsync(request, cancellationToken);
+        var definitions = await _columnDefs.GetDefinitionsAsync(cancellationToken);
+        var labels = definitions
+            .ToDictionary(d => d.Field, d => d.Label ?? d.Field, StringComparer.OrdinalIgnoreCase);
+        _columnLabels = labels;
+        return execution with { ColumnLabels = labels };
     }
 
     private ExecutionRequest BuildRequest(ConversationState state, GovernanceDecision governance, string? exportFormat)
@@ -414,8 +436,12 @@ public sealed partial class ConversationOrchestrator : IConversationResumeHandle
         };
 
         var columns = state.Step == ConversationStep.Columns
-            ? _columns.Available(state.Mql)
-            : state.Draft.Columns?.Select(name => new ColumnOption(name, true)).ToList();
+            ? _columns.Available(state.Mql).Select(c => c with
+            {
+                Label = _columnLabels.TryGetValue(c.Name, out var label) ? label : null
+            }).ToList()
+            : state.Draft.Columns?.Select(name => new ColumnOption(name, true,
+                _columnLabels.TryGetValue(name, out var label) ? label : null)).ToList();
 
         var downloadable = state.Step == ConversationStep.Complete
             && !state.ApprovalRequired

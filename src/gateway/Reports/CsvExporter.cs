@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Gateway.Rules;
 
 namespace Gateway.Reports;
 
@@ -17,30 +18,30 @@ public static class CsvExporter
             row.Latitude is null ? string.Empty : $"{row.Latitude},{row.Longitude}"
     };
 
-    public static string Export(IReadOnlyList<ListingRow> rows, IReadOnlyList<string> columns)
+    public static string Export(IReadOnlyList<ListingRow> rows, IReadOnlyList<ColumnDefinition> columns)
     {
         var builder = new StringBuilder();
-        builder.Append(string.Join(',', columns.Select(Escape)));
+        builder.Append(string.Join(',', columns.Select(column => Escape(column.Label ?? column.Field))));
 
         foreach (var row in rows)
         {
             builder.Append('\n');
-            builder.Append(string.Join(',', columns.Select(column => Escape(Value(row, column)))));
+            builder.Append(string.Join(',', columns.Select(column => Escape(Value(row, column.Field)))));
         }
 
         return builder.ToString();
     }
 
-    public static string Export(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<string> columns)
+    public static string Export(IReadOnlyList<IReadOnlyDictionary<string, string?>> rows, IReadOnlyList<ColumnDefinition> columns)
     {
         var builder = new StringBuilder();
-        builder.Append(string.Join(',', columns.Select(Escape)));
+        builder.Append(string.Join(',', columns.Select(column => Escape(column.Label ?? column.Field))));
 
         foreach (var row in rows)
         {
             builder.Append('\n');
             builder.Append(string.Join(',', columns.Select(column =>
-                Escape(row.TryGetValue(column, out var value) ? value ?? string.Empty : string.Empty))));
+                Escape(row.TryGetValue(column.Field, out var value) ? value ?? string.Empty : string.Empty))));
         }
 
         return builder.ToString();

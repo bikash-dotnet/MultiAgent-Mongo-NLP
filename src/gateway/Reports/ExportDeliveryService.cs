@@ -1,4 +1,5 @@
 using System.Text;
+using Gateway.Rules;
 using Microsoft.Extensions.Options;
 
 namespace Gateway.Reports;
@@ -16,13 +17,13 @@ public sealed class ExportDeliveryService
         _email = email;
     }
 
-    public ExportResult Csv(IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
+    public ExportResult Csv(IReadOnlyList<ColumnDefinition> columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
     {
         var content = Encoding.UTF8.GetBytes(CsvExporter.Export(rows, columns));
         return new ExportResult("CSV", content, CsvContentType, "report.csv");
     }
 
-    public ExportResult Xlsx(IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
+    public ExportResult Xlsx(IReadOnlyList<ColumnDefinition> columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
     {
         var content = XlsxExporter.Export(rows, columns);
         return new ExportResult("XLSX", content, XlsxContentType, "report.xlsx");

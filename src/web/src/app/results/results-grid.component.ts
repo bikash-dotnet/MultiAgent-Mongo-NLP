@@ -13,6 +13,10 @@ import { ExecutionPayload } from '../models/execution';
 export class ResultsGridComponent {
   @Input() execution: ExecutionPayload | null = null;
 
+  label(column: string): string {
+    return this.execution?.columnLabels?.[column] ?? column;
+  }
+
   value(row: Record<string, string | null>, column: string): string {
     return row[column] ?? '';
   }

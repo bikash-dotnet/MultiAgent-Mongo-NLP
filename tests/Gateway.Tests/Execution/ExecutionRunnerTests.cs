@@ -60,6 +60,119 @@ public class ExecutionRunnerTests
         Assert.Single(await audit.ListAsync(CancellationToken.None));
     }
 
+    [Fact]
+    public async Task Cap_rows_truncates_result_rows()
+    {
+        var backend = new InMemoryDocumentStore();
+        var store = new BusinessRuleStore(backend);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "cap", null, RuleScope.Global, null, 10, true,
+            new RuleCondition("*", "equals", ["*"], "all"),
+            new RuleAction(RuleActions.CapRows, new Dictionary<string, string> { ["max"] = "2" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+
+        var audit = new InMemoryAuditLogStore();
+        var events = new RecordingSink();
+        var transport = new StubTransport(_ => new TabularResult(
+            ["name", "price"],
+            Enumerable.Range(0, 5).Select(i => new Dictionary<string, string?>
+            {
+                ["name"] = $"r{i}", ["price"] = $"${i}"
+            }).ToList(),
+            "Mongo", 7));
+        var runner = new ExecutionRunner(transport, audit, events, Options(), new SettingsProvider(), TimeProvider.System,
+            new BusinessRuleEngine(store));
+
+        var result = await runner.ExecuteAsync(RequestWithRole("Business Analyst"), CancellationToken.None);
+
+        Assert.Equal(2, result.RowCount);
+        Assert.Equal(["name", "price"], result.Columns);
+    }
+
+    [Fact]
+    public async Task Mask_column_masks_values_for_non_exempt_requester()
+    {
+        var backend = new InMemoryDocumentStore();
+        var store = new BusinessRuleStore(backend);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "mask", null, RuleScope.Global, null, 10, true,
+            new RuleCondition("*", "equals", ["*"], "all"),
+            new RuleAction(RuleActions.MaskColumn, new Dictionary<string, string> { ["field"] = "price" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+
+        var audit = new InMemoryAuditLogStore();
+        var events = new RecordingSink();
+        var transport = new StubTransport(_ => new TabularResult(
+            ["name", "price"],
+            [new Dictionary<string, string?> { ["name"] = "a", ["price"] = "100" }],
+            "Mongo", 7));
+        var runner = new ExecutionRunner(transport, audit, events, Options(), new SettingsProvider(), TimeProvider.System,
+            new BusinessRuleEngine(store));
+
+        var result = await runner.ExecuteAsync(RequestWithRole("Business Analyst"), CancellationToken.None);
+
+        Assert.Equal(["name", "price"], result.Columns);
+        Assert.Equal("a", result.Rows[0]["name"]);
+        Assert.Equal("***", result.Rows[0]["price"]);
+    }
+
+    [Fact]
+    public async Task Exempt_role_skips_masking()
+    {
+        var backend = new InMemoryDocumentStore();
+        var store = new BusinessRuleStore(backend);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "mask", null, RuleScope.Global, null, 10, true,
+            new RuleCondition("*", "equals", ["*"], "all"),
+            new RuleAction(RuleActions.MaskColumn, new Dictionary<string, string> { ["field"] = "price" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "exempt", null, RuleScope.Global, null, 5, true,
+            new RuleCondition("*", "equals", ["*"], "all"),
+            new RuleAction(RuleActions.ExemptRole, new Dictionary<string, string> { ["role"] = "Business Analyst" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+
+        var audit = new InMemoryAuditLogStore();
+        var events = new RecordingSink();
+        var transport = new StubTransport(_ => new TabularResult(
+            ["name", "price"],
+            [new Dictionary<string, string?> { ["name"] = "a", ["price"] = "100" }],
+            "Mongo", 7));
+        var runner = new ExecutionRunner(transport, audit, events, Options(), new SettingsProvider(), TimeProvider.System,
+            new BusinessRuleEngine(store));
+
+        var result = await runner.ExecuteAsync(RequestWithRole("Business Analyst"), CancellationToken.None);
+
+        Assert.Equal("100", result.Rows[0]["price"]);
+    }
+
+    [Fact]
+    public async Task Exclude_column_removes_fields_from_columns_and_rows()
+    {
+        var backend = new InMemoryDocumentStore();
+        var store = new BusinessRuleStore(backend);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "exclude", null, RuleScope.Global, null, 10, true,
+            new RuleCondition("*", "equals", ["*"], "all"),
+            new RuleAction(RuleActions.ExcludeColumn, new Dictionary<string, string> { ["field"] = "price" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+
+        var audit = new InMemoryAuditLogStore();
+        var events = new RecordingSink();
+        var transport = new StubTransport(_ => new TabularResult(
+            ["name", "price"],
+            [new Dictionary<string, string?> { ["name"] = "a", ["price"] = "100" }],
+            "Mongo", 7));
+        var runner = new ExecutionRunner(transport, audit, events, Options(), new SettingsProvider(), TimeProvider.System,
+            new BusinessRuleEngine(store));
+
+        var result = await runner.ExecuteAsync(RequestWithRole("Business Analyst"), CancellationToken.None);
+
+        Assert.Equal(["name"], result.Columns);
+        Assert.False(result.Rows[0].ContainsKey("price"));
+        Assert.Equal("a", result.Rows[0]["name"]);
+    }
+
     private static IOptions<ExecutionOptions> Options(int timeoutMs = 5000)
     {
         return Microsoft.Extensions.Options.Options.Create(new ExecutionOptions { TimeoutMs = timeoutMs });
@@ -79,6 +192,23 @@ public class ExecutionRunnerTests
             false,
             0,
             new RequesterContext("usr_1", "Bikash", "Business Analyst", null, "bnayak@enterprise.com"),
+            GovernanceDecision.None);
+    }
+
+    private static ExecutionRequest RequestWithRole(string role)
+    {
+        return new ExecutionRequest(
+            "[{\"$match\":{}}]",
+            "sess-1",
+            "Listings",
+            ExecutionDataSource.Mongo,
+            "listingsAndReviews",
+            ["name", "price"],
+            new Dictionary<string, string>(),
+            false,
+            false,
+            0,
+            new RequesterContext("usr_1", "Bikash", role, null, "bnayak@enterprise.com"),
             GovernanceDecision.None);
     }
 

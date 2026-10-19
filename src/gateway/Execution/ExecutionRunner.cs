@@ -50,14 +50,52 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
             result = await _transport.ExecuteAsync(request, timeout.Token);
 
             var ruleResult = await _rules.EvaluateAsync(request.User, schemaId: null, cancellationToken);
-            var cap = BusinessRuleEngine.CapRows(ruleResult.Effects);
-            if (cap is int capped && capped >= 0 && result.Rows.Count > capped)
+            var effects = ruleResult.Effects;
+
+            var excluded = BusinessRuleEngine.ExcludedColumns(effects)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var masked = BusinessRuleEngine.MaskedColumns(effects)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var exemptRoles = BusinessRuleEngine.ExemptRoles(effects);
+            var isExempt = exemptRoles.Contains(request.User.Role, StringComparer.OrdinalIgnoreCase);
+
+            // Apply exclusions: drop excluded fields from columns and rows.
+            var keptColumns = result.Columns
+                .Where(c => !excluded.Contains(c))
+                .ToList();
+            var keptRows = result.Rows
+                .Select(row => row
+                    .Where(kv => !excluded.Contains(kv.Key))
+                    .ToDictionary(kv => kv.Key, kv => kv.Value))
+                .ToList();
+
+            // Apply masking for non-exempt requesters.
+            IReadOnlyList<IReadOnlyDictionary<string, string?>> finalRows;
+            if (!isExempt && masked.Count > 0)
             {
-                result = result with
+                finalRows = keptRows.Select(row =>
                 {
-                    Rows = result.Rows.Take(capped).ToList()
-                };
+                    var maskedRow = new Dictionary<string, string?>();
+                    foreach (var kv in row)
+                    {
+                        maskedRow[kv.Key] = masked.Contains(kv.Key) ? "***" : kv.Value;
+                    }
+                    return maskedRow as IReadOnlyDictionary<string, string?>;
+                }).ToList();
             }
+            else
+            {
+                finalRows = keptRows;
+            }
+
+            // Apply row cap.
+            var cap = BusinessRuleEngine.CapRows(effects);
+            if (cap is int capped && capped >= 0 && finalRows.Count > capped)
+            {
+                finalRows = finalRows.Take(capped).ToList();
+            }
+
+            result = result with { Columns = keptColumns, Rows = finalRows };
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
