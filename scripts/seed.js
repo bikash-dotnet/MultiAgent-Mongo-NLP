@@ -18,6 +18,8 @@
 //   SettingType: "String"/"Number"/"Double"/"Boolean"/"Select"/"Url"/"Password"/"Port"
 //   ColumnDataType: "String"/"Number"/"Currency"/"Boolean"/"Date"
 //   RuleScope: "Global"/"Schema"/"Role"
+//   McpTransport: "Stdio"/"Http"
+//   McpScope: "Global"/"Schema"/"Role"
 
 const now = new Date().toISOString();
 
@@ -258,6 +260,33 @@ const columnDefinitions = [
 ];
 
 // ----------------------------------------------------------------
+// MCP server registry (mirrors Gateway.Mcp.McpServerSeeder.BuildPocDefinition)
+// Sample POC entry only — not part of the production solution and can be removed.
+// Insert-only: never overwrite an operator-edited definition (S13-01).
+// envKeys are variable NAMES only; secret values are never stored.
+// ----------------------------------------------------------------
+const pocMcpServer = {
+  _id: 'mcp_mongo_ai_query',
+  id: 'mcp_mongo_ai_query',
+  name: 'mongo-ai-query',
+  description: 'Sample POC MCP server (stdio). Not part of the production solution and can be removed.',
+  transport: 'Stdio',
+  command: 'node',
+  args: ['src/poc/mcp-server.js.js'],
+  url: null,
+  envKeys: ['MONGO_URI', 'API_KEY'],
+  enabled: false,
+  allowedTools: ['get_schema', 'generate_pipeline', 'run_pipeline', 'ask'],
+  readOnly: true,
+  timeoutMs: 5000,
+  scope: 'Global',
+  scopeValue: null,
+  version: 1,
+  updatedAt: now,
+  updatedBy: 'system'
+};
+
+// ----------------------------------------------------------------
 // Seed (upsert: replaces existing documents, ensuring camelCase field names)
 // Old PascalCase documents are overwritten on re-run.
 // ----------------------------------------------------------------
@@ -290,5 +319,14 @@ for (const doc of columnDefinitions) {
   columnsUpserted++;
 }
 print('[column_definitions] Upserted ' + columnsUpserted + ' columns');
+
+// --- mcp_servers (insert-only; skip if operator already edited) ---
+const existingMcp = db.mcp_servers.findOne({ _id: pocMcpServer._id });
+if (existingMcp) {
+  print('[mcp_servers] Skipped existing definition: mcp_mongo_ai_query');
+} else {
+  db.mcp_servers.insertOne(pocMcpServer);
+  print('[mcp_servers] Inserted sample POC server (disabled): mcp_mongo_ai_query');
+}
 
 print('\nSeed complete.');
