@@ -55,6 +55,7 @@
                   } @else {
                     @if (isNumberType(setting.type)) {
                       <p-inputNumber
+                        name="num-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
                         [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
@@ -63,12 +64,14 @@
                       />
                     } @else if (isBooleanType(setting.type)) {
                       <p-toggleSwitch
+                        name="bool-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [disabled]="!setting.editable"
                         inputId="toggle-{{ section.sectionName }}-{{ setting.key }}"
                       />
                     } @else if (isSelectType(setting.type)) {
                       <p-select
+                        name="select-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [options]="(getFieldSchema(section.sectionName, setting.key)?.allowedValues ?? []).map((v) => ({ label: v, value: v }))"
                         [disabled]="!setting.editable"
@@ -79,6 +82,7 @@
                       />
                     } @else {
                       <p-inputText
+                        name="text-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [disabled]="!setting.editable || setting.secret"
                         class="control-sm"
