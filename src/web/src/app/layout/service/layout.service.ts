@@ -1,37 +1,72 @@
-import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID, signal, computed, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { BehaviorSubject, Observable, map } from 'rxjs';
 
-export interface LayoutPreferences {
-  darkMode: boolean;
-  sidebarVisible: boolean;
-  layoutPreset: string;
-  surface: string;
+export interface LayoutConfig {
+  preset: string;
+  primary: string;
+  surface: string | null;
+  darkTheme: boolean;
+  menuMode: string;
+}
+
+interface LayoutState {
+  staticMenuDesktopInactive: boolean;
+  overlayMenuActive: boolean;
+  configSidebarVisible: boolean;
+  mobileMenuActive: boolean;
+  menuHoverActive: boolean;
+  activePath: string | null;
 }
 
 const STORAGE_KEY = 'multi-agent-nlp.layout';
 
-const DEFAULTS: LayoutPreferences = {
-  darkMode: false,
-  sidebarVisible: true,
-  layoutPreset: 'sagga',
-  surface: 'light'
+const DEFAULTS: LayoutConfig = {
+  preset: 'Aura',
+  primary: 'emerald',
+  surface: null,
+  darkTheme: false,
+  menuMode: 'static'
 };
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
-  private readonly preferences = new BehaviorSubject<LayoutPreferences>(DEFAULTS);
-  readonly preferences$: Observable<LayoutPreferences> = this.preferences.asObservable();
+  layoutConfig = signal<LayoutConfig>(DEFAULTS);
 
-  readonly darkMode$: Observable<boolean> = this.preferences.pipe(
-    map((pref) => pref.darkMode)
+  layoutState = signal<LayoutState>({
+    staticMenuDesktopInactive: false,
+    overlayMenuActive: false,
+    configSidebarVisible: false,
+    mobileMenuActive: false,
+    menuHoverActive: false,
+    activePath: null
+  });
+
+  readonly theme = computed(() => (this.layoutConfig().darkTheme ? 'light' : 'dark'));
+  readonly isSidebarActive = computed(
+    () => this.layoutState().overlayMenuActive || this.layoutState().mobileMenuActive
   );
-  readonly sidebarVisible$: Observable<boolean> = this.preferences.pipe(
-    map((pref) => pref.sidebarVisible)
-  );
+  readonly isDarkTheme = computed(() => this.layoutConfig().darkTheme);
+  readonly getPrimary = computed(() => this.layoutConfig().primary);
+  readonly getSurface = computed(() => this.layoutConfig().surface);
+  readonly isOverlay = computed(() => this.layoutConfig().menuMode === 'overlay');
 
   constructor(@Inject(PLATFORM_ID) private readonly platformId: object) {
     this.load();
+
+    effect(() => {
+      const config = this.layoutConfig();
+      if (isPlatformBrowser(this.platformId)) {
+        if (config.darkTheme) {
+          document.documentElement.classList.add('app-dark');
+        } else {
+          document.documentElement.classList.remove('app-dark');
+        }
+      }
+    });
+
+    effect(() => {
+      this.persist();
+    });
   }
 
   private load(): void {
@@ -43,68 +78,54 @@ export class LayoutService {
       if (!raw) {
         return;
       }
-      const parsed = JSON.parse(raw) as Partial<LayoutPreferences>;
+      const parsed = JSON.parse(raw) as Partial<LayoutConfig>;
       if (parsed && typeof parsed === 'object') {
-        this.preferences.next({ ...DEFAULTS, ...parsed });
+        this.layoutConfig.set({ ...DEFAULTS, ...parsed });
       }
     } catch {
       // stale or invalid JSON: keep defaults
     }
   }
 
-  private persist(next: LayoutPreferences): void {
+  private persist(): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.layoutConfig()));
     } catch {
       // storage quota or private mode: ignore
     }
   }
 
-  get darkMode(): boolean {
-    return this.preferences.value.darkMode;
+  onMenuToggle(): void {
+    if (this.isOverlay()) {
+      this.layoutState.update((prev) => ({ ...prev, overlayMenuActive: !prev.overlayMenuActive }));
+    }
+
+    if (this.isDesktop()) {
+      this.layoutState.update((prev) => ({ ...prev, staticMenuDesktopInactive: !prev.staticMenuDesktopInactive }));
+    } else {
+      this.layoutState.update((prev) => ({ ...prev, mobileMenuActive: !prev.mobileMenuActive }));
+    }
   }
 
-  get sidebarVisible(): boolean {
-    return this.preferences.value.sidebarVisible;
+  showConfigSidebar(): void {
+    this.layoutState.update((prev) => ({ ...prev, configSidebarVisible: true }));
   }
 
-  get layoutPreset(): string {
-    return this.preferences.value.layoutPreset;
+  hideConfigSidebar(): void {
+    this.layoutState.update((prev) => ({ ...prev, configSidebarVisible: false }));
   }
 
-  get surface(): string {
-    return this.preferences.value.surface;
+  isDesktop(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return true;
+    }
+    return window.innerWidth > 991;
   }
 
-  setDarkMode(value: boolean): void {
-    const next = { ...this.preferences.value, darkMode: value };
-    this.preferences.next(next);
-    this.persist(next);
-  }
-
-  setSidebarVisible(value: boolean): void {
-    const next = { ...this.preferences.value, sidebarVisible: value };
-    this.preferences.next(next);
-    this.persist(next);
-  }
-
-  setPreset(preset: string): void {
-    const next = { ...this.preferences.value, layoutPreset: preset };
-    this.preferences.next(next);
-    this.persist(next);
-  }
-
-  setSurface(surface: string): void {
-    const next = { ...this.preferences.value, surface };
-    this.preferences.next(next);
-    this.persist(next);
-  }
-
-  reset(): void {
-    this.preferences.next(DEFAULTS);
-    this.persist(DEFAULTS);
+  isMobile(): boolean {
+    return !this.isDesktop();
   }
 }
