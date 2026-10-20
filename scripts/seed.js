@@ -21,7 +21,8 @@
 //   McpTransport: "Stdio"/"Http"
 //   McpScope: "Global"/"Schema"/"Role"
 
-const now = new Date().toISOString();
+// Timestamps are stored as BSON Date values so range queries and TTL indexes work.
+const now = new Date();
 
 // ----------------------------------------------------------------
 // Schema definition (mirrors Gateway.Schemas.SchemaSeeder.BuildDefault())

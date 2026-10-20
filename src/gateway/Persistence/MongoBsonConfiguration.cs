@@ -40,7 +40,7 @@ internal static class MongoBsonConfiguration
             };
             ConventionRegistry.Register("Gateway", conventions, _ => true);
 
-            BsonSerializer.RegisterSerializer(typeof(DateTimeOffset), new DateTimeOffsetSerializer(BsonType.String));
+            BsonSerializer.RegisterSerializer(typeof(DateTimeOffset), new DateTimeOffsetSerializer(BsonType.DateTime));
 
             RegisterDocument<BusinessRule>(map => map.MapIdMember(document => document.Id));
             RegisterDocument<ColumnDefinition>(map => map.MapIdMember(document => document.Id));

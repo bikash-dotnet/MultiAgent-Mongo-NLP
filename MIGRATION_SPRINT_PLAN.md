@@ -5,16 +5,20 @@
 **Implemented**
 - `MongoDocumentStore` reads and writes typed `IMongoCollection<T>` documents with native
   `FindAsync` / `ReplaceOneAsync`; the System.Text.Json round-trip is gone.
-- `MongoBsonConfiguration` registers camelCase element names, string enum values, ISO-8601
-  `DateTimeOffset` values, and `Id` → `_id` class maps (plus `AgentState.SessionId` and
+- `MongoBsonConfiguration` registers camelCase element names, string enum values, UTC BSON
+  `Date` timestamps, and `Id` → `_id` class maps (plus `AgentState.SessionId` and
   `ActivationLock.Id`). JSON string converters remain on enums for HTTP contracts.
-- `seed.js` no longer writes a duplicate `id` field; `scripts/migrate-remove-duplicate-id.js`
-  cleans legacy documents.
+- `seed.js` no longer writes a duplicate `id` field and stores timestamps as `Date` objects.
+  `scripts/migrate-remove-duplicate-id.js` cleans legacy duplicate ids, and
+  `scripts/migrate-timestamps-to-bson-date.js` converts legacy ISO-8601 strings.
 - `RuleSeedHostedService` is retained as a safety net and still skips when data exists.
 
 **Pending**
-- Run `scripts/migrate-remove-duplicate-id.js` against each deployed database (no MongoDB
-  instance is available in this environment).
+- During the deployment cutover (gateway stopped), run
+  `scripts/migrate-remove-duplicate-id.js` and
+  `scripts/migrate-timestamps-to-bson-date.js` against each deployed database (no MongoDB
+  instance is available in this environment). The BSON `Date` serializer cannot read legacy
+  string timestamps, so migrate before starting the new build.
 
 ## Deferred from current sprint (Option A applied now)
 
@@ -65,12 +69,15 @@
 4. [x] Remove `_id`/`Id` duplication from writes, `seed.js`, and add a legacy cleanup script
 5. [x] Evaluate removing C# `RuleSeedHostedService` seeding redundancy — retained as an idempotent safety net
 6. [x] Store classes need no changes; the generic `IDocumentStore` methods now use typed collections internally
+7. [x] Store timestamps as UTC BSON `Date` and migrate legacy ISO-8601 strings
 
 ## Verification checklist for migration sprint
 
-- [x] `dotnet test` passes with typed MongoDB collections (378/378)
+- [x] `dotnet test` passes with typed MongoDB collections (379/379)
 - [x] `ng build` production clean
 - [x] `ng test` 57/57 pass
 - [x] Seed script inserts camelCase documents without duplicate ids; BSON round-trip tests cover every document shape
 - [ ] No duplicate `_id`/`Id` fields in MongoDB documents (run `scripts/migrate-remove-duplicate-id.js`)
 - [x] Enum values stored as strings in BSON (covered by `MongoBsonConfigurationTests`)
+- [x] Timestamps stored as UTC BSON `Date` values (covered by `MongoBsonConfigurationTests`)
+- [ ] Existing string timestamps migrated (run `scripts/migrate-timestamps-to-bson-date.js`)
