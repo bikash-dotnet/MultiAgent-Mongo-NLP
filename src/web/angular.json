@@ -39,7 +39,8 @@
             ],
             "styles": [
               "src/styles.scss",
-              "src/tailwind.css"
+              "src/tailwind.css",
+              "src/app/layout/layout.scss"
             ],
             "scripts": []
           },

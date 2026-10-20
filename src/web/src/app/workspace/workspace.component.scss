@@ -1,38 +1,14 @@
 .shell {
-  margin: 0 auto;
-}
-
-.hero {
-  background: #111827;
-  color: #f9fafb;
-  border-radius: 20px;
-  padding: 36px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-}
-
-.eyebrow {
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-size: 12px;
-  color: #93c5fd;
-  margin: 0 0 12px;
-}
-
-h1 {
-  margin: 0 0 12px;
-  font-size: 36px;
-  line-height: 1.15;
-}
-
-.period {
-  color: #d1d5db;
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .chat-layout {
   display: grid;
   gap: 1.5rem;
-  margin-top: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 768px) {
@@ -47,15 +23,14 @@ h1 {
   }
   .case-context {
     order: -1;
-    margin-top: 1.5rem;
   }
 }
 
 .case-context {
-  padding: 24px;
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  border-radius: var(--content-border-radius);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
   height: fit-content;
 
   .stream-event-bar {
@@ -69,6 +44,8 @@ h1 {
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
+      color: var(--text-color);
+      background: var(--surface-hover);
 
       &.badge-online {
         background: #dcfce7;
@@ -86,25 +63,13 @@ h1 {
 .case-context h2 {
   margin: 0 0 16px;
   font-size: 18px;
-  color: #1e293b;
+  color: var(--text-color);
 }
 
 .case-context p {
   margin: 8px 0;
   font-size: 14px;
-  color: #64748b;
-}
-
-.case-context .json-container {
-  margin-top: 12px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  color: var(--text-color-secondary);
 }
 
 .export-actions {
@@ -112,17 +77,4 @@ h1 {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.export-actions p {
-  margin: 0;
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-@media (max-width: 900px) {
-  .shell {
-    padding: 0;
-  }
 }

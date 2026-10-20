@@ -1,7 +1,5 @@
 .schemas {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .toolbar {
@@ -16,6 +14,7 @@
 .toolbar h1 {
   margin: 0;
   font-size: 1.5rem;
+  color: var(--text-color);
 }
 
 .toolbar-actions {
@@ -25,7 +24,7 @@
 
 .subtitle {
   margin: 0.35rem 0 0;
-  color: #666;
+  color: var(--text-color-secondary);
   font-size: 0.95rem;
 }
 
@@ -52,7 +51,7 @@
 }
 
 .form-grid > label {
-  color: #444;
+  color: var(--text-color);
   font-size: 0.9rem;
 }
 
@@ -69,7 +68,7 @@
 
 .checkbox-row label {
   font-size: 0.9rem;
-  color: #444;
+  color: var(--text-color);
 }
 
 .fields-header {
@@ -92,12 +91,12 @@
 }
 
 .muted {
-  color: #999;
+  color: var(--text-color-secondary);
 }
 
 .hint {
   margin: 0 0 0.4rem;
-  color: #666;
+  color: var(--text-color-secondary);
   font-size: 0.85rem;
 }
 
@@ -110,4 +109,16 @@
 
 .preview-actions {
   margin: 0.5rem 0 0.75rem;
+}
+
+.p-datatable-thead th {
+  color: var(--text-color);
+}
+
+.p-datatable-tbody td {
+  color: var(--text-color);
+}
+
+.p-datatable-tbody tr:hover td {
+  background: var(--surface-hover);
 }

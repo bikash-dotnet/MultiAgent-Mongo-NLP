@@ -1,5 +1,8 @@
 <section class="queue">
-  <h2>Governance approvals</h2>
+  <div class="page-header">
+    <h2>Governance approvals</h2>
+    <p class="subtitle">Review and approve or reject pending access requests.</p>
+  </div>
   @if (error) {
     <p class="error" role="alert">{{ error }}</p>
   }
@@ -25,10 +28,10 @@
       }
       @if (request.status === 'PENDING_LEAD' && canDecide) {
         <div class="actions">
-          <button type="button" (click)="approve(request)">Approve</button>
-          <button type="button" (click)="reject(request)">Reject</button>
+          <button type="button" class="p-button p-button-primary" (click)="approve(request)">Approve</button>
+          <button type="button" class="p-button p-button-secondary" (click)="reject(request)">Reject</button>
           <input name="overrideNotes" placeholder="Override notes" [(ngModel)]="overrideNotes" />
-          <button type="button" (click)="override(request)">Override</button>
+          <button type="button" class="p-button p-button-secondary" (click)="override(request)">Override</button>
         </div>
       }
     </article>

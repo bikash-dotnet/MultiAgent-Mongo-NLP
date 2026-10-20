@@ -1,7 +1,5 @@
 .configuration {
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 24px;
+  padding: 16px;
 }
 
 .toolbar {
@@ -14,11 +12,12 @@
 .toolbar h1 {
   margin: 0;
   font-size: 20px;
+  color: var(--text-color);
 }
 
 .toolbar .subtitle {
   margin: 4px 0 0;
-  color: var(--p-text-muted-color, #64748b);
+  color: var(--text-color-secondary);
   font-size: 14px;
 }
 
@@ -40,7 +39,7 @@ p-tabView {
 
 .section-title {
   font-weight: 600;
-  color: var(--p-text-color, #1e293b);
+  color: var(--text-color);
 }
 
 .settings-grid {
@@ -54,7 +53,7 @@ p-tabView {
   align-items: center;
   gap: 12px;
   padding: 8px 4px;
-  border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-bottom: 1px solid var(--surface-border);
 }
 
 .setting-row:last-child {
@@ -64,7 +63,7 @@ p-tabView {
 .setting-label {
   min-width: 210px;
   font-size: 14px;
-  color: var(--p-text-color, #1e293b);
+  color: var(--text-color);
 }
 
 .setting-control {
@@ -91,20 +90,20 @@ p-tabView {
   gap: 6px;
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid var(--p-content-border-color, #e5e7eb);
-  background: var(--p-content-background, #fff);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
 }
 
 .badge-configured {
-  color: var(--p-success-color, #1e7e34);
+  color: #1e7e34;
 }
 
 .badge-not-configured {
-  color: var(--p-text-muted-color, #64748b);
+  color: var(--text-color-secondary);
 }
 
 .secret-note {
-  color: var(--p-text-muted-color, #64748b);
+  color: var(--text-color-secondary);
 }
 
 .source-badge {
@@ -112,18 +111,18 @@ p-tabView {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--p-primary-color, #3b82f6);
+  background: var(--primary-color);
   color: #fff;
 }
 
 .source-badge.db {
-  background: var(--p-gray-500, #6b7280);
+  background: var(--text-color-secondary);
 }
 
 .field-error {
   margin-left: auto;
   font-size: 12px;
-  color: var(--p-error-color, #dc2626);
+  color: #dc2626;
 }
 
 .section-actions {
@@ -131,7 +130,7 @@ p-tabView {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
-  border-top: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-top: 1px solid var(--surface-border);
   padding-top: 12px;
 }
 
