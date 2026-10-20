@@ -42,7 +42,7 @@ public class MongoBsonConfigurationTests
         Assert.Equal("br_1", document["_id"].AsString);
         Assert.False(document.Contains("id"));
         Assert.Equal("Global", document["scope"].AsString);
-        Assert.Equal(BsonType.String, document["updatedAt"].BsonType);
+        Assert.Equal(BsonType.DateTime, document["updatedAt"].BsonType);
         Assert.Equal("100", document["action"]["parameters"]["maxRows"].AsString);
 
         var reloaded = BsonSerializer.Deserialize<BusinessRule>(document);
@@ -227,10 +227,38 @@ public class MongoBsonConfigurationTests
 
         Assert.Equal("_activation_lock", document["_id"].AsString);
         Assert.False(document.Contains("id"));
-        Assert.Equal(BsonType.String, document["expiresAt"].BsonType);
+        Assert.Equal(BsonType.DateTime, document["expiresAt"].BsonType);
 
         var reloaded = BsonSerializer.Deserialize<ActivationLock>(document);
         Assert.Equal("_activation_lock", reloaded.Id);
         Assert.Equal("token-1", reloaded.Token);
+    }
+
+    [Fact]
+    public void Timestamps_are_stored_as_utc_bson_dates()
+    {
+        var original = new DateTimeOffset(2026, 10, 19, 14, 30, 0, TimeSpan.FromHours(5));
+        var rule = new BusinessRule(
+            "br_1",
+            "Cap rows",
+            null,
+            RuleScope.Global,
+            null,
+            1,
+            true,
+            new RuleCondition("price", ">", ["10"]),
+            new RuleAction(RuleActions.CapRows, new Dictionary<string, string> { ["maxRows"] = "100" }),
+            1,
+            original,
+            "seed");
+
+        var document = rule.ToBsonDocument();
+
+        Assert.Equal(BsonType.DateTime, document["updatedAt"].BsonType);
+        Assert.Equal(original.UtcDateTime, document["updatedAt"].AsBsonDateTime.ToUniversalTime());
+
+        var reloaded = BsonSerializer.Deserialize<BusinessRule>(document);
+        Assert.Equal(TimeSpan.Zero, reloaded.UpdatedAt!.Value.Offset);
+        Assert.Equal(original, reloaded.UpdatedAt.Value);
     }
 }
