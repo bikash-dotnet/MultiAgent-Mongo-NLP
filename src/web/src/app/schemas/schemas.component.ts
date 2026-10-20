@@ -121,13 +121,14 @@ export class SchemasComponent implements OnInit {
     this.error = null;
     this.schemasService.list().subscribe({
       next: (response) => {
-        this.schemas = response.schemas;
+        this.schemas = response.schemas ?? [];
         this.loading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load schemas.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }

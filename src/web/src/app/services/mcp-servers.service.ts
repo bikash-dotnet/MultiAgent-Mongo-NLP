@@ -3,8 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   McpServerDefinition,
-  McpServerDetailResponse,
-  McpServerListResponse,
   McpServerRequest,
   McpServerSummary,
   McpTestResult,
@@ -15,12 +13,12 @@ import {
 export class McpServersService {
   constructor(private readonly http: HttpClient) {}
 
-  listServers(): Observable<McpServerListResponse> {
-    return this.http.get<McpServerListResponse>('/api/mcp-servers');
+  listServers(): Observable<McpServerSummary[]> {
+    return this.http.get<McpServerSummary[]>('/api/mcp-servers');
   }
 
-  getServer(id: string): Observable<McpServerDetailResponse> {
-    return this.http.get<McpServerDetailResponse>(
+  getServer(id: string): Observable<McpServerDefinition> {
+    return this.http.get<McpServerDefinition>(
       `/api/mcp-servers/${encodeURIComponent(id)}`
     );
   }
