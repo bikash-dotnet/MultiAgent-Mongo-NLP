@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
-import { LayoutService, LayoutPreferences } from './layout.service';
+import { LayoutService, LayoutConfig } from './layout.service';
 
 describe('LayoutService', () => {
   let service: LayoutService;
@@ -20,65 +20,59 @@ describe('LayoutService', () => {
     localStorage.clear();
   });
 
-  it('starts with default preferences', () => {
-    expect(service.darkMode).toBe(false);
-    expect(service.sidebarVisible).toBe(true);
-    expect(service.layoutPreset).toBe('sagga');
-    expect(service.surface).toBe('light');
+  it('starts with default layout config', () => {
+    expect(service.layoutConfig().preset).toBe('Aura');
+    expect(service.layoutConfig().primary).toBe('emerald');
+    expect(service.layoutConfig().surface).toBeNull();
+    expect(service.layoutConfig().darkTheme).toBe(false);
+    expect(service.layoutConfig().menuMode).toBe('static');
   });
 
-  it('persists dark mode to localStorage', () => {
-    service.setDarkMode(true);
-
-    expect(service.darkMode).toBe(true);
-    const stored: Partial<LayoutPreferences> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
-    expect(stored.darkMode).toBe(true);
-    expect(stored.sidebarVisible).toBe(true);
+  it('starts with default layout state', () => {
+    expect(service.layoutState().overlayMenuActive).toBe(false);
+    expect(service.layoutState().mobileMenuActive).toBe(false);
+    expect(service.layoutState().staticMenuDesktopInactive).toBe(false);
+    expect(service.layoutState().configSidebarVisible).toBe(false);
+    expect(service.layoutState().menuHoverActive).toBe(false);
+    expect(service.layoutState().activePath).toBeNull();
   });
 
-  it('persists sidebar visibility to localStorage', () => {
-    service.setSidebarVisible(false);
+  it('isDarkTheme reflects layoutConfig darkTheme', () => {
+    expect(service.isDarkTheme()).toBe(false);
 
-    expect(service.sidebarVisible).toBe(false);
-    const stored: Partial<LayoutPreferences> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
-    expect(stored.sidebarVisible).toBe(false);
+    service.layoutConfig.update((c) => ({ ...c, darkTheme: true }));
+    expect(service.isDarkTheme()).toBe(true);
   });
 
-  it('persists layout preset to localStorage', () => {
-    service.setPreset('vela');
+  it('isOverlay reflects menuMode overlay', () => {
+    expect(service.isOverlay()).toBe(false);
 
-    expect(service.layoutPreset).toBe('vela');
-    const stored: Partial<LayoutPreferences> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
-    expect(stored.layoutPreset).toBe('vela');
+    service.layoutConfig.update((c) => ({ ...c, menuMode: 'overlay' }));
+    expect(service.isOverlay()).toBe(true);
   });
 
-  it('persists surface to localStorage', () => {
-    service.setSurface('dark');
+  it('persists darkTheme to localStorage', async () => {
+    service.layoutConfig.update((c) => ({ ...c, darkTheme: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(service.surface).toBe('dark');
-    const stored: Partial<LayoutPreferences> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
-    expect(stored.surface).toBe('dark');
+    const stored: Partial<LayoutConfig> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
+    expect(stored.darkTheme).toBe(true);
   });
 
-  it('resets all preferences to defaults', () => {
-    service.setDarkMode(true);
-    service.setSidebarVisible(false);
-    service.setPreset('arya');
-    service.setSurface('dark');
+  it('persists preset to localStorage', async () => {
+    service.layoutConfig.update((c) => ({ ...c, preset: 'Lara' }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    service.reset();
+    const stored: Partial<LayoutConfig> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
+    expect(stored.preset).toBe('Lara');
+  });
 
-    expect(service.darkMode).toBe(false);
-    expect(service.sidebarVisible).toBe(true);
-    expect(service.layoutPreset).toBe('sagga');
-    expect(service.surface).toBe('light');
-    const stored: LayoutPreferences = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
-    expect(stored).toEqual({
-      darkMode: false,
-      sidebarVisible: true,
-      layoutPreset: 'sagga',
-      surface: 'light'
-    });
+  it('persists surface to localStorage', async () => {
+    service.layoutConfig.update((c) => ({ ...c, surface: 'slate' }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const stored: Partial<LayoutConfig> = JSON.parse(localStorage.getItem('multi-agent-nlp.layout') ?? '{}');
+    expect(stored.surface).toBe('slate');
   });
 
   it('ignores stale or invalid localStorage JSON', () => {
@@ -93,17 +87,15 @@ describe('LayoutService', () => {
     });
     const fresh = TestBed.inject(LayoutService);
 
-    expect(fresh.darkMode).toBe(false);
-    expect(fresh.sidebarVisible).toBe(true);
+    expect(fresh.layoutConfig().darkTheme).toBe(false);
+    expect(fresh.layoutConfig().preset).toBe('Aura');
   });
 
   it('restores preferences from valid localStorage JSON', () => {
-    localStorage.setItem('multi-agent-nlp.layout', JSON.stringify({
-      darkMode: true,
-      sidebarVisible: false,
-      layoutPreset: 'arya',
-      surface: 'dark'
-    }));
+    localStorage.setItem(
+      'multi-agent-nlp.layout',
+      JSON.stringify({ preset: 'Nora', primary: 'indigo', surface: 'zinc', darkTheme: true, menuMode: 'overlay' })
+    );
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -114,19 +106,46 @@ describe('LayoutService', () => {
     });
     const fresh = TestBed.inject(LayoutService);
 
-    expect(fresh.darkMode).toBe(true);
-    expect(fresh.sidebarVisible).toBe(false);
-    expect(fresh.layoutPreset).toBe('arya');
-    expect(fresh.surface).toBe('dark');
+    expect(fresh.layoutConfig().preset).toBe('Nora');
+    expect(fresh.layoutConfig().primary).toBe('indigo');
+    expect(fresh.layoutConfig().surface).toBe('zinc');
+    expect(fresh.layoutConfig().darkTheme).toBe(true);
+    expect(fresh.layoutConfig().menuMode).toBe('overlay');
   });
 
-  it('emits darkMode changes on darkMode$', () => {
-    const values: boolean[] = [];
-    service.darkMode$.subscribe((v) => values.push(v));
+  it('onMenuToggle switches overlay menu active in overlay mode', () => {
+    service.layoutConfig.update((c) => ({ ...c, menuMode: 'overlay' }));
 
-    service.setDarkMode(true);
-    service.setDarkMode(false);
+    expect(service.layoutState().overlayMenuActive).toBe(false);
+    service.onMenuToggle();
+    expect(service.layoutState().overlayMenuActive).toBe(true);
+  });
 
-    expect(values).toEqual([false, true, false]);
+  it('onMenuToggle switches mobile menu active on mobile', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+
+    expect(service.layoutState().mobileMenuActive).toBe(false);
+    service.onMenuToggle();
+    expect(service.layoutState().mobileMenuActive).toBe(true);
+  });
+
+  it('showConfigSidebar and hideConfigSidebar toggle configSidebarVisible', () => {
+    expect(service.layoutState().configSidebarVisible).toBe(false);
+    service.showConfigSidebar();
+    expect(service.layoutState().configSidebarVisible).toBe(true);
+    service.hideConfigSidebar();
+    expect(service.layoutState().configSidebarVisible).toBe(false);
+  });
+
+  it('isDesktop returns true in non-browser platform', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        LayoutService,
+        { provide: PLATFORM_ID, useValue: 'server' }
+      ]
+    });
+    const srv = TestBed.inject(LayoutService);
+    expect(srv.isDesktop()).toBe(true);
   });
 });
