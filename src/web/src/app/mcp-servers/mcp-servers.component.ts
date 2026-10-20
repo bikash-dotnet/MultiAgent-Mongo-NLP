@@ -152,14 +152,15 @@ export class McpServersComponent implements OnInit {
     this.loading = true;
     this.error = null;
     this.mcpServersService.listServers().subscribe({
-      next: (response) => {
-        this.servers = response.servers;
+      next: (servers) => {
+        this.servers = servers ?? [];
         this.loading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Unable to load MCP servers.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
@@ -196,12 +197,16 @@ export class McpServersComponent implements OnInit {
 
   startEdit(summary: McpServerSummary): void {
     this.mcpServersService.getServer(summary.id).subscribe({
-      next: (response) => {
-        this.applyDefinition(response.server);
+      next: (server) => {
+        this.applyDefinition(server);
         this.error = null;
         this.editorVisible = true;
+        this.cdr.markForCheck();
       },
-      error: () => (this.error = 'Unable to load MCP server details.')
+      error: () => {
+        this.error = 'Unable to load MCP server details.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -324,13 +329,15 @@ export class McpServersComponent implements OnInit {
   testServer(summary: McpServerSummary): void {
     this.beginTest(summary.id);
     this.mcpServersService.getServer(summary.id).subscribe({
-      next: (response) => {
-        this.applyDefinition(response.server);
+      next: (server) => {
+        this.applyDefinition(server);
         this.runTest(summary.id);
+        this.cdr.markForCheck();
       },
       error: () => {
         this.testing = false;
         this.error = 'Unable to load MCP server details.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -338,25 +345,28 @@ export class McpServersComponent implements OnInit {
   openTools(summary: McpServerSummary): void {
     this.beginTest(summary.id);
     this.mcpServersService.getServer(summary.id).subscribe({
-      next: (response) => {
-        this.applyDefinition(response.server);
+      next: (server) => {
+        this.applyDefinition(server);
         this.mcpServersService.listTools(summary.id).subscribe({
           next: (tools) => {
             this.testResult = { ok: true, health: McpHealth.Healthy, latencyMs: 0, tools, error: null };
             this.discoveredTools = tools.map((t) => t.name);
             this.testing = false;
             this.load();
+            this.cdr.markForCheck();
           },
           error: () => {
             this.testResult = null;
             this.testing = false;
             this.error = 'Unable to load tools.';
+            this.cdr.markForCheck();
           }
         });
       },
       error: () => {
         this.testing = false;
         this.error = 'Unable to load MCP server details.';
+        this.cdr.markForCheck();
       }
     });
   }

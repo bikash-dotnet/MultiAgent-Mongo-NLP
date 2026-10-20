@@ -88,11 +88,3 @@ export interface McpServerRequest {
   scopeValue?: string | null;
   version: number;
 }
-
-export interface McpServerListResponse {
-  servers: McpServerSummary[];
-}
-
-export interface McpServerDetailResponse {
-  server: McpServerDefinition;
-}

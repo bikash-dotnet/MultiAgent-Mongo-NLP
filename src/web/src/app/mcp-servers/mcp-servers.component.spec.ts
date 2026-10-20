@@ -74,7 +74,7 @@ const testResult: McpTestResult = {
   error: null
 };
 
-function setup(role = 'Data Owner / Admin') {
+function setup(role = 'Data Owner / Admin', list: McpServerSummary[] = summaries) {
   let created: McpServerRequest[] = [];
   let updated: { id: string; request: McpServerRequest; version: number }[] = [];
   let deleted: string[] = [];
@@ -84,8 +84,8 @@ function setup(role = 'Data Owner / Admin') {
   let listedTools: string[] = [];
 
   const service = {
-    listServers: () => of({ servers: summaries }),
-    getServer: () => of({ server: detail }),
+    listServers: () => of(list),
+    getServer: () => of(detail),
     createServer: (request: McpServerRequest) => {
       created.push(request);
       return of({ ...detail, id: 'mcp_new', name: request.name });
@@ -265,6 +265,14 @@ describe('McpServersComponent', () => {
     fixture.detectChanges();
     expect(listedTools.length).toBe(1);
     expect(component.testResult?.tools.map((t) => t.name)).toEqual(['get_schema', 'ask']);
+  });
+
+  it('renders the empty state when the API returns no servers', () => {
+    const { component, fixture } = setup('Data Owner / Admin', []);
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('No MCP servers defined.');
   });
 
   it('hides mutating actions for non-admin users', () => {
