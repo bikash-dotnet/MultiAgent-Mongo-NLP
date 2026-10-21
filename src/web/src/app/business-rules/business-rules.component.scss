@@ -37,9 +37,8 @@
   margin: 0;
   border-radius: var(--content-border-radius);
   border-right-width: 1px;
-  margin-right: 0.5rem;
   &:last-child {
-    margin-right: 0;
+    border-right-width: 1px;
   }
 }
 
