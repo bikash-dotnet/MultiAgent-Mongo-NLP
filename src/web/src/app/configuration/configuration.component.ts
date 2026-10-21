@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
+import { InputNumber } from 'primeng/inputnumber';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
@@ -39,7 +39,7 @@ interface SectionDraft {
     ToastModule,
     CardModule,
     InputTextModule,
-    InputNumberModule,
+    InputNumber,
     ToggleSwitchModule,
     SelectModule,
     TagModule,
