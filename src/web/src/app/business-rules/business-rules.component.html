@@ -21,14 +21,10 @@
     <p-tabpanels>
       <p-tabpanel value="rules">
         <div class="mt-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1>Business Rules</h1>
-        <p class="subtitle">Define rules that apply across guardrails, execution, grid columns, and exports.</p>
-        <div class="flex gap-2">
+      <div class="mb-4 flex justify-end">
           @if (canManage) {
             <p-button label="Add rule" icon="pi pi-plus" (onClick)="addRule()" />
           }
-        </div>
       </div>
 
       @if (rules.length) {
