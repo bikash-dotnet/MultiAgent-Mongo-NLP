@@ -41,7 +41,7 @@ export class LayoutService {
     activePath: null
   });
 
-  readonly theme = computed(() => (this.layoutConfig().darkTheme ? 'light' : 'dark'));
+  readonly theme = computed(() => (this.layoutConfig().darkTheme ? 'dark' : 'light'));
   readonly isSidebarActive = computed(
     () => this.layoutState().overlayMenuActive || this.layoutState().mobileMenuActive
   );
