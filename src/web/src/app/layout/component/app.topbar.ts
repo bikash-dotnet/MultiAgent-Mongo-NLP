@@ -2,14 +2,13 @@ import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { StyleClassModule } from 'primeng/styleclass';
-import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
 import { SessionService } from '../../services/session.service';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [RouterModule, CommonModule, StyleClassModule, AppConfigurator],
+  imports: [RouterModule, CommonModule, StyleClassModule],
   template: `
     <div class="layout-topbar">
       <div class="layout-topbar-logo-container">
@@ -22,22 +21,6 @@ import { SessionService } from '../../services/session.service';
       </div>
 
       <div class="layout-topbar-actions">
-        <div class="layout-config-menu">
-          <button type="button" class="layout-topbar-action" (click)="toggleDarkMode()">
-            <i class="pi" [ngClass]="{ 'pi-moon': layoutService.isDarkTheme(), 'pi-sun': !layoutService.isDarkTheme() }"></i>
-          </button>
-          <div class="relative">
-            <button
-              type="button"
-              class="layout-topbar-action layout-topbar-action-highlight"
-              (click)="toggleConfigSidebar()"
-            >
-              <i class="pi pi-palette"></i>
-            </button>
-            <app-configurator [hidden]="!layoutService.layoutState().configSidebarVisible" />
-          </div>
-        </div>
-
         <button class="layout-topbar-menu-button layout-topbar-action" pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout" [hideOnOutsideClick]="true">
           <i class="pi pi-ellipsis-v"></i>
         </button>
@@ -50,12 +33,4 @@ import { SessionService } from '../../services/session.service';
 export class AppTopbar {
   layoutService = inject(LayoutService);
   sessionService = inject(SessionService);
-
-  toggleDarkMode() {
-    this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
-  }
-
-  toggleConfigSidebar() {
-    this.layoutService.layoutState.update((prev) => ({ ...prev, configSidebarVisible: !prev.configSidebarVisible }));
-  }
 }
