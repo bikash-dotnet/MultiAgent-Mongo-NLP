@@ -24,18 +24,22 @@
   }
 
   @if (sections.length) {
-    <p-tabs>
-      @for (section of sections; track section.sectionName) {
-        <p-tabpanel>
-          <ng-template pTemplate="header">
+    <p-tabs [(value)]="activeSection">
+      <p-tablist>
+        @for (section of sections; track section.sectionName) {
+          <p-tab [value]="section.sectionName">
             <div class="section-header">
               <span class="section-title">{{ section.label }}</span>
               @if (section.adminOnly && canManage) {
                 <p-badge value="Admin only" severity="info" />
               }
             </div>
-          </ng-template>
-
+          </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels>
+      @for (section of sections; track section.sectionName) {
+        <p-tabpanel [value]="section.sectionName">
           <div class="settings-grid">
             @for (setting of section.values; track setting.key) {
               <div class="setting-row">
@@ -104,28 +108,27 @@
             }
           </div>
 
-          <ng-template pTemplate="footer">
-            <div class="section-actions">
-              @if (canManage) {
-                <p-button
-                  label="Reset section"
-                  icon="pi pi-undo"
-                  severity="secondary"
-                  [disabled]="getDraft(section.sectionName).saving"
-                  (onClick)="resetSection(section.sectionName)"
-                />
-                <p-button
-                  label="Save"
-                  icon="pi pi-save"
-                  severity="success"
-                  [disabled]="getDraft(section.sectionName).saving"
-                  (onClick)="save(section.sectionName)"
-                />
-              }
-            </div>
-          </ng-template>
+          <div class="section-actions">
+            @if (canManage) {
+              <p-button
+                label="Reset section"
+                icon="pi pi-undo"
+                severity="secondary"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="resetSection(section.sectionName)"
+              />
+              <p-button
+                label="Save"
+                icon="pi pi-save"
+                severity="success"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="save(section.sectionName)"
+              />
+            }
+          </div>
         </p-tabpanel>
       }
+      </p-tabpanels>
     </p-tabs>
   }
 
