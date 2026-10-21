@@ -18,6 +18,7 @@ import { ChipModule } from 'primeng/chip';
 import { TagModule } from 'primeng/tag';
 import { BadgeModule } from 'primeng/badge';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TabsModule } from 'primeng/tabs';
 import { BusinessRulesService } from '../services/business-rules.service';
 import { SessionService } from '../services/session.service';
 import {
@@ -88,7 +89,8 @@ const DATA_TYPE_OPTIONS = [
     ChipModule,
     TagModule,
     BadgeModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    TabsModule
   ],
   providers: [ConfirmationService],
   templateUrl: './business-rules.component.html',
@@ -102,7 +104,7 @@ export class BusinessRulesComponent implements OnInit {
   error: string | null = null;
   canManage = false;
 
-  selectedTab = 0;
+  tabValue = 'rules';
 
   // Rule dialog
   ruleDialog = false;
