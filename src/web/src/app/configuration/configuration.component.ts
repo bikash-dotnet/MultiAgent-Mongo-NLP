@@ -5,7 +5,6 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
@@ -39,7 +38,6 @@ interface SectionDraft {
     ToastModule,
     CardModule,
     InputTextModule,
-    InputNumberModule,
     ToggleSwitchModule,
     SelectModule,
     TagModule,
@@ -59,6 +57,7 @@ export class ConfigurationComponent implements OnInit {
 
   drafts = new Map<string, SectionDraft>();
   canManage = false;
+  activeSection = '';
 
   constructor(
     private readonly configurationService: ConfigurationService,
@@ -90,6 +89,9 @@ export class ConfigurationComponent implements OnInit {
     this.configurationService.list().subscribe({
       next: (sections) => {
         this.sections = sections;
+        if (!this.activeSection && sections.length) {
+          this.activeSection = sections[0].sectionName;
+        }
         for (const section of sections) {
           this.drafts.set(section.sectionName, {
             values: { ...this.initialValues(section) },

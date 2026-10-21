@@ -24,18 +24,22 @@
   }
 
   @if (sections.length) {
-    <p-tabs>
-      @for (section of sections; track section.sectionName) {
-        <p-tabpanel>
-          <ng-template pTemplate="header">
+    <p-tabs [(value)]="activeSection">
+      <p-tablist>
+        @for (section of sections; track section.sectionName) {
+          <p-tab [value]="section.sectionName">
             <div class="section-header">
               <span class="section-title">{{ section.label }}</span>
               @if (section.adminOnly && canManage) {
                 <p-badge value="Admin only" severity="info" />
               }
             </div>
-          </ng-template>
-
+          </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels>
+      @for (section of sections; track section.sectionName) {
+        <p-tabpanel [value]="section.sectionName">
           <div class="settings-grid">
             @for (setting of section.values; track setting.key) {
               <div class="setting-row">
@@ -54,21 +58,24 @@
                     </div>
                   } @else {
                     @if (isNumberType(setting.type)) {
-                      <p-inputNumber
-                        name="num-{{ section.sectionName }}-{{ setting.key }}"
-                        [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
-                        [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
-                        [disabled]="!setting.editable"
-                        class="control-sm"
-                      />
+<input
+  name="num-{{ section.sectionName }}-{{ setting.key }}"
+  type="number"
+  pInputText
+  [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+  [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
+  [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
+  [disabled]="!setting.editable"
+  class="control-sm"
+/>
                     } @else if (isBooleanType(setting.type)) {
-                      <p-toggleSwitch
-                        name="bool-{{ section.sectionName }}-{{ setting.key }}"
-                        [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [disabled]="!setting.editable"
-                        inputId="toggle-{{ section.sectionName }}-{{ setting.key }}"
-                      />
+<input
+  type="checkbox"
+  name="bool-{{ section.sectionName }}-{{ setting.key }}"
+  [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+  [disabled]="!setting.editable"
+  id="toggle-{{ section.sectionName }}-{{ setting.key }}"
+/>
                     } @else if (isSelectType(setting.type)) {
                       <p-select
                         name="select-{{ section.sectionName }}-{{ setting.key }}"
@@ -101,28 +108,27 @@
             }
           </div>
 
-          <ng-template pTemplate="footer">
-            <div class="section-actions">
-              @if (canManage) {
-                <p-button
-                  label="Reset section"
-                  icon="pi pi-undo"
-                  severity="secondary"
-                  [disabled]="getDraft(section.sectionName).saving"
-                  (onClick)="resetSection(section.sectionName)"
-                />
-                <p-button
-                  label="Save"
-                  icon="pi pi-save"
-                  severity="success"
-                  [disabled]="getDraft(section.sectionName).saving"
-                  (onClick)="save(section.sectionName)"
-                />
-              }
-            </div>
-          </ng-template>
+          <div class="section-actions">
+            @if (canManage) {
+              <p-button
+                label="Reset section"
+                icon="pi pi-undo"
+                severity="secondary"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="resetSection(section.sectionName)"
+              />
+              <p-button
+                label="Save"
+                icon="pi pi-save"
+                severity="success"
+                [disabled]="getDraft(section.sectionName).saving"
+                (onClick)="save(section.sectionName)"
+              />
+            }
+          </div>
         </p-tabpanel>
       }
+      </p-tabpanels>
     </p-tabs>
   }
 

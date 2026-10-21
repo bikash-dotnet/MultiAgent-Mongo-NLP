@@ -13,30 +13,18 @@
     <p class="error" role="alert">{{ error }}</p>
   }
 
-  <div class="tab-bar">
-    <p-button
-      label="Business Rules"
-      icon="pi pi-list"
-      class="mr-2"
-      [severity]="selectedTab === 0 ? 'secondary' : null"
-      (onClick)="selectedTab = 0" />
-    <p-button
-      label="Column Definitions"
-      icon="pi pi-table"
-      [severity]="selectedTab === 1 ? 'secondary' : null"
-      (onClick)="selectedTab = 1" />
-  </div>
-
-  @if (selectedTab === 0) {
-    <div class="mt-4">
-      <div class="flex justify-between items-center mb-6">
-        <h1>Business Rules</h1>
-        <p class="subtitle">Define rules that apply across guardrails, execution, grid columns, and exports.</p>
-        <div class="flex gap-2">
+  <p-tabs [(value)]="tabValue">
+    <p-tablist>
+      <p-tab value="rules" icon="pi pi-list">Business Rules</p-tab>
+      <p-tab value="columns" icon="pi pi-table">Column Definitions</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel value="rules">
+        <div class="mt-4">
+      <div class="mb-4 flex justify-end">
           @if (canManage) {
             <p-button label="Add rule" icon="pi pi-plus" (onClick)="addRule()" />
           }
-        </div>
       </div>
 
       @if (rules.length) {
@@ -45,7 +33,7 @@
           [paginator]="true"
           [rows]="10"
           dataKey="id">
-          <ng-template pTemplate="header">
+          <ng-template #header pTemplate="header">
             <tr>
               <th pSortableColumn="enabled">Enabled</th>
               <th pSortableColumn="name">Name</th>
@@ -56,14 +44,14 @@
               <th style="width: 120px">Controls</th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-rule>
+          <ng-template #body pTemplate="body" let-rule>
             <tr>
               <td>
-                <p-toggleSwitch
-                  name="rule-enabled-{{ rule.id }}"
-                  [(ngModel)]="rule.enabled"
-                  (onChange)="toggleRule(rule)"
-                  [inputId]="'rule-enabled-' + rule.id"
+                <input
+                  type="checkbox"
+                  [checked]="rule.enabled"
+                  (change)="toggleRule(rule)"
+                  [attr.id]="'rule-enabled-' + rule.id"
                 />
               </td>
               <td>
@@ -177,11 +165,11 @@
           </div>
         }
       </div>
-    </div>
-  }
+      </div>
+    </p-tabpanel>
 
-  @if (selectedTab === 1) {
-    <div class="mt-4">
+    <p-tabpanel value="columns">
+      <div class="mt-4">
       @if (columns.length) {
         <div class="mb-4 flex justify-end">
           @if (canManage) {
@@ -191,7 +179,7 @@
         <p-table
           [value]="columns"
           dataKey="id">
-          <ng-template pTemplate="header">
+          <ng-template #header pTemplate="header">
             <tr>
               <th>Field</th>
               <th>Label</th>
@@ -207,7 +195,7 @@
               }
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-column let-i="rowIndex">
+          <ng-template #body pTemplate="body" let-column let-i="rowIndex">
             <tr>
               <td>
                 <div class="col-field">{{ column.field }}</div>
@@ -242,16 +230,16 @@
               </td>
               <td>
                 @if (canManage) {
-                  <p-inputNumber name="col-order-{{ column.id }}" [(ngModel)]="column.order" [min]="0" />
+                  <input name="col-order-{{ column.id }}" type="number" pInputText [(ngModel)]="column.order" min="0" />
                 } @else {
                   {{ column.order }}
                 }
               </td>
               <td>
-                <p-toggleSwitch name="col-visible-{{ column.id }}" [(ngModel)]="column.visibleByDefault" [inputId]="'col-visible-' + column.id" />
+                <input type="checkbox" name="col-visible-{{ column.id }}" [(ngModel)]="column.visibleByDefault" [attr.id]="'col-visible-' + column.id" />
               </td>
               <td>
-                <p-toggleSwitch name="col-export-{{ column.id }}" [(ngModel)]="column.exportable" [inputId]="'col-export-' + column.id" />
+                <input type="checkbox" name="col-export-{{ column.id }}" [(ngModel)]="column.exportable" [attr.id]="'col-export-' + column.id" />
               </td>
               @if (canManage) {
                 <td>
@@ -305,7 +293,9 @@
         <div class="empty">No column definitions defined. Click "Add column" to create one.</div>
       }
     </div>
-  }
+  </p-tabpanel>
+  </p-tabpanels>
+  </p-tabs>
 
   <!-- Rule editor dialog -->
   <p-dialog
@@ -313,7 +303,7 @@
       [(visible)]="ruleDialog"
       [modal]="true"
       [style]="{ width: '600px' }">
-      <ng-template pTemplate="content">
+      <ng-template #content pTemplate="content">
         <div class="dialog-form">
           <div class="form-group">
             <label>Name</label>
@@ -343,12 +333,12 @@
           </div>
           <div class="form-group">
             <label>Priority</label>
-            <p-inputNumber name="ruleDraft-priority" [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
+            <input name="ruleDraft-priority" type="number" pInputText [(ngModel)]="ruleDraft.priority" min="0" placeholder="Lower runs first" />
             <small class="hint">Rules with the same priority run in ID order.</small>
           </div>
           <div class="form-group">
             <label>Enabled</label>
-            <p-toggleSwitch name="ruleDraft-enabled" [(ngModel)]="ruleDraft.enabled" />
+            <input type="checkbox" name="ruleDraft-enabled" [(ngModel)]="ruleDraft.enabled" />
           </div>
           <div class="form-group">
             <label>Condition</label>
@@ -405,7 +395,7 @@
           </div>
         </div>
       </ng-template>
-      <ng-template pTemplate="footer">
+      <ng-template #footer pTemplate="footer">
         <p-button label="Cancel" icon="pi pi-times" severity="secondary" (onClick)="ruleDialog = false" />
         <p-button
           label="Save rule"
@@ -422,7 +412,7 @@
     [(visible)]="columnDialog"
     [modal]="true"
     [style]="{ width: '500px' }">
-    <ng-template pTemplate="content">
+    <ng-template #content pTemplate="content">
       <div class="dialog-form">
         <div class="form-group">
           <label>Field</label>
@@ -452,20 +442,20 @@
         </div>
         <div class="form-group">
           <label>Order</label>
-          <p-inputNumber name="columnDraft-order" [(ngModel)]="columnDraft.order" [min]="0" />
+          <input name="columnDraft-order" type="number" pInputText [(ngModel)]="columnDraft.order" min="0" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Visible by default</label>
-            <p-toggleSwitch name="columnDraft-visibleByDefault" [(ngModel)]="columnDraft.visibleByDefault" />
+            <input type="checkbox" name="columnDraft-visibleByDefault" [(ngModel)]="columnDraft.visibleByDefault" />
           </div>
           <div class="form-group">
             <label>Exportable</label>
-            <p-toggleSwitch name="columnDraft-exportable" [(ngModel)]="columnDraft.exportable" />
+            <input type="checkbox" name="columnDraft-exportable" [(ngModel)]="columnDraft.exportable" />
           </div>
           <div class="form-group">
             <label>Sensitive</label>
-            <p-toggleSwitch name="columnDraft-sensitive" [(ngModel)]="columnDraft.sensitive" />
+            <input type="checkbox" name="columnDraft-sensitive" [(ngModel)]="columnDraft.sensitive" />
           </div>
         </div>
         <div class="form-group">
@@ -474,11 +464,11 @@
         </div>
       </div>
     </ng-template>
-    <ng-template pTemplate="footer">
+    <ng-template #footer pTemplate="footer">
         <p-button label="Cancel" icon="pi pi-times" severity="secondary" (onClick)="columnDialog = false" />
         <p-button label="Save column" icon="pi pi-check" (onClick)="saveColumn()" [loading]="columnDraft.saving" />
       </ng-template>
     </p-dialog>
 
-  <p-confirmDialog />
+  <p-confirmdialog />
 </section>

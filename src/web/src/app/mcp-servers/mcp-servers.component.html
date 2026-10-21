@@ -22,7 +22,7 @@
     [rows]="10"
     styleClass="p-datatable-striped p-datatable-sm"
   >
-    <ng-template pTemplate="header">
+    <ng-template #header pTemplate="header">
       <tr>
         <th>Name</th>
         <th>Transport</th>
@@ -34,7 +34,7 @@
         <th></th>
       </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-server>
+    <ng-template #body pTemplate="body" let-server>
       <tr>
         <td>{{ server.name }}</td>
         <td>{{ server.transport }}</td>
@@ -95,7 +95,7 @@
         </td>
       </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage pTemplate="emptymessage">
       <tr>
         <td colspan="8">No MCP servers defined.</td>
       </tr>
@@ -221,7 +221,7 @@
     <input id="serverScopeValue" name="serverScopeValue" pInputText [(ngModel)]="serverForm.scopeValue" placeholder="database or role" />
   </div>
 
-  <ng-template pTemplate="footer">
+  <ng-template #footer pTemplate="footer">
     <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="closeEditor()" />
     <p-button
       [label]="saving ? 'Saving...' : 'Save server'"
@@ -263,7 +263,7 @@
       @if (testResult.tools && testResult.tools.length > 0) {
         <h3>Available tools</h3>
         <p-table [value]="testResult.tools" styleClass="p-datatable-sm p-datatable-striped">
-          <ng-template pTemplate="header">
+          <ng-template #header pTemplate="header">
             <tr>
               <th>Name</th>
               <th>Allowed</th>
@@ -271,14 +271,14 @@
               <th>Description</th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-tool>
+          <ng-template #body pTemplate="body" let-tool>
             <tr>
               <td>{{ tool.name }}</td>
               <td>
-                <p-toggleSwitch
-                  [ngModel]="isToolAllowed(tool.name)"
-                  (ngModelChange)="setToolAllowed(tool, $event)"
-                  [ngModelOptions]="{ standalone: true }"
+                <input
+                  type="checkbox"
+                  [checked]="isToolAllowed(tool.name)"
+                  (change)="setToolAllowed(tool, $event.target.checked)"
                   [disabled]="!tool.readOnly || !canManage"
                 />
               </td>
@@ -293,7 +293,7 @@
     </div>
   }
 
-  <ng-template pTemplate="footer">
+  <ng-template #footer pTemplate="footer">
     <p-button label="Close" severity="secondary" [text]="true" (onClick)="closeTest()" />
     @if (canManage && testResult) {
       <p-button label="Save allow-list" icon="pi pi-check" [loading]="saving" (onClick)="saveServer()" />
@@ -301,4 +301,4 @@
   </ng-template>
 </p-dialog>
 
-<p-confirmDialog />
+<p-confirmdialog />
