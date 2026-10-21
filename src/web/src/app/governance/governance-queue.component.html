@@ -1,5 +1,5 @@
-<section class="queue">
-  <div class="page-header">
+<section class="grid gap-4">
+  <div class="flex justify-between items-center gap-4">
     <h2>Governance approvals</h2>
     <p class="subtitle">Review and approve or reject pending access requests.</p>
   </div>
@@ -11,7 +11,7 @@
   }
   @for (request of requests; track request.id) {
     <article class="card" [attr.data-status]="request.status">
-      <header>
+      <header class="flex justify-between items-center">
         <h3>{{ request.requester?.name }}</h3>
         <span class="status">{{ request.status }}</span>
       </header>
@@ -27,7 +27,7 @@
         </dl>
       }
       @if (request.status === 'PENDING_LEAD' && canDecide) {
-        <div class="actions">
+        <div class="flex gap-2 flex-wrap mt-3">
           <button type="button" class="p-button p-button-primary" (click)="approve(request)">Approve</button>
           <button type="button" class="p-button p-button-secondary" (click)="reject(request)">Reject</button>
           <input name="overrideNotes" placeholder="Override notes" [(ngModel)]="overrideNotes" />

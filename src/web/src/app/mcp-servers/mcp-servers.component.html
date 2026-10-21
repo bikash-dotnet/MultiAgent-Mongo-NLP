@@ -1,11 +1,11 @@
-<section class="mcp-servers">
-  <header class="toolbar">
+<section class="p-6">
+  <header class="flex flex-start justify-between gap-4 flex-wrap mb-5">
     <div>
       <h1>MCP Servers</h1>
       <p class="subtitle">Register and manage Model Context Protocol servers available to the assistant.</p>
     </div>
     @if (canManage) {
-      <div class="toolbar-actions">
+      <div class="flex gap-2">
         <p-button label="Create server" icon="pi pi-plus" severity="secondary" (onClick)="startCreate()" />
       </div>
     }
@@ -170,7 +170,7 @@
       rows="3"
       placeholder="API_KEY&#10;MONGO_URI"
     ></textarea>
-    <p class="hint">Secret values are never stored here. Configure them in the backend environment.</p>
+    <p class="mb-1 text-sm text-gray-500">Secret values are never stored here. Configure them in the backend environment.</p>
 
     @if (envKeyStatuses.length > 0) {
       <label>Env key status</label>
@@ -191,7 +191,7 @@
       appendTo="body"
       placeholder="Select tool names"
     />
-    <p class="hint">Empty means no tools are callable (deny by default). Only read-only tools can be enabled.</p>
+    <p class="mb-1 text-sm text-gray-500">Empty means no tools are callable (deny by default). Only read-only tools can be enabled.</p>
 
     <div class="checkbox-row">
       <p-checkbox name="serverReadOnly" inputId="serverReadOnly" [(ngModel)]="serverForm.readOnly" [binary]="true" />
@@ -247,8 +247,8 @@
   }
 
   @if (testResult) {
-    <div class="test-result">
-      <div class="test-line">
+    <div class="py-4">
+      <div class="flex items-center gap-3 mb-3">
         <span class="label">Status:</span>
         <p-tag [value]="testResult.health" [severity]="healthSeverity(testResult.health)" />
         @if (testResult.latencyMs > 0) {

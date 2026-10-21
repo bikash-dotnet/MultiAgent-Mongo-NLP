@@ -1,46 +1,4 @@
-.schemas {
-  padding: 1rem;
-}
-
-.toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.toolbar h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--text-color);
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.subtitle {
-  margin: 0.35rem 0 0;
-  color: var(--text-color-secondary);
-  font-size: 0.95rem;
-}
-
-.error {
-  color: #c0392b;
-  background: #fdecea;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin: 0 0 1rem;
-}
-
-.row-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.15rem;
-}
+@use '../../styles/variables' as *;
 
 .form-grid {
   display: grid;
@@ -48,15 +6,16 @@
   gap: 0.75rem 1rem;
   align-items: center;
   margin-bottom: 1rem;
-}
 
-.form-grid > label {
-  color: var(--text-color);
-  font-size: 0.9rem;
-}
+  > label {
+    color: $color-text-primary;
+    font-size: 0.9rem;
+  }
 
-.form-grid input {
-  width: 100%;
+  input,
+  textarea {
+    width: 100%;
+  }
 }
 
 .checkbox-row {
@@ -64,11 +23,11 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-}
 
-.checkbox-row label {
-  font-size: 0.9rem;
-  color: var(--text-color);
+  label {
+    font-size: 0.9rem;
+    color: $color-text-primary;
+  }
 }
 
 .fields-header {
@@ -76,11 +35,11 @@
   align-items: center;
   justify-content: space-between;
   margin: 1.25rem 0 0.5rem;
-}
 
-.fields-header h3 {
-  margin: 0;
-  font-size: 1rem;
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
 }
 
 .flag-row {
@@ -91,34 +50,33 @@
 }
 
 .muted {
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .hint {
   margin: 0 0 0.4rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
   font-size: 0.85rem;
-}
-
-.import-text {
-  width: 100%;
-  margin-bottom: 0.85rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.85rem;
-}
-
-.preview-actions {
-  margin: 0.5rem 0 0.75rem;
 }
 
 .p-datatable-thead th {
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
-.p-datatable-tbody td {
-  color: var(--text-color);
+.p-datatable-tbody {
+  tr:hover td {
+    background: var(--surface-hover);
+  }
+
+  td {
+    color: $color-text-primary;
+  }
 }
 
-.p-datatable-tbody tr:hover td {
-  background: var(--surface-hover);
+.error {
+  color: $color-error-dark;
+  background: $color-error-bg;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin: 0 0 1rem;
 }

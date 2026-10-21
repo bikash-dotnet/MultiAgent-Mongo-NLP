@@ -1,46 +1,4 @@
-.configuration {
-  padding: 16px;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.toolbar h1 {
-  margin: 0;
-  font-size: 20px;
-  color: var(--text-color);
-}
-
-.toolbar .subtitle {
-  margin: 4px 0 0;
-  color: var(--text-color-secondary);
-  font-size: 14px;
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 8px;
-}
-
-p-tabView {
-  margin-top: 8px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-weight: 600;
-  color: var(--text-color);
-}
+@use '../../styles/variables' as *;
 
 .settings-grid {
   display: flex;
@@ -54,16 +12,16 @@ p-tabView {
   gap: 12px;
   padding: 8px 4px;
   border-bottom: 1px solid var(--surface-border);
-}
 
-.setting-row:last-child {
-  border-bottom: none;
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .setting-label {
   min-width: 210px;
   font-size: 14px;
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
 .setting-control {
@@ -95,15 +53,15 @@ p-tabView {
 }
 
 .badge-configured {
-  color: #1e7e34;
+  color: $color-success-dark;
 }
 
 .badge-not-configured {
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .secret-note {
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .source-badge {
@@ -112,17 +70,17 @@ p-tabView {
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--primary-color);
-  color: #fff;
-}
+  color: $color-text-inverse;
 
-.source-badge.db {
-  background: var(--text-color-secondary);
+  &.db {
+    background: $color-text-secondary;
+  }
 }
 
 .field-error {
   margin-left: auto;
   font-size: 12px;
-  color: #dc2626;
+  color: $color-error-dark;
 }
 
 .section-actions {
@@ -138,7 +96,7 @@ p-tabView {
   margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 6px;
-  background: #fef2f2;
-  color: #991b1b;
+  background: $color-error-bg;
+  color: $color-error-text-dark;
   font-size: 13px;
 }
