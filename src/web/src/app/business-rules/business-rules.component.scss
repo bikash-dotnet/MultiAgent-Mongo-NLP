@@ -35,10 +35,11 @@
 
 .tab-bar p-button {
   margin: 0;
-  border-radius: 0;
-  border-right-width: 0;
+  border-radius: var(--content-border-radius);
+  border-right-width: 1px;
+  margin-right: 0.5rem;
   &:last-child {
-    border-right-width: 1px;
+    margin-right: 0;
   }
 }
 
