@@ -263,6 +263,31 @@ export class AppConfigurator {
 
   selectedPreset = computed(() => this.layoutService.layoutConfig().preset);
 
+  private isLightColor(hex: string): boolean {
+    const c = hex.replace('#', '');
+    if (c.length === 3) {
+      return this.isLightColor(c[0] + c[0] + c[1] + c[1] + c[2] + c[2]);
+    }
+    const r = parseInt(c.substring(0, 2), 16) || 0;
+    const g = parseInt(c.substring(2, 4), 16) || 0;
+    const b = parseInt(c.substring(4, 6), 16) || 0;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5;
+  }
+
+  private applyTextContrast(isLightSurface: boolean): void {
+    const darkTheme = this.layoutService.layoutConfig().darkTheme;
+    // Dark mode takes precedence: light text on dark background.
+    // Otherwise, text contrasts with the surface background luminance.
+    const isLightEffective = darkTheme ? false : isLightSurface;
+    const text = isLightEffective ? '#111827' : '#ffffff';
+    const muted = isLightEffective ? '#6b7280' : '#9ca3af';
+    document.documentElement.style.setProperty('--p-text-color', text);
+    document.documentElement.style.setProperty('--p-text-muted-color', muted);
+    document.documentElement.style.setProperty('--text-color', text);
+    document.documentElement.style.setProperty('--text-color-secondary', muted);
+  }
+
   primaryColors = computed<SurfacesType[]>(() => {
     const presetPalette = presets[this.layoutService.layoutConfig().preset as KeyOfType<typeof presets>].primitive;
     const colors = ['emerald', 'green', 'lime', 'orange', 'amber', 'yellow', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose'];
@@ -295,6 +320,10 @@ export class AppConfigurator {
     } else if (type === 'surface') {
       updateSurfacePalette(color.palette);
     }
+    // Re-apply text contrast based on current surface after any theme change
+    const surfacePalette = this.surfaces.find((s) => s.name === this.selectedSurfaceColor())?.palette ?? {};
+    const surfaceColor = surfacePalette?.['0'] ?? '#ffffff';
+    this.applyTextContrast(this.isLightColor(surfaceColor));
   }
 
   onPresetChange(event: any) {
@@ -302,6 +331,8 @@ export class AppConfigurator {
     const preset = presets[event as KeyOfType<typeof presets>];
     const surfacePalette = this.surfaces.find((s) => s.name === this.selectedSurfaceColor())?.palette ?? {};
     $t().preset(preset).preset(this.getPresetExt()).surfacePalette(surfacePalette).use({ useDefaultOptions: true });
+    const surfaceColor = surfacePalette?.['0'] ?? '#ffffff';
+    this.applyTextContrast(this.isLightColor(surfaceColor));
   }
 
   getPresetExt() {
