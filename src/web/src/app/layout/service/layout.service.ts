@@ -61,6 +61,15 @@ export class LayoutService {
         } else {
           document.documentElement.classList.remove('app-dark');
         }
+        // Sync text color CSS variables with dark mode so toggling from topbar
+        // doesn't leave light-mode text colors stuck (which would override
+        // PrimeNG's dark theme variables set via the .app-dark selector).
+        const text = config.darkTheme ? '#ffffff' : '#111827';
+        const muted = config.darkTheme ? '#9ca3af' : '#6b7280';
+        document.documentElement.style.setProperty('--p-text-color', text);
+        document.documentElement.style.setProperty('--p-text-muted-color', muted);
+        document.documentElement.style.setProperty('--text-color', text);
+        document.documentElement.style.setProperty('--text-color-secondary', muted);
       }
     });
 
