@@ -28,17 +28,13 @@ import { SessionService } from '../../services/session.service';
           </button>
           <div class="relative">
             <button
+              type="button"
               class="layout-topbar-action layout-topbar-action-highlight"
-              pStyleClass="@next"
-              enterFromClass="hidden"
-              enterActiveClass="animate-scalein"
-              leaveToClass="hidden"
-              leaveActiveClass="animate-fadeout"
-              [hideOnOutsideClick]="true"
+              (click)="toggleConfigSidebar()"
             >
               <i class="pi pi-palette"></i>
             </button>
-            <app-configurator />
+            <app-configurator [hidden]="!layoutService.layoutState().configSidebarVisible" />
           </div>
         </div>
 
@@ -57,5 +53,9 @@ export class AppTopbar {
 
   toggleDarkMode() {
     this.layoutService.layoutConfig.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
+  }
+
+  toggleConfigSidebar() {
+    this.layoutService.layoutState.update((prev) => ({ ...prev, configSidebarVisible: !prev.configSidebarVisible }));
   }
 }
