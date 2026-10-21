@@ -57,8 +57,8 @@
                       <p-inputNumber
                         name="num-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
-                        [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
+                        [attr.min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
+                        [attr.max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
                         [disabled]="!setting.editable"
                         class="control-sm"
                       />
@@ -67,7 +67,7 @@
                         name="bool-{{ section.sectionName }}-{{ setting.key }}"
                         [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
                         [disabled]="!setting.editable"
-                        inputId="toggle-{{ section.sectionName }}-{{ setting.key }}"
+                        [attr.inputId]="'toggle-' + section.sectionName + '-' + setting.key"
                       />
                     } @else if (isSelectType(setting.type)) {
                       <p-select
