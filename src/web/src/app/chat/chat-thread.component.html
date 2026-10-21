@@ -120,7 +120,7 @@
         <fieldset class="step-fieldset">
           <legend>Select Columns to Include</legend>
           <div class="columns-grid">
-            @for (column of turn?.columns ?? []; track column.name) {
+            @for (column of turn.columns ?? []; track column.name) {
             <label class="column-item">
               <input type="checkbox" [checked]="selectedColumns.has(column.name)"
                 (change)="toggleColumn(column.name, $any($event.target).checked)" />
@@ -169,7 +169,7 @@
       </div>
       }
 
-      <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution ?? null"></app-results-grid>
+      <app-results-grid *ngIf="turn?.execution" [execution]="turn!.execution"></app-results-grid>
       }
     </div>
 
