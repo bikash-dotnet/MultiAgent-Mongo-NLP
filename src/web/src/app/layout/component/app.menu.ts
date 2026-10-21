@@ -32,7 +32,7 @@ export class AppMenu {
           { label: 'Schemas', icon: 'pi pi-fw pi-database', routerLink: ['/schemas'] },
           { label: 'Configuration', icon: 'pi pi-fw pi-cog', routerLink: ['/configuration'] },
           { label: 'Business Rules', icon: 'pi pi-fw pi-sliders-h', routerLink: ['/business-rules'] },
-          { label: 'MCP Servers', icon: 'pi pi-fw pi-plug', routerLink: ['/mcp-servers'] }
+          { label: 'MCP Servers', icon: 'pi pi-fw pi-server', routerLink: ['/mcp-servers'] }
         ]
       }
     ];
