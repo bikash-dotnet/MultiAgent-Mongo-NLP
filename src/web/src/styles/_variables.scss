@@ -1,0 +1,81 @@
+// Central color variables for Multi-Agent NLP UI
+// Import with: @use '../../styles/variables' as *;
+// or: @import '../../styles/variables';
+
+// --- Neutral / grayscale ---
+$color-white: #ffffff;
+$color-black: #000000;
+$color-gray-50: #f3f4f6;
+$color-gray-100: #f1f5f9;
+$color-gray-200: #e2e8f0;
+$color-gray-300: #cbd5e1;
+$color-gray-400: #94a3b8;
+$color-gray-500: #64748b;
+$color-gray-600: #475569;
+$color-gray-700: #334155;
+$color-gray-800: #1e293b;
+$color-gray-900: #0f172a;
+
+// --- Semantic text ---
+$color-text-primary: $color-gray-900;
+$color-text-secondary: $color-gray-500;
+$color-text-muted: $color-gray-400;
+$color-text-inverse: $color-white;
+
+// --- Semantic backgrounds ---
+$color-bg-surface: $color-white;
+$color-bg-surface-hover: $color-gray-100;
+$color-bg-surface-overlay: $color-gray-50;
+$color-bg-body: $color-gray-50;
+
+// --- Primary brand ---
+$color-primary: #2563eb;
+$color-primary-contrast: #ffffff;
+$color-primary-light: #e0f2fe;
+$color-primary-dark: #0284c7;
+
+// --- Status colors ---
+$color-success: #22c55e;
+$color-success-dark: #15803d;
+$color-success-bg: #dcfce7;
+
+$color-warning: #b45309;
+$color-warning-bg: #fef3c7;
+
+$color-error: #ef4444;
+$color-error-dark: #dc2626;
+$color-error-bg: #fef2f2;
+$color-error-text-dark: #991b1b;
+$color-error-border: #fecaca;
+
+// --- Component tag / badge colors ---
+$color-tag-info-bg: #e3f2fd;
+$color-tag-info-text: #0d47a1;
+
+$color-tag-success-bg: #e8f5e9;
+$color-tag-success-text: #1b5e20;
+
+$color-tag-warning-bg: #fff3e0;
+$color-tag-warning-text: #e65100;
+
+$color-tag-exclude-bg: #fce4ec;
+$color-tag-exclude-text: #880e4f;
+
+$color-tag-approve-bg: #e8faf6;
+$color-tag-approve-text: #006064;
+
+$color-tag-exempt-bg: #f3e5f5;
+$color-tag-exempt-text: #4a148c;
+
+$color-tag-deny-bg: #ffebee;
+$color-tag-deny-text: #b71c1c;
+
+// --- Surface borders ---
+$color-border-light: #e2e5ea;
+$color-border-medium: #eef0f3;
+$color-border-focus: #f7f8fa;
+
+// --- Muted text (alt) ---
+$color-text-muted-alt: #55606e;
+$color-text-body-dark: #444;
+$color-text-muted-dark: #666;

@@ -1,5 +1,5 @@
-<main class="shell">
-  <div class="chat-layout">
+<main class="flex flex-col h-full">
+  <div class="grid gap-6 flex-1 min-h-[0] sm:grid-cols-[1fr_300px]">
     <app-chat-thread [greeting]="greeting" [latestEvent]="latestEvent" [isAvailable]="isAgentAvailable"
       (turnChange)="onTurnChange($event)"></app-chat-thread>
 
@@ -16,7 +16,7 @@
         <p><strong>Slots:</strong> {{ activeConversation.appliedSlots | json }}</p>
         <p><strong>Report intake progress:</strong> {{ activeConversation.reportProgress }}%</p>
         <p><strong>Governance status:</strong> {{ activeConversation.governanceStatus }}</p>
-        <div class="export-actions">
+        <div class="mt-5 flex gap-2 flex-wrap">
           <button pButton label="Export CSV" icon="pi pi-download" (click)="downloadCsv()"></button>
           <button pButton label="Export XLSX" icon="pi pi-file-excel" (click)="downloadXlsx()"></button>
           <button pButton label="Export PDF" icon="pi pi-file-pdf" (click)="downloadPdf()"></button>

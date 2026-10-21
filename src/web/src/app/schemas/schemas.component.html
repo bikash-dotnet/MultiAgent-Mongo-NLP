@@ -1,11 +1,11 @@
-<section class="schemas">
-  <header class="toolbar">
+<section class="p-4">
+  <header class="flex flex-start justify-between gap-4 flex-wrap mb-5">
     <div>
       <h1>Schema Registry</h1>
       <p class="subtitle">Define and manage data-source schemas that drive guardrails, validation, and result columns.</p>
     </div>
     @if (canManage) {
-      <div class="toolbar-actions">
+      <div class="flex gap-2">
         <p-button label="Import" icon="pi pi-upload" severity="secondary" (onClick)="openImport()" />
         <p-button label="Create schema" icon="pi pi-plus" (onClick)="startCreate()" />
       </div>
@@ -267,7 +267,7 @@
     pTextarea
     [(ngModel)]="importText"
     rows="7"
-    class="import-text"
+    class="w-full mb-3 font-mono text-sm"
     placeholder="- price: number&#10;- address.market: string"
   ></textarea>
 
@@ -277,7 +277,7 @@
     pTextarea
     [(ngModel)]="importJson"
     rows="5"
-    class="import-text"
+    class="w-full mb-3 font-mono text-sm"
     placeholder='[{"path":"price","dataType":"Number"}]'
   ></textarea>
 
@@ -285,7 +285,7 @@
     <p class="error" role="alert">{{ importError }}</p>
   }
 
-  <div class="preview-actions">
+  <div class="mt-2 mb-3">
     <p-button label="Preview fields" icon="pi pi-eye" severity="secondary" (onClick)="previewImport()" />
   </div>
 

@@ -1,11 +1,11 @@
 <div class="grid" *ngIf="execution; else empty">
-  <div class="grid-meta">
+  <div class="grid-meta flex gap-3 p-2 text-xs border-b">
     <span>{{ execution.rowCount }} rows</span>
     <span>{{ execution.dataSource }}</span>
     <span>{{ execution.durationMs }} ms</span>
     <span class="grid-error" *ngIf="execution.error">{{ execution.error }}</span>
   </div>
-  <div class="grid-scroll">
+  <div class="grid-scroll max-h-[320px] overflow-auto">
     <p-table [value]="execution.rows" [tableStyle]="{ 'min-width': '50rem' }" styleClass="p-datatable-striped p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>

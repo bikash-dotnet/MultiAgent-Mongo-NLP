@@ -1,30 +1,4 @@
-.business-rules {
-  padding: 1.5rem;
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.toolbar h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--text-color);
-}
-
-.subtitle {
-  margin: 0.25rem 0 0;
-  color: var(--text-color-secondary);
-  font-size: 0.95rem;
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 0.5rem;
-}
+@use '../../styles/variables' as *;
 
 .tab-bar {
   display: flex;
@@ -49,7 +23,7 @@
 .empty {
   padding: 2rem;
   text-align: center;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .tester-card {
@@ -58,39 +32,19 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--content-border-radius);
   background: var(--surface-card);
-  color: var(--text-color);
-}
+  color: $color-text-primary;
 
-.tester-card h2 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
-}
+  h2 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: $color-text-primary;
+  }
 
-.tester-card p {
-  margin: 0 0 1rem;
-  color: var(--text-color-secondary);
-  font-size: 0.95rem;
-}
-
-.tester-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-end;
-  margin-bottom: 1.5rem;
-}
-
-.tester-form label {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-color);
-}
-
-.tester-form input {
-  min-width: 200px;
+  p {
+    margin: 0 0 1rem;
+    color: $color-text-secondary;
+    font-size: 0.95rem;
+  }
 }
 
 .tester-result {
@@ -98,58 +52,52 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--content-border-radius);
   background: var(--surface-card);
-  color: var(--text-color);
-}
+  color: $color-text-primary;
 
-.tester-result h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
-}
+  h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: $color-text-primary;
+  }
 
-.tester-result h4 {
-  margin: 1rem 0 0.5rem;
-  font-size: 1rem;
-  color: var(--text-color-secondary);
-}
+  h4 {
+    margin: 1rem 0 0.5rem;
+    font-size: 1rem;
+    color: $color-text-secondary;
+  }
 
-.tester-result ul {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
+  ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+  }
 
-.tester-result li {
-  margin-bottom: 0.25rem;
-  color: var(--text-color);
-}
+  li {
+    margin-bottom: 0.25rem;
+    color: $color-text-primary;
+  }
 
-.params {
-  font-size: 0.85rem;
-  color: var(--text-color-secondary);
-  font-family: monospace;
-}
+  .params {
+    font-size: 0.85rem;
+    color: $color-text-secondary;
+    font-family: monospace;
+  }
 
-.effect-row {
-  margin: 0.5rem 0;
-  font-size: 0.95rem;
-  color: var(--text-color);
-}
+  .effect-row {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: $color-text-primary;
+  }
 
-.effect-row.muted {
-  color: var(--text-color-secondary);
-  font-style: italic;
-}
-
-.column-toolbar {
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: flex-end;
+  .effect-row.muted {
+    color: $color-text-secondary;
+    font-style: italic;
+  }
 }
 
 .p-table {
   th,
   td {
-    color: var(--text-color);
+    color: $color-text-primary;
   }
 
   .p-table-tbody > tr:hover {
@@ -159,17 +107,17 @@
 
 .rule-name {
   font-weight: 600;
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
 .rule-description {
   font-size: 0.85rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .scope-value {
   font-size: 0.85rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
   margin-left: 0.5rem;
 }
 
@@ -188,13 +136,40 @@
   margin: 0.1rem;
 }
 
-.tag-default { background: #e3f2fd; color: #0d47a1; }
-.tag-cap { background: #e8f5e9; color: #1b5e20; }
-.tag-mask { background: #fff3e0; color: #e65100; }
-.tag-exclude { background: #fce4ec; color: #880e4f; }
-.tag-approve { background: #e8faf6; color: #006064; }
-.tag-exempt { background: #f3e5f5; color: #4a148c; }
-.tag-deny { background: #ffebee; color: #b71c1c; }
+.tag-default {
+  background: $color-tag-info-bg;
+  color: $color-tag-info-text;
+}
+
+.tag-cap {
+  background: $color-tag-success-bg;
+  color: $color-tag-success-text;
+}
+
+.tag-mask {
+  background: $color-tag-warning-bg;
+  color: $color-tag-warning-text;
+}
+
+.tag-exclude {
+  background: $color-tag-exclude-bg;
+  color: $color-tag-exclude-text;
+}
+
+.tag-approve {
+  background: $color-tag-approve-bg;
+  color: $color-tag-approve-text;
+}
+
+.tag-exempt {
+  background: $color-tag-exempt-bg;
+  color: $color-tag-exempt-text;
+}
+
+.tag-deny {
+  background: $color-tag-deny-bg;
+  color: $color-tag-deny-text;
+}
 
 .reorder-controls {
   margin-top: 2rem;
@@ -215,7 +190,7 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--content-border-radius);
   background: var(--surface-card);
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
 .order-badge {
@@ -234,14 +209,14 @@
 .col-name {
   flex: 1;
   font-weight: 500;
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
 .col-field {
   font-weight: 600;
   font-family: monospace;
   font-size: 0.9rem;
-  color: var(--text-color);
+  color: $color-text-primary;
 }
 
 .dialog-form {
@@ -254,40 +229,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-}
 
-.form-group label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-color);
+  label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: $color-text-primary;
+  }
 }
 
 .form-row {
   display: flex;
   gap: 1rem;
-}
 
-.form-row .form-group {
-  flex: 1;
+  .form-group {
+    flex: 1;
+  }
 }
 
 .hint {
   font-size: 0.8rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .condition-builder {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.cond-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1;
-  min-width: 120px;
 }
 
 .action-picker p-select {
@@ -309,10 +276,10 @@
 
 .rule-version {
   font-size: 0.85rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
 
 .applied-to {
   font-size: 0.85rem;
-  color: var(--text-color-secondary);
+  color: $color-text-secondary;
 }
