@@ -1,5 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
+import { PrimeTemplate } from 'primeng/api';
 import { ChatThreadComponent } from './chat-thread.component';
 import { ConversationService } from '../services/conversation.service';
 
@@ -39,7 +44,7 @@ describe('ChatThreadComponent', () => {
     startCalls = [];
     answerCalls = [];
     await TestBed.configureTestingModule({
-      imports: [ChatThreadComponent],
+      imports: [ChatThreadComponent, NoopAnimationsModule, ButtonModule, InputTextModule, TableModule, PrimeTemplate],
       providers: [
         {
           provide: ConversationService,
@@ -68,7 +73,7 @@ describe('ChatThreadComponent', () => {
     const button = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
 
     expect(button.getAttribute('aria-label')).toBe('Send message');
-    expect(button.textContent).toContain('Send');
+    expect(button.getAttribute('label')).toBe('Send');
   });
 
   it('starts a conversation and renders the email control', () => {
