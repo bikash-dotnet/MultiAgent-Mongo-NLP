@@ -23,7 +23,7 @@
     [rows]="10"
     styleClass="p-datatable-striped p-datatable-sm"
   >
-    <ng-template pTemplate="header">
+    <ng-template #header pTemplate="header">
       <tr>
         <th>Name</th>
         <th>Data source</th>
@@ -34,7 +34,7 @@
         <th></th>
       </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-schema>
+    <ng-template #body pTemplate="body" let-schema>
       <tr>
         <td>{{ schema.name }}</td>
         <td>{{ schema.dataSource }}</td>
@@ -75,7 +75,7 @@
         </td>
       </tr>
     </ng-template>
-    <ng-template pTemplate="emptymessage">
+    <ng-template #emptymessage pTemplate="emptymessage">
       <tr>
         <td colspan="7">No schemas defined.</td>
       </tr>

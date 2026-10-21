@@ -195,7 +195,7 @@ describe('ConfigurationComponent', () => {
     const fixture = TestBed.createComponent(ConfigurationComponent);
     fixture.detectChanges();
 
-    const input = fixture.nativeElement.querySelector('p-inputnumber');
+    const input = fixture.nativeElement.querySelector('input[type="number"][pinputtext]');
     expect(input).toBeTruthy();
   });
 });

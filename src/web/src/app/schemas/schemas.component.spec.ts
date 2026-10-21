@@ -1,6 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ConfirmationService } from 'primeng/api';
+import { PrimeTemplate } from 'primeng/api';
+import { TableModule } from 'primeng/table';
 import { SchemasComponent } from './schemas.component';
 import { SchemasService } from '../services/schemas.service';
 import { SessionService } from '../services/session.service';
@@ -96,7 +99,7 @@ describe('SchemasComponent', () => {
     };
 
     TestBed.configureTestingModule({
-      imports: [SchemasComponent],
+      imports: [SchemasComponent, NoopAnimationsModule, TableModule, PrimeTemplate],
       providers: [
         { provide: SchemasService, useValue: service },
         { provide: SessionService, useValue: { role: () => role } },

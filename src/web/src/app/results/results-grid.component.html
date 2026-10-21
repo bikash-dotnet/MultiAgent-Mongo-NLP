@@ -7,12 +7,12 @@
   </div>
   <div class="grid-scroll max-h-[320px] overflow-auto">
     <p-table [value]="execution.rows" [tableStyle]="{ 'min-width': '50rem' }" styleClass="p-datatable-striped p-datatable-sm">
-      <ng-template pTemplate="header">
+      <ng-template #header pTemplate="header">
         <tr>
           <th *ngFor="let column of execution.columns">{{ label(column) }}</th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-row>
+      <ng-template #body pTemplate="body" let-row>
         <tr>
           <td *ngFor="let column of execution.columns">{{ value(row, column) }}</td>
         </tr>

@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { NoopAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
+import { PrimeTemplate } from 'primeng/api';
+import { TableModule } from 'primeng/table';
+import Aura from '@primeuix/themes/aura';
 import { McpServersComponent } from './mcp-servers.component';
 import { McpServersService } from '../services/mcp-servers.service';
 import { SessionService } from '../services/session.service';
@@ -117,8 +122,14 @@ function setup(role = 'Data Owner / Admin', list: McpServerSummary[] = summaries
   };
 
   TestBed.configureTestingModule({
-    imports: [McpServersComponent],
+    imports: [McpServersComponent, NoopAnimationsModule, TableModule, PrimeTemplate],
     providers: [
+      providePrimeNG({
+        theme: {
+          preset: Aura,
+          options: { prefix: 'p', darkModeSelector: '.app-dark', cssLayer: false }
+        }
+      }),
       { provide: McpServersService, useValue: service },
       { provide: SessionService, useValue: { role: () => role } },
       {
@@ -138,9 +149,11 @@ function setup(role = 'Data Owner / Admin', list: McpServerSummary[] = summaries
 }
 
 describe('McpServersComponent', () => {
-  it('renders server list with health badges', () => {
+  it('renders server list with health badges', async () => {
     const { component, fixture } = setup();
     component.ngOnInit();
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;

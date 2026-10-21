@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { PrimeTemplate } from 'primeng/api';
+import { TableModule } from 'primeng/table';
 import { ResultsGridComponent } from './results-grid.component';
 import { ExecutionPayload } from '../models/execution';
 
@@ -6,7 +9,7 @@ describe('ResultsGridComponent', () => {
   let fixture: ComponentFixture<ResultsGridComponent>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [ResultsGridComponent] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [ResultsGridComponent, NoopAnimationsModule, TableModule, PrimeTemplate] }).compileComponents();
     fixture = TestBed.createComponent(ResultsGridComponent);
   });
 
