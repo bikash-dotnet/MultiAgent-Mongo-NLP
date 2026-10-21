@@ -109,9 +109,7 @@ describe('ChatThreadComponent', () => {
 
   it('renders the manager email control on the manager step', () => {
     const fixture = TestBed.createComponent(ChatThreadComponent);
-    fixture.detectChanges();
     const component = fixture.componentInstance;
-
     component.turn = {
       ...emailTurn,
       step: 'ManagerEmail',
@@ -142,7 +140,6 @@ describe('ChatThreadComponent', () => {
 
   it('renders the results grid when a turn carries an execution payload', () => {
     const fixture = TestBed.createComponent(ChatThreadComponent);
-    fixture.detectChanges();
     const component = fixture.componentInstance;
     component.turn = {
       conversationId: 'c1',
@@ -163,7 +160,6 @@ describe('ChatThreadComponent', () => {
         timedOut: false
       }
     };
-
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('row-1');
