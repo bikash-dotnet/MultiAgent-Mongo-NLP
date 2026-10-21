@@ -7,11 +7,6 @@
         approvals, and exports. Both are stored durably and edited from this UI.
       </p>
     </div>
-    @if (canManage) {
-      <div class="flex gap-2">
-        <p-button label="Add rule" icon="pi pi-plus" (onClick)="addRule()" />
-      </div>
-    }
   </header>
 
   @if (error) {
