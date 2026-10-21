@@ -54,21 +54,24 @@
                     </div>
                   } @else {
                     @if (isNumberType(setting.type)) {
-                      <p-inputNumber
-                        name="num-{{ section.sectionName }}-{{ setting.key }}"
-                        [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [attr.min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
-                        [attr.max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
-                        [disabled]="!setting.editable"
-                        class="control-sm"
-                      />
+<input
+  name="num-{{ section.sectionName }}-{{ setting.key }}"
+  type="number"
+  pInputText
+  [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+  [min]="getFieldSchema(section.sectionName, setting.key)?.min ?? null"
+  [max]="getFieldSchema(section.sectionName, setting.key)?.max ?? null"
+  [disabled]="!setting.editable"
+  class="control-sm"
+/>
                     } @else if (isBooleanType(setting.type)) {
-                      <p-toggleSwitch
-                        name="bool-{{ section.sectionName }}-{{ setting.key }}"
-                        [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
-                        [disabled]="!setting.editable"
-                        [attr.inputId]="'toggle-' + section.sectionName + '-' + setting.key"
-                      />
+<input
+  type="checkbox"
+  name="bool-{{ section.sectionName }}-{{ setting.key }}"
+  [(ngModel)]="getDraft(section.sectionName).values[setting.key]"
+  [disabled]="!setting.editable"
+  id="toggle-{{ section.sectionName }}-{{ setting.key }}"
+/>
                     } @else if (isSelectType(setting.type)) {
                       <p-select
                         name="select-{{ section.sectionName }}-{{ setting.key }}"

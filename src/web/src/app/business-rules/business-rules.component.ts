@@ -81,7 +81,6 @@ const DATA_TYPE_OPTIONS = [
     TableModule,
     DialogModule,
     InputTextModule,
-    InputNumberModule,
     TextareaModule,
     ToggleSwitchModule,
     SelectModule,
