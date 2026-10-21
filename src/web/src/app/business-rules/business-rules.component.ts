@@ -11,7 +11,6 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ChipModule } from 'primeng/chip';
@@ -82,7 +81,6 @@ const DATA_TYPE_OPTIONS = [
     DialogModule,
     InputTextModule,
     TextareaModule,
-    ToggleSwitchModule,
     SelectModule,
     MultiSelectModule,
     ChipModule,

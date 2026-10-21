@@ -57,6 +57,7 @@ export class ConfigurationComponent implements OnInit {
 
   drafts = new Map<string, SectionDraft>();
   canManage = false;
+  activeSection = '';
 
   constructor(
     private readonly configurationService: ConfigurationService,
@@ -88,6 +89,9 @@ export class ConfigurationComponent implements OnInit {
     this.configurationService.list().subscribe({
       next: (sections) => {
         this.sections = sections;
+        if (!this.activeSection && sections.length) {
+          this.activeSection = sections[0].sectionName;
+        }
         for (const section of sections) {
           this.drafts.set(section.sectionName, {
             values: { ...this.initialValues(section) },
