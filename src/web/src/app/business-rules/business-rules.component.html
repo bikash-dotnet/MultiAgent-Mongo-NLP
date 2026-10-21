@@ -63,7 +63,7 @@
                   name="rule-enabled-{{ rule.id }}"
                   [(ngModel)]="rule.enabled"
                   (onChange)="toggleRule(rule)"
-                  [inputId]="'rule-enabled-' + rule.id"
+                  [attr.inputId]="'rule-enabled-' + rule.id"
                 />
               </td>
               <td>
@@ -242,16 +242,16 @@
               </td>
               <td>
                 @if (canManage) {
-                  <p-inputNumber name="col-order-{{ column.id }}" [(ngModel)]="column.order" [min]="0" />
+                  <p-inputNumber name="col-order-{{ column.id }}" [(ngModel)]="column.order" [attr.min]="0" />
                 } @else {
                   {{ column.order }}
                 }
               </td>
               <td>
-                <p-toggleSwitch name="col-visible-{{ column.id }}" [(ngModel)]="column.visibleByDefault" [inputId]="'col-visible-' + column.id" />
+                <p-toggleSwitch name="col-visible-{{ column.id }}" [(ngModel)]="column.visibleByDefault" [attr.inputId]="'col-visible-' + column.id" />
               </td>
               <td>
-                <p-toggleSwitch name="col-export-{{ column.id }}" [(ngModel)]="column.exportable" [inputId]="'col-export-' + column.id" />
+                <p-toggleSwitch name="col-export-{{ column.id }}" [(ngModel)]="column.exportable" [attr.inputId]="'col-export-' + column.id" />
               </td>
               @if (canManage) {
                 <td>
@@ -343,7 +343,7 @@
           </div>
           <div class="form-group">
             <label>Priority</label>
-            <p-inputNumber name="ruleDraft-priority" [(ngModel)]="ruleDraft.priority" [min]="0" placeholder="Lower runs first" />
+            <p-inputNumber name="ruleDraft-priority" [(ngModel)]="ruleDraft.priority" [attr.min]="0" placeholder="Lower runs first" />
             <small class="hint">Rules with the same priority run in ID order.</small>
           </div>
           <div class="form-group">
@@ -452,7 +452,7 @@
         </div>
         <div class="form-group">
           <label>Order</label>
-          <p-inputNumber name="columnDraft-order" [(ngModel)]="columnDraft.order" [min]="0" />
+          <p-inputNumber name="columnDraft-order" [(ngModel)]="columnDraft.order" [attr.min]="0" />
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -480,5 +480,5 @@
       </ng-template>
     </p-dialog>
 
-  <p-confirmDialog />
+  <p-confirmdialog />
 </section>
