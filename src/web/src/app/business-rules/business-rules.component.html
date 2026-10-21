@@ -13,22 +13,14 @@
     <p class="error" role="alert">{{ error }}</p>
   }
 
-  <div class="tab-bar">
-    <p-button
-      label="Business Rules"
-      icon="pi pi-list"
-      class="mr-2"
-      [severity]="selectedTab === 0 ? 'secondary' : null"
-      (onClick)="selectedTab = 0" />
-    <p-button
-      label="Column Definitions"
-      icon="pi pi-table"
-      [severity]="selectedTab === 1 ? 'secondary' : null"
-      (onClick)="selectedTab = 1" />
-  </div>
-
-  @if (selectedTab === 0) {
-    <div class="mt-4">
+  <p-tabs [(value)]="tabValue">
+    <p-tablist>
+      <p-tab value="rules" icon="pi pi-list">Business Rules</p-tab>
+      <p-tab value="columns" icon="pi pi-table">Column Definitions</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel value="rules">
+        <div class="mt-4">
       <div class="flex justify-between items-center mb-6">
         <h1>Business Rules</h1>
         <p class="subtitle">Define rules that apply across guardrails, execution, grid columns, and exports.</p>
@@ -177,11 +169,11 @@
           </div>
         }
       </div>
-    </div>
-  }
+      </div>
+    </p-tabpanel>
 
-  @if (selectedTab === 1) {
-    <div class="mt-4">
+    <p-tabpanel value="columns">
+      <div class="mt-4">
       @if (columns.length) {
         <div class="mb-4 flex justify-end">
           @if (canManage) {
@@ -305,7 +297,9 @@
         <div class="empty">No column definitions defined. Click "Add column" to create one.</div>
       }
     </div>
-  }
+  </p-tabpanel>
+  </p-tabpanels>
+  </p-tabs>
 
   <!-- Rule editor dialog -->
   <p-dialog
