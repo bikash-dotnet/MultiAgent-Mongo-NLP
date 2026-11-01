@@ -74,7 +74,7 @@
             "proxyConfig": "proxy.conf.json",
             "host": "0.0.0.0",
             "allowedHosts": [
-              "all"
+              ".monkeycode-ai.live"
             ]
           },
           "configurations": {
