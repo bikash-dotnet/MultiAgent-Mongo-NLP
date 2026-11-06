@@ -1,6 +1,7 @@
 using Gateway.Auth;
 using Gateway.Conversations;
 using Gateway.Endpoints;
+using Gateway.Nlp.Guardrails;
 using Gateway.Reports;
 using Gateway.Rules;
 using Microsoft.AspNetCore.Http;
@@ -162,7 +163,16 @@ public static class ReportHandlers
         CancellationToken cancellationToken)
     {
         var requester = SessionClaims.ToRequesterContext(user);
-        var ruleResult = await rules.EvaluateAsync(requester, schemaId: null, cancellationToken: cancellationToken);
+        var mql = turn.Result?.Mql;
+        var columns = turn.Columns?.Select(c => c.Name) ?? [];
+        var ruleResult = await rules.EvaluateAsync(
+            requester,
+            schemaId: null,
+            cancellationToken,
+            RuleEvaluationContext.From(
+                columns,
+                RuleEvaluationContext.ValuesFromRows(turn.Execution?.Rows),
+                MqlAnalyzer.ExtractEqualityValues(mql)));
         var effects = ruleResult.Effects;
 
         var excluded = BusinessRuleEngine.ExcludedColumns(effects)

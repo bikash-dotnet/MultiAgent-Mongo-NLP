@@ -38,7 +38,14 @@ public sealed class GuardrailEvaluator
                 violations);
         }
 
-        var ruleResult = await _rules.EvaluateAsync(requester ?? new RequesterContext(requesterRole ?? string.Empty, string.Empty, requesterRole ?? string.Empty, null), schemaId, cancellationToken);
+        var requesterContext = requester ?? new RequesterContext(requesterRole ?? string.Empty, string.Empty, requesterRole ?? string.Empty, null);
+        var ruleResult = await _rules.EvaluateAsync(
+            requesterContext,
+            schemaId,
+            cancellationToken,
+            RuleEvaluationContext.From(
+                analysis.FieldPaths,
+                multiValues: MqlAnalyzer.ExtractEqualityValues(pipelineJson)));
 
         var deniedOperators = BusinessRuleEngine.DeniedOperators(ruleResult.Effects);
         var usedOperators = analysis.Operators;
