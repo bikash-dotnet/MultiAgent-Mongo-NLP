@@ -93,4 +93,17 @@ public class MqlAnalyzerTests
         Assert.False(analysis.IsParsable);
         Assert.Contains("array", analysis.ParseError);
     }
+
+    [Fact]
+    public void Extracts_equality_values_from_match()
+    {
+        var values = MqlAnalyzer.ExtractEqualityValues(
+            """[{"$match":{"address.market":"New York","price":{"$eq":150},"status":{"$in":["open","live"]}}}]""");
+
+        Assert.Equal(["New York"], values["address.market"]);
+        Assert.Equal(["150"], values["price"]);
+        Assert.Contains("open", values["status"]);
+        Assert.Contains("live", values["status"]);
+        Assert.False(values.ContainsKey("missing"));
+    }
 }

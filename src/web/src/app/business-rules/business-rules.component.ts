@@ -353,6 +353,7 @@ export class BusinessRulesComponent implements OnInit {
       if (r.scope === RuleScope.Role) return r.scopeValue === requesterRole;
       return false;
     })
+    .filter((r) => this.conditionMatches(r.condition, requesterRole, fields))
     .sort((a, b) => a.priority - b.priority);
 
     const appliedRuleIds: string[] = [];
@@ -525,6 +526,34 @@ export class BusinessRulesComponent implements OnInit {
 
   private persistColumnOrder(): void {
     this.businessRulesService.reorderColumnDefinitions({ ids: this.columns.map((c) => c.id) }).subscribe();
+  }
+
+  conditionMatches(condition: RuleCondition, requesterRole: string, fields: string[]): boolean {
+    const field = (condition.field ?? '').trim();
+    const operator = this.normalizeOperator(condition.operator);
+    const values = (condition.values ?? []).map((value) => value.trim()).filter(Boolean);
+    const wildcardValues = values.length === 0 || values.every((value) => value === '*');
+
+    if ((field.length === 0 || field === '*') && (operator.length === 0 || operator === 'equals' || operator === 'eq') && wildcardValues) {
+      return true;
+    }
+
+    if (operator === 'matchesdataownerrole') {
+      const role = this.normalizeOperator(requesterRole);
+      if (wildcardValues) {
+        return role.includes('dataowner') || role.includes('admin');
+      }
+      return values.some((value) => {
+        const expected = this.normalizeOperator(value);
+        return role.includes(expected) || expected.includes(role);
+      });
+    }
+
+    return fields.some((item) => item.toLowerCase() === field.toLowerCase());
+  }
+
+  normalizeOperator(value: string | undefined): string {
+    return (value ?? '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   }
 
   scopeBadge(scope: RuleScope): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined {

@@ -1,5 +1,6 @@
 using Gateway.Audit;
 using Gateway.Configuration;
+using Gateway.Nlp.Guardrails;
 using Gateway.Nlp.Orchestrator;
 using Gateway.Rules;
 using Microsoft.Extensions.Options;
@@ -49,7 +50,14 @@ public sealed class ExecutionRunner : ITabularQueryExecutor
         {
             result = await _transport.ExecuteAsync(request, timeout.Token);
 
-            var ruleResult = await _rules.EvaluateAsync(request.User, schemaId: null, cancellationToken);
+            var ruleResult = await _rules.EvaluateAsync(
+                request.User,
+                schemaId: null,
+                cancellationToken,
+                RuleEvaluationContext.From(
+                    request.Columns.Concat(result.Columns),
+                    RuleEvaluationContext.ValuesFromRows(result.Rows),
+                    MqlAnalyzer.ExtractEqualityValues(request.Mql)));
             var effects = ruleResult.Effects;
 
             var excluded = BusinessRuleEngine.ExcludedColumns(effects)

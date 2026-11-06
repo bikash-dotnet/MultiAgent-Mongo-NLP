@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Gateway.Governance;
 
 namespace Gateway.Rules;
@@ -15,9 +14,11 @@ public sealed class BusinessRuleEngine
     public async Task<RuleEvaluationResult> EvaluateAsync(
         RequesterContext requester,
         string? schemaId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        RuleEvaluationContext? context = null)
     {
         var rules = await _store.ListAsync(cancellationToken);
+        var evaluationContext = context ?? RuleEvaluationContext.Empty;
 
         var applicable = rules
             .Where(rule => rule.Enabled)
@@ -28,6 +29,7 @@ public sealed class BusinessRuleEngine
                 RuleScope.Role => string.Equals(rule.ScopeValue, requester.Role, StringComparison.Ordinal),
                 _ => false
             })
+            .Where(rule => RuleConditionEvaluator.Matches(rule.Condition, requester, evaluationContext))
             .OrderBy(rule => rule.Priority)
             .ThenBy(rule => rule.Id, StringComparer.Ordinal)
             .ToList();
