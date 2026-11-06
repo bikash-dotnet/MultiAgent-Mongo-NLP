@@ -194,10 +194,14 @@ public sealed class NlpOrchestrator : INlpOrchestrator
         var columns = MqlAnalyzer.Analyze(result.Mql).FieldPaths;
 
         // Apply business rule setDefault values before query execution parameters are finalized.
+        var user = requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null);
         var ruleResult = await _rules.EvaluateAsync(
-            requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null),
+            user,
             schemaId: null,
-            cancellationToken);
+            cancellationToken,
+            RuleEvaluationContext.From(
+                columns,
+                multiValues: MqlAnalyzer.ExtractEqualityValues(result.Mql)));
         var setDefaults = BusinessRuleEngine.SetDefaults(ruleResult.Effects);
         var defaults = result.ClarificationsApplied;
         var effectiveDefaults = new MqlDefaults(
@@ -205,7 +209,6 @@ public sealed class NlpOrchestrator : INlpOrchestrator
             setDefaults.TryGetValue("sort", out var sort) ? sort : defaults.Sort,
             setDefaults.TryGetValue("market", out var market) ? market : defaults.Market);
 
-        var user = requester ?? new RequesterContext(sessionId, sessionId, string.Empty, null);
         var execution = await _executor.ExecuteAsync(
             new ExecutionRequest(
                 result.Mql,

@@ -173,6 +173,35 @@ public class ExecutionRunnerTests
         Assert.Equal("a", result.Rows[0]["name"]);
     }
 
+    [Fact]
+    public async Task Cap_rows_applies_only_when_condition_matches()
+    {
+        var backend = new InMemoryDocumentStore();
+        var store = new BusinessRuleStore(backend);
+        await store.UpsertAsync(new BusinessRule(
+            BusinessRule.NewId(), "us-cap", null, RuleScope.Global, null, 10, true,
+            new RuleCondition("market", "equals", ["us"], "all"),
+            new RuleAction(RuleActions.CapRows, new Dictionary<string, string> { ["max"] = "1" }),
+            1, DateTimeOffset.UtcNow, "system"), "system", CancellationToken.None);
+
+        TabularResult Run(string market)
+        {
+            var transport = new StubTransport(_ => new TabularResult(
+                ["name", "market"],
+                Enumerable.Range(0, 3).Select(i => new Dictionary<string, string?>
+                {
+                    ["name"] = $"r{i}", ["market"] = market
+                }).ToList(),
+                "Mongo", 7));
+            var runner = new ExecutionRunner(transport, new InMemoryAuditLogStore(), new RecordingSink(), Options(), new SettingsProvider(), TimeProvider.System,
+                new BusinessRuleEngine(store));
+            return runner.ExecuteAsync(RequestWithRole("Business Analyst")).GetAwaiter().GetResult();
+        }
+
+        Assert.Equal(1, Run("us").RowCount);
+        Assert.Equal(3, Run("eu").RowCount);
+    }
+
     private static IOptions<ExecutionOptions> Options(int timeoutMs = 5000)
     {
         return Microsoft.Extensions.Options.Options.Create(new ExecutionOptions { TimeoutMs = timeoutMs });

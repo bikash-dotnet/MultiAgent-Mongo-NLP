@@ -98,4 +98,23 @@ describe('BusinessRulesComponent', () => {
     ).map((input) => input.value);
     expect(labelValues).toContain('Customer');
   });
+
+  it('rule tester applies only rules whose condition matches the field set', async () => {
+    const { fixture } = setup();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const component = fixture.componentInstance;
+    component.testerRole = 'Business Analyst';
+    component.testerFields = 'price';
+    component.testRules();
+
+    expect(component.testerResult.appliedRuleIds).toEqual([]);
+
+    component.testerFields = 'rows';
+    component.testRules();
+
+    expect(component.testerResult.appliedRuleIds).toEqual(['rule_1']);
+    expect(component.testerResult.capRows).toBe(1000);
+  });
 });

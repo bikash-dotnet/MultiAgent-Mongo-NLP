@@ -49,10 +49,141 @@ public static class MqlAnalyzer
         }
     }
 
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> ExtractEqualityValues(string? pipelineJson)
+    {
+        var values = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(pipelineJson))
+        {
+            return ToReadOnly(values);
+        }
+
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(pipelineJson);
+        }
+        catch (JsonException)
+        {
+            return ToReadOnly(values);
+        }
+
+        using (document)
+        {
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return ToReadOnly(values);
+            }
+
+            foreach (var stage in document.RootElement.EnumerateArray())
+            {
+                if (stage.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                foreach (var stageProperty in stage.EnumerateObject())
+                {
+                    if (stageProperty.Name == "$match")
+                    {
+                        CollectEqualityValues(stageProperty.Value, values);
+                    }
+                }
+            }
+        }
+
+        return ToReadOnly(values);
+    }
+
     private static MqlAnalysis Invalid(string reason)
     {
         return new MqlAnalysis(false, reason, [], []);
     }
+
+    private static void CollectEqualityValues(JsonElement filter, Dictionary<string, List<string>> values)
+    {
+        if (filter.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        foreach (var property in filter.EnumerateObject())
+        {
+            if (property.Name is "$and" or "$or")
+            {
+                if (property.Value.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in property.Value.EnumerateArray())
+                    {
+                        CollectEqualityValues(item, values);
+                    }
+                }
+
+                continue;
+            }
+
+            if (property.Name.StartsWith('$'))
+            {
+                continue;
+            }
+
+            AddLiteral(values, property.Name, property.Value);
+            if (property.Value.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var inner in property.Value.EnumerateObject())
+                {
+                    if (inner.Name is "$eq" or "$in")
+                    {
+                        AddLiteral(values, property.Name, inner.Value);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void AddLiteral(Dictionary<string, List<string>> values, string field, JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                AddLiteral(values, field, item);
+            }
+
+            return;
+        }
+
+        var text = element.ValueKind switch
+        {
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.GetRawText(),
+            JsonValueKind.True => "true",
+            JsonValueKind.False => "false",
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(field) || text is null)
+        {
+            return;
+        }
+
+        if (!values.TryGetValue(field, out var list))
+        {
+            list = [];
+            values[field] = list;
+        }
+
+        if (!list.Contains(text, StringComparer.OrdinalIgnoreCase))
+        {
+            list.Add(text);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> ToReadOnly(
+        Dictionary<string, List<string>> values) =>
+        values.ToDictionary(
+            pair => pair.Key,
+            pair => (IReadOnlyList<string>)pair.Value,
+            StringComparer.OrdinalIgnoreCase);
 
     private static void CollectStage(
         string stage,
